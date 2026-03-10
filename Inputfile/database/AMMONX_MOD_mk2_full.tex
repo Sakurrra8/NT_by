@@ -1,0 +1,3237 @@
+\documentclass[12pt,dvipdfm]{article}
+
+
+\usepackage{epsf}
+
+\oddsidemargin 0. true cm
+\topmargin -2.5 true cm
+\textheight 24 true cm
+\textwidth 16 true cm
+\usepackage{color}
+\pagecolor{white}
+\setcounter{secnumdepth}{3}
+\usepackage{times}
+
+
+\usepackage[unicode=true,
+% hypertex, % use for activating links in DVI file
+ dvipdfm, % use for bookmarks in final version
+ bookmarks=true,bookmarksnumbered=true,bookmarksopen=true,
+ breaklinks=false,pdfborder={0 0 0},backref=false,colorlinks=true]
+ {hyperref}
+\hypersetup{pdftitle={AMMONX Documentation},linkcolor=blue, citecolor=blue, urlcolor=blue, filecolor=blue}
+ \usepackage{bookmark} % use only together with dvipdfm option of hyperref package!
+
+
+\begin{document}
+\parindent 0pt
+%titlepage
+{\Large \bf \center
+\vspace*{3truecm}
+
+The data file AMMONIAEX \\(based on AMUJEL format): \\
+Additional Atomic and Molecular Data for EIRENE for AMMONIA
+\vspace*{3truecm}
+
+S. Touchard, J. Mougenot, C. Rond, K. Hassouni\\
+LSPM -- 99 avenue J.B. Clement\\
+93430 Villetaneuse \\
+%Post-box 1917 \\
+FR
+\vspace{5truecm}
+
+Version: \today
+\vspace{3truecm}
+
+Available via e-mail from sylvain.touchard@lspm.cnrs.fr
+}
+\tableofcontents
+%end titlepage
+\newpage
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+\subsection*{Record:}
+\addcontentsline{toc}{subsection}{Record:}
+\begin{itemize}
+\item April, 17:  First version
+\item July 3, 17: Adding cross-sections
+\item July 31, 17: Database update. Thanks to Ms S. TAMODARIN and Mr S. KETHESWARAN for their work.
+
+\item April 2020:  typo in reaction 32 (both H.1. and H.2):  NH3+ educt, rather than NH3
+\end{itemize}
+
+\subsection*{to be done:}
+\addcontentsline{toc}{subsection}{To be done:}
+\begin{itemize}
+\item  To be done
+\end{itemize}
+
+
+Additional atomic data fits, read by EIRENE
+Specific reaction for AMMONIAC
+
+Format as HYDHEL DATEN \cite{kn:Janev}
+or METHANE DATEN \cite{kn:Ehrhardt} or AMJUEL DATEN
+
+SPECIFIC BIBLIOGRAPHY IS AVAILABLE
+
+\subsection*{End of preface:}
+\addcontentsline{toc}{subsection}{End of preface:}
+This next string is searched by EIRENE in subroutine SLREAC
+to initialize search for a particular set of fit coefficients.
+From here on, a character string \textbf{`H.n'}, with n an integer, must only appear in the
+section title,
+but not in the text. Likewise: identifiers p0, a0, b0, ....,h0, k0 are used
+in SLREAC and must not
+appear in the text elsewhere, from here on.
+
+\bigskip
+\begin{small}\begin{verbatim}
+...........................................
+.                                         .
+.       ##BEGIN DATA HERE##               .
+.                                         .
+...........................................
+\end{verbatim}\end{small}
+\newpage
+
+\setcounter{section}{0}
+
+\section{H.1 : Fits for cross-section }
+
+\subsection{
+Reaction DB N2*(A) + N  = N2 + N*(2P)}
+\begin{small}\begin{verbatim}
+   a0 -3.525604931656E+01    a1 -1.169467047039E+00    a2 -3.016619218433E-04
+   a3 -1.131053596850E-04    a4  5.075664503871E-05    a5  5.186112097513E-06
+   a6 -2.519799999214E-06    a7  4.025963385058E-08    a8  1.886635246743E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a1.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DE N2*(A) + H = N2 + H}
+\begin{small}\begin{verbatim}
+   a0 -3.636724579729E+01    a1 -4.996921680518E-01    a2 -3.004238048443E-04
+   a3 -7.027601268270E-05    a4  4.639562577142E-05    a5  4.000298458661E-06
+   a6 -2.200508309113E-06    a7  1.127902891757E-08    a8  1.890104031525E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a2.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DF N2*(A) + H2  = N2 + 2H}
+\begin{small}\begin{verbatim}
+   a0 -3.652800397725E+01    a1 -4.578607537346E-02    a2 -2.399741909925E-01
+   a3  7.519012714366E-02    a4 -1.537136580981E-02    a5  3.557144220075E-03
+   a6 -9.047956443652E-04    a7  1.282478836314E-04    a8 -6.737601321279E-06
+  al0 -3.690118294352E+01   al1 -9.552068318873E-01   al2 -8.526095153209E-01
+  ar0 -7.369645315588E+01   ar1  1.059530072648E+01   ar2 -8.174067143707E-01
+ELABMIN= 1.51188E-01 eV
+ELABMAX= 2.37103E+03 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a3.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EC N*(2D) + NH3  = NH + NH2}
+\begin{small}\begin{verbatim}
+   a0 -3.597312484632E+01    a1 -4.992860132291E-01    a2  2.221724976694E-04
+   a3 -2.185431927439E-04    a4 -1.875235453436E-05    a5  1.801683905709E-05
+   a6 -5.631533912406E-07    a7 -4.004005884577E-07    a8  3.456994046962E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a4.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 32 NH3 + H+ = H + NH3+}
+\begin{small}\begin{verbatim}
+   a0 -3.512950843118E+01    a1 -9.995197673296E-01    a2 -1.089341894829E-04
+   a3 -1.324296798829E-04    a4  1.991180950364E-05    a5  1.021163226029E-05
+   a6 -1.537210572679E-06    a7 -1.883169541811E-07    a8  2.892314580928E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a5.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZL H+ + NH2 = NH2+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.537490331955E+01    a1 -9.993461448873E-01    a2 -1.949720016317E-04
+   a3 -1.729087654282E-04    a4  3.569519275369E-05    a5  1.165878099393E-05
+   a6 -2.244838297527E-06    a7 -1.767355711604E-07    a8  3.403726702521E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a6.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZM 	H+ + NH = NH+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.569871167432E+01    a1 -9.983552723791E-01    a2 -2.774822166591E-04
+   a3 -4.556629385908E-04    a4  5.969049346956E-05    a5  3.538344846415E-05
+   a6 -4.659439894078E-06    a7 -7.556905829568E-07    a8  1.034211511159E-07
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a7.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 33 H2+ + H = H2 + H+}
+\begin{small}\begin{verbatim}
+   a0 -3.543361362397E+01    a1 -4.992788117844E-01    a2  4.583388077472E-04
+   a3 -1.407924001098E-04    a4 -4.505298269726E-05    a5  1.169063046928E-05
+   a6  6.572405609520E-07    a7 -2.867139255236E-07    a8  1.628565543476E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a8.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 34 H2+ + H2 = H3+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.409202391649E+01    a1 -4.990685444208E-01    a2  1.437669809837E-04
+   a3 -2.595121452718E-04    a4  9.995622582894E-07    a5  1.869798439979E-05
+   a6 -1.485708040220E-06    a7 -3.285779522997E-07    a8  3.583715168109E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a9.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 35 H2+ + NH3 = NH3+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.275288968305E+01    a1 -4.994787050446E-01    a2 -2.188016275804E-04
+   a3 -1.033806506382E-04    a4  3.316204729448E-05    a5  4.858481757960E-06
+   a6 -1.522128427499E-06    a7 -1.004154955784E-08    a8  1.187729688822E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a10.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 36 H2+ + N2 = N2H+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.377920738035E+01    a1 -4.997687175351E-01    a2 -9.948208681396E-05
+   a3 -5.978514387256E-05    a4  1.295890511041E-05    a5  6.455654301945E-06
+   a6 -1.012966875438E-06    a7 -1.864498029942E-07    a8  2.762522101525E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a11.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZN H2+ + N = N+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.519826157435E+01    a1 -4.998014584796E-01    a2  1.530815192373E-04
+   a3  5.036422855746E-05    a4 -5.083768450143E-06    a5 -5.745853671067E-06
+   a6  4.837645055788E-09    a7  1.667353837445E-07    a8 -8.813920612450E-09
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a12.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZO H2+ + N = NH+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.386357554600E+01    a1 -4.994103923210E-01    a2  2.706129685180E-04
+   a3 -2.095646572375E-04    a4 -2.749472868472E-05    a5  2.142732365011E-05
+   a6 -3.458818819641E-07    a7 -6.382759584083E-07    a8  5.716798847223E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a13.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZR H2+ + NH2 = NH2+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.537889371688E+01    a1 -9.988111947000E-01    a2 -2.580324837846E-04
+   a3 -2.911740540974E-04    a4  5.386582495464E-05    a5  1.997041706219E-05
+   a6 -3.537831334797E-06    a7 -3.296643009103E-07    a8  5.745822253520E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a14.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZT H2+ + NH = NH+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.639877685839E+01    a1 -9.991932271353E-01    a2 -3.786106055822E-04
+   a3 -2.000209526831E-04    a4  6.490058121546E-05    a5  1.204772346475E-05
+   a6 -3.491148657210E-06    a7 -1.039499856348E-07    a8  3.854441560333E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a15.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 39 H3+ + NH3 = NH4+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.445855504336E+01    a1 -9.991800597753E-01    a2 -4.749471155324E-04
+   a3 -2.864635224663E-04    a4  7.700583560252E-05    a5  2.201247421731E-05
+   a6 -4.531304197853E-06    a7 -4.179190244699E-07    a8  7.678547276233E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a16.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZU H3+ + NH2 = NH3+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.535718875007E+01    a1 -9.988041211578E-01    a2 -1.327073962939E-04
+   a3 -3.024750238876E-04    a4  3.537215304242E-05    a5  2.306215109979E-05
+   a6 -2.938634729118E-06    a7 -4.885550353885E-07    a8  6.619909023077E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a17.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZV H3+ + NH = NH2+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.568779264120E+01    a1 -9.991262523277E-01    a2 -1.490267028808E-04
+   a3 -2.583679126152E-04    a4  3.122615471999E-05    a5  2.265333790401E-05
+   a6 -2.824905844315E-06    a7 -5.468812609031E-07    a8  7.313382420176E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a18.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 40 H3+ + N2 = N2H+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.364424583043E+01    a1 -5.001053947537E-01    a2 -3.489472719550E-04
+   a3  5.217830017246E-05    a4  4.832027801732E-05    a5 -6.339876962418E-06
+   a6 -1.623185920202E-06    a7  2.249465107832E-07    a8 -2.791634048550E-10
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a19.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 41 H2 + N+ = NH+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.519826157435E+01    a1 -4.998014584796E-01    a2  1.530815192373E-04
+   a3  5.036422855746E-05    a4 -5.083768450143E-06    a5 -5.745853671067E-06
+   a6  4.837645055788E-09    a7  1.667353837445E-07    a8 -8.813920612450E-09
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a20.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZZ N+ + H = H+ + N}
+\begin{small}\begin{verbatim}
+   a0 -3.642877046760E+01    a1 -4.993284140026E-01    a2  1.110120593205E-04
+   a3 -2.158746434780E-04    a4 -8.302489080848E-06    a5  2.011967096965E-05
+   a6 -9.264918567094E-07    a7 -5.415644349055E-07    a8  5.239164855073E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a21.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 46 NH+ + H2 = NH2+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.450120601495E+01    a1 -4.994452038861E-01    a2  7.638532994153E-05
+   a3 -1.448123543562E-04    a4  4.073634739478E-06    a5  1.176427290163E-05
+   a6 -1.088326346202E-06    a7 -2.720391880305E-07    a8  3.287797730196E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a22.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 50 NH2+ + H2 = NH3+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.610585832408E+01    a1 -4.994904651358E-01    a2 -2.952907279827E-04
+   a3 -6.005065614576E-05    a4  5.388044003298E-05    a5 -4.149821036921E-06
+   a6 -1.914629649127E-06    a7  3.669195429192E-07    a8 -1.813946931009E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a23.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DD N2*(A) + NH3 =  N2(X) + H + NH2}
+\begin{small}\begin{verbatim}
+   a0 -3.606850050331E+01    a1 -4.985692234760E-01    a2 -2.554692077144E-04
+   a3 -4.069952082798E-04    a4  5.028150025855E-05    a5  3.019730055286E-05
+   a6 -3.697880512623E-06    a7 -6.049288920032E-07    a8  7.786467574166E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a24.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EB N*(2D) + H2  = NH + H}
+\begin{small}\begin{verbatim}
+   a0 -4.058426808527E+01    a1 -5.002334190407E-01    a2 -7.888387115786E-05
+   a3  9.295612376230E-05    a4  1.599541494452E-05    a5 -9.072793765241E-06
+   a6 -4.451575724006E-07    a7  3.001864279963E-07    a8 -1.820461730557E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/a25.eps}
+\end{figure}
+\newpage
+
+
+\section{H.2 : Fits for rate coefficient }
+
+\subsection{
+Reaction 01 e + N = N+ + 2e }
+\begin{small}\begin{verbatim}
+   b0 -3.518518351008E+01    b1  1.707576198208E+01    b2 -8.227861906601E+00
+   b3  2.853001756746E+00    b4 -7.513126739699E-01    b5  1.408230464943E-01
+   b6 -1.675815431763E-02    b7  1.103977300446E-03    b8 -3.033294428047E-05
+  bl0 -2.706766368653E+01   bl1  4.986368193103E+00   bl2 -6.102911587515E-01
+TEMIN= 8.70350E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b1.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 02 e + N2 = N+ + N + 2e}
+\begin{small}\begin{verbatim}
+   b0 -4.942549999176E+01    b1  3.017277842063E+01    b2 -1.467285577702E+01
+   b3  5.087796049996E+00    b4 -1.339825902980E+00    b5  2.511316153268E-01
+   b6 -2.988503990258E-02    b7  1.968737430747E-03    b8 -5.409314373186E-05
+  bl0 -2.989170864250E+01   bl1  5.247739935335E+00   bl2 -5.333316059920E-01
+TEMIN= 1.56574E+01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b2.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 03 e + N2 = N2+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.526103439612E+01    b1  1.748221230697E+01    b2 -8.430348304062E+00
+   b3  2.923213684733E+00    b4 -7.698023616246E-01    b5  1.442886796913E-01
+   b6 -1.717056988007E-02    b7  1.131146009520E-03    b8 -3.107943330538E-05
+  bl0 -2.682979467177E+01   bl1  5.011800609290E+00   bl2 -6.102334456355E-01
+TEMIN= 8.90625E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b3.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 04 e + H = H+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.363465760376E+01    b1  1.543770966904E+01    b2 -7.546322324902E+00
+   b3  2.616678682058E+00    b4 -6.890790911320E-01    b5  1.291582323189E-01
+   b6 -1.537002388796E-02    b7  1.012531401609E-03    b8 -2.782037146492E-05
+  bl0 -2.709885669611E+01   bl1  5.046086478797E+00   bl2 -6.910394613921E-01
+TEMIN= 7.07432E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b4.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 05 e + H2 = H+ + H + 2e}
+\begin{small}\begin{verbatim}
+   b0 -5.078252697142E+01    b1  3.013078713947E+01    b2 -1.478644570730E+01
+   b3  5.127183229110E+00    b4 -1.350198166786E+00    b5  2.530757510227E-01
+   b6 -3.011639497419E-02    b7  1.983978413886E-03    b8 -5.451190586779E-05
+  bl0 -3.208164777375E+01   bl1  5.617215668141E+00   bl2 -6.293245273315E-01
+TEMIN= 1.39545E+01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b5.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 06 e + H2 = H2+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.549202289051E+01    b1  1.790528611163E+01    b2 -8.825443713743E+00
+   b3  3.060212568611E+00    b4 -8.058798009509E-01    b5  1.510508908075E-01
+   b6 -1.797528317264E-02    b7  1.184158124788E-03    b8 -3.253599725642E-05
+  bl0 -2.726004163883E+01   bl1  5.293633090302E+00   bl2 -7.202301519130E-01
+TEMIN= 7.93761E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b6.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 07 e + NH = NH+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.319843294396E+01    b1  1.572589154276E+01    b2 -7.650034869943E+00
+   b3  2.652640889075E+00    b4 -6.985494189552E-01    b5  1.309333127369E-01
+   b6 -1.558126112726E-02    b7  1.026447081867E-03    b8 -2.820271950207E-05
+  bl0 -2.636951780989E+01   bl1  5.030812554231E+00   bl2 -6.693292179146E-01
+TEMIN= 7.40776E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b7.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 08 e + NH = N+ + H + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.554735633352E+01    b1  1.696437674301E+01    b2 -8.306880988537E+00
+   b3  2.880401533522E+00    b4 -7.585281618352E-01    b5  1.421754887175E-01
+   b6 -1.691909697615E-02    b7  1.114579723499E-03    b8 -3.062425707068E-05
+  bl0 -2.791032046130E+01   bl1  5.178920305863E+00   bl2 -6.939548518573E-01
+TEMIN= 7.75691E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b8.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 09 e + NH2 = NH2+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.058208344880E+01    b1  1.279264397226E+01    b2 -6.123978850051E+00
+   b3  2.123482700099E+00    b4 -5.592003095574E-01    b5  1.048142723007E-01
+   b6 -1.247305603473E-02    b7  8.216877866463E-04    b8 -2.257674124117E-05
+  bl0 -2.564129916956E+01   bl1  4.655479160377E+00   bl2 -6.199865202750E-01
+TEMIN= 6.37794E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b9.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 10 e + NH2 = NH+ + H + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.563666632219E+01    b1  1.802442033722E+01    b2 -8.874830639953E+00
+   b3  3.077337429095E+00    b4 -8.103894808667E-01    b5  1.518961671970E-01
+   b6 -1.807587233421E-02    b7  1.190784639196E-03    b8 -3.271806775030E-05
+  bl0 -2.729909673356E+01   bl1  5.296931324933E+00   bl2 -7.157890260846E-01
+TEMIN= 8.02954E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b10.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 11 e + NH3 = NH3+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.165130180136E+01    b1  1.389216810181E+01    b2 -6.721560657193E+00
+   b3  2.330693511964E+00    b4 -6.137674365384E-01    b5  1.150421166139E-01
+   b6 -1.369018488974E-02    b7  9.018686109884E-04    b8 -2.477979421712E-05
+  bl0 -2.605183624126E+01   bl1  4.815429224858E+00   bl2 -6.510300595395E-01
+TEMIN= 6.67855E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b11.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 12 e + NH3 = NH2+ + H + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.339021332416E+01    b1  1.561658416230E+01    b2 -7.610525328975E+00
+   b3  2.638941000688E+00    b4 -6.949416750226E-01    b5  1.302570916252E-01
+   b6 -1.550078979800E-02    b7  1.021145870340E-03    b8 -2.805706310696E-05
+  bl0 -2.664721809186E+01   bl1  5.016490290176E+00   bl2 -6.735428784623E-01
+TEMIN= 7.32296E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b12.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZA e + NH3 = NH+ + 2H + 2e}
+\begin{small}\begin{verbatim}
+   b0 -4.744940094576E+01    b1  2.620437918686E+01    b2 -1.287023297035E+01
+   b3  4.462738642305E+00    b4 -1.175222586054E+00    b5  2.202790271093E-01
+   b6 -2.621353550525E-02    b7  1.726869654839E-03    b8 -4.744757070522E-05
+  bl0 -3.230318300526E+01   bl1  5.592493520722E+00   bl2 -6.626398703180E-01
+TEMIN= 1.20146E+01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b13.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZB e + NH3 = N+ + H + H2 + 2e}
+\begin{small}\begin{verbatim}
+   b0 -5.220926834260E+01    b1  2.933892541899E+01    b2 -1.432220860093E+01
+   b3  4.966209540554E+00    b4 -1.307807175578E+00    b5  2.451301529612E-01
+   b6 -2.917085685543E-02    b7  1.921689178447E-03    b8 -5.280044322530E-05
+  bl0 -3.380775527752E+01   bl1  5.416005940859E+00   bl2 -5.820286052788E-01
+TEMIN= 1.44449E+01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b14.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZC e + NH3 = H+ + NH2 + 2e}
+\begin{small}\begin{verbatim}
+   b0 -5.136820819564E+01    b1  2.877282140387E+01    b2 -1.409996743298E+01
+   b3  4.889147668373E+00    b4 -1.287513615957E+00    b5  2.413264092084E-01
+   b6 -2.871820562836E-02    b7  1.891869863609E-03    b8 -5.198112600285E-05
+  bl0 -3.382005963876E+01   bl1  5.576244953147E+00   bl2 -6.279357032464E-01
+TEMIN= 1.34807E+01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b15.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EK e + N2 = N2*(A) + e}
+\begin{small}\begin{verbatim}
+   b0 -2.559242769964E+01    b1  7.276452157772E+00    b2 -3.625000383821E+00
+   b3  1.256964759575E+00    b4 -3.310105058187E-01    b5  6.204328699087E-02
+   b6 -7.383244459270E-03    b7  4.863861575793E-04    b8 -1.336397425082E-05
+  bl0 -2.414945112701E+01   bl1  3.940841147232E+00   bl2 -7.314515165188E-01
+TEMIN= 2.98296E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b16.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EL e + N2 = N2*(a') + e}
+\begin{small}\begin{verbatim}
+   b0 -3.080643141587E+01    b1  1.158879097062E+01    b2 -5.773331673960E+00
+   b3  2.001896190658E+00    b4 -5.271815821553E-01    b5  9.881280993505E-02
+   b6 -1.175887298758E-02    b7  7.746395343463E-04    b8 -2.128404073461E-05
+  bl0 -2.703985702704E+01   bl1  4.705942298619E+00   bl2 -7.554317878939E-01
+TEMIN= 4.83803E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b17.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EM e + N = N*(2D) + e}
+\begin{small}\begin{verbatim}
+   b0 -2.078384988604E+01    b1  2.920996557021E+00    b2 -1.654462028038E+00
+   b3  5.736828262365E-01    b4 -1.510742771788E-01    b5  2.831675904897E-02
+   b6 -3.369736912610E-03    b7  2.219882326827E-04    b8 -6.099361544993E-06
+  bl0 -2.074204864239E+01   bl1  2.512639702290E+00   bl2 -8.222816979571E-01
+TEMIN= 1.14711E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b18.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EN e + N = N*(2P) + e}
+\begin{small}\begin{verbatim}
+   b0 -2.102160644758E+01    b1  4.308442827971E+00    b2 -2.370572458084E+00
+   b3  8.219933032642E-01    b4 -2.164646359577E-01    b5  4.057326669703E-02
+   b6 -4.828279755381E-03    b7  3.180726916050E-04    b8 -8.739383706258E-06
+  bl0 -2.071897101504E+01   bl1  3.112146169139E+00   bl2 -8.404740367594E-01
+TEMIN= 1.62040E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b19.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 13 e + H2 = H + H + e}
+\begin{small}\begin{verbatim}
+   b0 -2.708571324418E+01    b1  9.068035062033E+00    b2 -4.343171611769E+00
+   b3  1.505989815931E+00    b4 -3.965890427172E-01    b5  7.433506599401E-02
+   b6 -8.845984646340E-03    b7  5.827471250443E-04    b8 -1.601159377683E-05
+  bl0 -2.457764409096E+01   bl1  4.207315634531E+00   bl2 -6.436594534657E-01
+TEMIN= 4.21369E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b20.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZD e + H2+ = H+ + H  + e}
+\begin{small}\begin{verbatim}
+   b0 -1.768640642427E+01    b1  1.952944243980E+00    b2 -9.729224463388E-01
+   b3  3.373597515480E-01    b4 -8.884069434098E-02    b5  1.665194487357E-02
+   b6 -1.981606482938E-03    b7  1.305423338462E-04    b8 -3.586788729444E-06
+  bl0 -1.770575768646E+01   bl1  1.958065780094E+00   bl2 -7.107025672767E-01
+TEMIN= 7.84494E-01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b21.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 14 e + N2 = N + N*(2D) + e}
+\begin{small}\begin{verbatim}
+   b0 -3.310497821898E+01    b1  1.566554523300E+01    b2 -7.669789640427E+00
+   b3  2.659490833269E+00    b4 -7.003532909215E-01    b5  1.312714232927E-01
+   b6 -1.562149679189E-02    b7  1.029097687630E-03    b8 -2.827554769962E-05
+  bl0 -2.641138253935E+01   bl1  5.063433217888E+00   bl2 -6.944312697497E-01
+TEMIN= 7.15625E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b22.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 14s e + N2 = N + N + e }
+\begin{small}\begin{verbatim}
+   b0 -3.310497821898E+01    b1  1.566554523300E+01    b2 -7.669789640427E+00
+   b3  2.659490833269E+00    b4 -7.003532909215E-01    b5  1.312714232927E-01
+   b6 -1.562149679189E-02    b7  1.029097687630E-03    b8 -2.827554769962E-05
+  bl0 -2.641138253935E+01   bl1  5.063433217888E+00   bl2 -6.944312697497E-01
+TEMIN= 7.15625E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b23.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 15 e + NH = N + H + e}
+\begin{small}\begin{verbatim}
+   b0 -2.457785758960E+01    b1  7.403421947312E+00    b2 -3.797854625556E+00
+   b3  1.316901771271E+00    b4 -3.467943855239E-01    b5  6.500175435420E-02
+   b6 -7.735306524768E-03    b7  5.095789580089E-04    b8 -1.400122097940E-05
+  bl0 -2.313135491867E+01   bl1  3.989738586876E+00   bl2 -7.904673819663E-01
+TEMIN= 2.88168E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b24.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 16 e + NH2 = N + H2 + e}
+\begin{small}\begin{verbatim}
+   b0 -2.947714258173E+01    b1  1.172095540666E+01    b2 -5.649864358434E+00
+   b3  1.959084039446E+00    b4 -5.159073823659E-01    b5  9.669961896125E-02
+   b6 -1.150740008366E-02    b7  7.580732483252E-04    b8 -2.082886449991E-05
+  bl0 -2.535903668546E+01   bl1  4.591181457094E+00   bl2 -6.513405753292E-01
+TEMIN= 5.55488E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b25.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 17 e + NH2 = NH + H + e}
+\begin{small}\begin{verbatim}
+   b0 -2.454118936625E+01    b1  7.764114566845E+00    b2 -3.758345084588E+00
+   b3  1.303201882883E+00    b4 -3.431866415913E-01    b5  6.432553324258E-02
+   b6 -7.654835195510E-03    b7  5.042777464821E-04    b8 -1.385556458430E-05
+  bl0 -2.278113522184E+01   bl1  3.995284714494E+00   bl2 -6.702289604129E-01
+TEMIN= 3.42494E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b26.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 18 e + NH3 = NH2 + H + e}
+\begin{small}\begin{verbatim}
+   b0 -2.459014390392E+01    b1  7.714287721729E+00    b2 -3.748467699346E+00
+   b3  1.299776910786E+00    b4 -3.422847056081E-01    b5  6.415647796467E-02
+   b6 -7.634717363196E-03    b7  5.029524436004E-04    b8 -1.381915048552E-05
+  bl0 -2.287917708567E+01   bl1  4.005888585864E+00   bl2 -6.823467373402E-01
+TEMIN= 3.34697E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b27.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 19 e + NH3 = NH + H2 + e}
+\begin{small}\begin{verbatim}
+   b0 -2.182891305431E+01    b1  4.508356250529E+00    b2 -2.375511150705E+00
+   b3  8.237057893126E-01    b4 -2.169156039493E-01    b5  4.065779433598E-02
+   b6 -4.838338671538E-03    b7  3.187353430458E-04    b8 -8.757590755646E-06
+  bl0 -2.146392297693E+01   bl1  3.189088161513E+00   bl2 -7.885426336904E-01
+TEMIN= 1.73630E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b28.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZE e + NH3 = NH + 2H + e}
+\begin{small}\begin{verbatim}
+   b0 -2.923951508276E+01    b1  1.134424534945E+01    b2 -5.462194038836E+00
+   b3  1.894009569605E+00    b4 -4.987705986859E-01    b5  9.348756868107E-02
+   b6 -1.112516126969E-02    b7  7.328924935732E-04    b8 -2.013699662317E-05
+  bl0 -2.536338736958E+01   bl1  4.544983424328E+00   bl2 -6.501292982544E-01
+TEMIN= 5.36628E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b29.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 20 e + H2+ = H + H}
+\begin{small}\begin{verbatim}
+   b0 -1.952226532449E+01    b1 -4.300000000000E-01    b2  1.176699630083E-14
+   b3 -4.306129821113E-15    b4 -1.976279697331E-15    b5  1.188464274130E-15
+   b6 -2.107638125050E-16    b7  1.540936682618E-17    b8 -3.878633051697E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b30.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 21 e + H3+ = 3H}
+\begin{small}\begin{verbatim}
+   b0 -1.884873396354E+01    b1 -5.200000000000E-01    b2  1.568932840110E-14
+   b3 -3.526376612459E-15    b4 -2.691319284541E-15    b5  1.154103018397E-15
+   b6 -1.604149159172E-16    b7  8.482332459835E-18    b8 -1.050069624873E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b31.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 22 e + H3+ = H2 + H}
+\begin{small}\begin{verbatim}
+   b0 -1.947105509154E+01    b1 -5.200000000000E-01    b2  1.176699630083E-14
+   b3  3.446824533805E-15    b4 -2.138917803282E-15    b5 -2.721988437046E-16
+   b6  2.082826560054E-16    b7 -2.858807325302E-17    b8  1.225739194722E-18
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b32.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 23 e + N2+ = N*(2D) + N}
+\begin{small}\begin{verbatim}
+   b0 -1.668392429045E+01    b1 -3.000000000000E-01    b2  1.961166050138E-14
+   b3 -5.930872513862E-15    b4 -2.419718156833E-15    b5  1.337121931740E-15
+   b6 -2.261907631853E-16    b7  1.639312063691E-17    b8 -4.303619611140E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b33.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 23s e + N2+ = N + N}
+\begin{small}\begin{verbatim}
+   b0 -1.668392429045E+01    b1 -3.000000000000E-01    b2  1.961166050138E-14
+   b3 -5.930872513862E-15    b4 -2.419718156833E-15    b5  1.337121931740E-15
+   b6 -2.261907631853E-16    b7  1.639312063691E-17    b8 -4.303619611140E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b34.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 24 e + NH+ = N + H}
+\begin{small}\begin{verbatim}
+   b0 -1.878949387217E+01    b1 -5.000000000000E-01    b2  3.726215495262E-14
+   b3 -8.098253227630E-15    b4 -4.407151722654E-15    b5  2.057457077627E-15
+   b6 -3.302568924012E-16    b7  2.375034314407E-17    b8 -6.443341406356E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b35.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 25 e + NH2+ = NH + H}
+\begin{small}\begin{verbatim}
+   b0 -1.756023554439E+01    b1 -4.000000000000E-01    b2  3.137865680221E-14
+   b3 -4.837623409228E-15    b4 -5.267214245188E-15    b5  1.760403301084E-15
+   b6 -1.625073412217E-16    b7 -2.977237729308E-19    b8  4.512501894627E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b36.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DB N2*(A) + N  = N2 + N*(2P)}
+\begin{small}\begin{verbatim}
+   b0 -2.639089538605E+01    b1 -6.700000063335E-01    b2 -8.624699809858E-09
+   b3 -6.633570679721E-09    b4 -3.151551870313E-09    b5 -9.470599538949E-10
+   b6 -1.758156215834E-10    b7 -1.843916759489E-11    b8 -8.367108693434E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b37.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DE N2*(A) + H = N2 + H}
+\begin{small}\begin{verbatim}
+   b0 -2.228391358521E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b38.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DF N2*(A) + H2  = N2 + 2H}
+\begin{small}\begin{verbatim}
+   b0 -2.268826321125E+01    b1  1.143045937131E-01    b2 -4.372098380053E-01
+   b3 -2.007521826120E-01    b4 -1.512801491418E-01    b5 -4.722928220100E-02
+   b6 -1.184186593315E-02    b7 -1.507809868440E-03    b8 -1.121565090195E-04
+  bl0 -2.317588690980E+01   bl1 -7.535834934473E-01   bl2 -7.272016014319E-01
+  br0 -2.266155438667E+01   br1  2.999858805443E-01   br2 -1.085351118699E+00
+TEMIN= 1.20090E-01 eV
+TEMAX= 2.84869E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b39.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EC N*(2D) + NH3  = NH + NH2}
+\begin{small}\begin{verbatim}
+   b0 -2.293054075014E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b40.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EA 	N*(2D) + N2 =  N2 + N}
+\begin{small}\begin{verbatim}
+   b0 -3.274701692568E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b41.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 26 e + NH2+ = N + 2H}
+\begin{small}\begin{verbatim}
+   b0 -1.689694132698E+01    b1 -4.000000000000E-01    b2 -3.922332100276E-15
+   b3  3.373615195767E-15    b4 -5.494869089446E-16    b5 -2.931721287741E-16
+   b6  1.188405030278E-16    b7 -1.507005324713E-17    b8  6.434779337134E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b42.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZF e + N2H+ = N2 + H}
+\begin{small}\begin{verbatim}
+   b0 -1.825208158533E+01    b1 -8.400000000000E-01    b2  1.961166050138E-15
+   b3  6.667678312880E-16    b4  4.608871172109E-18    b5 -8.196062952573E-17
+   b6  1.886554408333E-17    b7 -1.936160340987E-18    b8  8.166550190105E-20
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b43.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZG e + N2H+ = NH + N}
+\begin{small}\begin{verbatim}
+   b0 -2.083843485145E+01    b1 -8.400000000000E-01    b2  3.530098890249E-14
+   b3 -8.211238604995E-15    b4 -4.923772150637E-15    b5  2.244719695150E-15
+   b6 -3.385173756315E-16    b7  2.160520453501E-17    b8 -4.775349462097E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b44.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 27 e + NH3+ = NH + 2H}
+\begin{small}\begin{verbatim}
+   b0 -1.750726887094E+01    b1 -5.000000000000E-01    b2  2.745632470193E-14
+   b3 -1.004763624926E-14    b4 -2.722575161826E-15    b5  1.938931165252E-15
+   b6 -3.680508755642E-16    b7  2.957064295090E-17    b8 -8.674063015304E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b45.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 28 e + NH3+ = NH2 + H}
+\begin{small}\begin{verbatim}
+   b0 -1.750726887094E+01    b1 -5.000000000000E-01    b2  2.745632470193E-14
+   b3 -1.004763624926E-14    b4 -2.722575161826E-15    b5  1.938931165252E-15
+   b6 -3.680508755642E-16    b7  2.957064295090E-17    b8 -8.674063015304E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b46.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 29 e + NH4+ = NH3 + H}
+\begin{small}\begin{verbatim}
+   b0 -1.624544842816E+01    b1 -6.050000000000E-01    b2  0.000000000000E+00
+   b3  8.306736808840E-16    b4 -4.686048483672E-17    b5 -2.950510937902E-16
+   b6  1.050373201078E-16    b7 -1.304766889864E-17    b8  5.502683070338E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b47.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 30 e + NH4+ = NH2 + 2H}
+\begin{small}\begin{verbatim}
+   b0 -1.811912501986E+01    b1 -6.050000000000E-01    b2  2.941749075207E-14
+   b3 -9.380868417975E-15    b4 -3.748190362625E-15    b5  2.200689446104E-15
+   b6 -3.784562783185E-16    b7  2.695309824768E-17    b8 -6.649703260841E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b48.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 31 e + N2H+ = N2 + H}
+\begin{small}\begin{verbatim}
+   b0 -1.678575516040E+01    b1 -7.200000000000E-01    b2  2.941749075207E-14
+   b3 -1.766359676538E-15    b4 -4.297937615358E-15    b5  1.044560914165E-15
+   b6 -3.956040344312E-17    b7 -8.226431945192E-18    b8  6.016644534124E-19
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b49.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 32 NH3 + H+ = H + NH3+}
+\begin{small}\begin{verbatim}
+   b0 -2.124236116983E+01    b1 -5.000000049540E-01    b2 -6.581921337736E-09
+   b3 -4.941457323182E-09    b4 -2.292305524667E-09    b5 -6.727088691196E-10
+   b6 -1.219481205389E-10    b7 -1.248479911283E-11    b8 -5.526669688591E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b50.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZL H+ + NH2 = NH2+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.148598325252E+01    b1 -5.000000052634E-01    b2 -7.274686331173E-09
+   b3 -5.686468493740E-09    b4 -2.749065636477E-09    b5 -8.416173449789E-10
+   b6 -1.593528795054E-10    b7 -1.706404308800E-11    b8 -7.914454258785E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b51.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZM H+ + NH = NH+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.180875664609E+01    b1 -5.000000092849E-01    b2 -1.261517857558E-08
+   b3 -9.699489564652E-09    b4 -4.615551314815E-09    b5 -1.391879349947E-09
+   b6 -2.597688881768E-10    b7 -2.743376818213E-11    b8 -1.255322335567E-12
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b52.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 33 H2+ + H = H2 + H+}
+\begin{small}\begin{verbatim}
+   b0 -2.116955293957E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b53.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 34 H2+ + H2 = H3+ + H}
+\begin{small}\begin{verbatim}
+   b0 -1.999089794323E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b54.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 35 H2+ + NH3 = NH3+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.081022781504E+01    b1 -5.000000063682E-01    b2 -8.716351898605E-09
+   b3 -6.744375376163E-09    b4 -3.226162467434E-09    b5 -9.769045577405E-10
+   b6 -1.828822359175E-10    b7 -1.935531934856E-11    b8 -8.868789870933E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b55.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 36 H2+ + N2 = N2H+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.003011865639E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b56.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZN H2+ + N = N+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.141641301751E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b57.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZO H2+ + N = NH+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.008141195077E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b58.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZP H2+ + NH3 = NH4+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.371899811050E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b59.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZQ H2+ + NH2 = NH3+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.371899811050E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b60.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZR H2+ + NH2 = NH2+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.180875664609E+01    b1 -5.000000092849E-01    b2 -1.261517857558E-08
+   b3 -9.699489564652E-09    b4 -4.615551314815E-09    b5 -1.391879349947E-09
+   b6 -2.597688881768E-10    b7 -2.743376818213E-11    b8 -1.255322335567E-12
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b61.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZS H2+ + NH = NH2+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.282513083456E+01    b1 -5.000000030980E-01    b2 -4.172533795604E-09
+   b3 -3.178279948201E-09    b4 -1.497002555752E-09    b5 -4.463695735110E-10
+   b6 -8.227558117594E-11    b7 -8.571561358925E-12    b8 -3.865197085583E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b62.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZT H2+ + NH = NH+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.282513083456E+01    b1 -5.000000030980E-01    b2 -4.172533795604E-09
+   b3 -3.178279948201E-09    b4 -1.497002555752E-09    b5 -4.463695735110E-10
+   b6 -8.227558117594E-11    b7 -8.571561358925E-12    b8 -3.865197085583E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b63.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 37 H3+ + N = NH+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.207033948491E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b64.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 38 H3+ + N = NH2+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.166487437680E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b65.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 39 H3+ + NH3 = NH4+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.107136476258E+01    b1 -5.000000055727E-01    b2 -7.437148651905E-09
+   b3 -5.609819632118E-09    b4 -2.615584427083E-09    b5 -7.718869172379E-10
+   b6 -1.408075560704E-10    b7 -1.451862542892E-11    b8 -6.479800800281E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b66.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZU H3+ + NH2 = NH3+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.196290732349E+01    b1 -5.000000017280E-01    b2 -2.428579288053E-09
+   b3 -1.921777919375E-09    b4 -9.364377031497E-10    b5 -2.877434523747E-10
+   b6 -5.445759602353E-11    b7 -5.805294394799E-12    b8 -2.669522116361E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b67.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZV H3+ + NH = NH2+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.228832972476E+01    b1 -5.000000042028E-01    b2 -5.569379050783E-09
+   b3 -4.161520963593E-09    b4 -1.916979254164E-09    b5 -5.572768434265E-10
+   b6 -9.981865098488E-11    b7 -1.007015872766E-11    b8 -4.380051097582E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b68.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 40 H3+ + N2 = N2H+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.010268934922E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b69.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 41 H2 + N+ = NH+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.141641301751E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b70.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 42 N+ + NH3 = NH2+ + NH}
+\begin{small}\begin{verbatim}
+   b0 -2.147828842122E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b71.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 43 N+ + NH3 = NH3+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.021044221052E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b72.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 44 N+ + NH3 = N2H+ + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.408317086045E+01    b1 -5.000000039818E-01    b2 -5.322487393845E-09
+   b3 -4.009817581528E-09    b4 -1.860909331983E-09    b5 -5.443952121280E-10
+   b6 -9.796847626584E-11    b7 -9.908533882743E-12    b8 -4.308943182685E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b73.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZW N+ + NH = N2+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.354494626224E+01    b1 -5.000000032306E-01    b2 -4.347944933015E-09
+   b3 -3.299966277679E-09    b4 -1.544289864373E-09    b5 -4.561831738007E-10
+   b6 -8.305450654833E-11    b7 -8.519342746733E-12    b8 -3.768628601479E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b74.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZX N+ + NH = NH+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.354494626224E+01    b1 -5.000000032306E-01    b2 -4.347944933015E-09
+   b3 -3.299966277679E-09    b4 -1.544289864373E-09    b5 -4.561831738007E-10
+   b6 -8.305450654833E-11    b7 -8.519342746733E-12    b8 -3.768628601479E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b75.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZY N+ + N2 = N2+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.463528884237E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b76.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZZ N+ + H = H+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.233270374938E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b77.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AB N+ + NH2 = NH2+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.255069399034E+01    b1 -5.000000077382E-01    b2 -1.048331289759E-08
+   b3 -8.030169368750E-09    b4 -3.804180693869E-09    b5 -1.141479368811E-09
+   b6 -2.119003834735E-10    b7 -2.225565586486E-11    b8 -1.012819638805E-12
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b78.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 45 NH+ + H2 = H3+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.241066529085E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b79.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 46 NH+ + H2 = NH2+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.067447567278E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b80.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 47 NH+ + NH3 = NH3+ + NH}
+\begin{small}\begin{verbatim}
+   b0 -2.013547917204E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b81.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 48 NH+ + NH3 = NH4+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.123409146071E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b82.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AC NH+ + NH2 = NH3+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.214522888071E+01    b1 -5.000000029212E-01    b2 -3.860018050693E-09
+   b3 -2.872424232405E-09    b4 -1.316010331162E-09    b5 -3.799779029463E-10
+   b6 -6.750141857656E-11    b7 -6.743736474333E-12    b8 -2.900439964921E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b83.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AD NH+ + NH2 = NH2+ + NH}
+\begin{small}\begin{verbatim}
+   b0 -2.013547917204E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b84.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AE NH+ + NH = NH2+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.255069399034E+01    b1 -5.000000077382E-01    b2 -1.048331289759E-08
+   b3 -8.030169368750E-09    b4 -3.804180693869E-09    b5 -1.141479368811E-09
+   b6 -2.119003834735E-10    b7 -2.225565586486E-11    b8 -1.012819638805E-12
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b85.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 49 NH+ + N2 = N2H+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.115404875304E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b86.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AG NH+ + N = N2+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.046090157248E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b87.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 50 NH2+ + H2 = NH3+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.235802155736E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b88.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 51 NH2+ + NH3 = NH3+ + NH2}
+\begin{small}\begin{verbatim}
+   b0 -2.058350389457E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b89.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 52 NH2+ + NH3 = NH4+ + NH}
+\begin{small}\begin{verbatim}
+   b0 -2.058350389457E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b90.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AH NH2+ + NH = N + NH3+}
+\begin{small}\begin{verbatim}
+   b0 -2.286540473346E+01    b1 -5.000000022583E-01    b2 -2.903991793554E-09
+   b3 -2.092602780058E-09    b4 -9.224932782956E-10    b5 -2.541818400592E-10
+   b6 -4.262482993526E-11    b7 -3.961221014971E-12    b8 -1.552398934101E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b91.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AI NH2+ + N = HN2+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.312016160941E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b92.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 53 NH3+ + NH3 = NH4+ + NH2}
+\begin{small}\begin{verbatim}
+   b0 -1.998132849222E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b93.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AJ NH3+ + H2 = NH4+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.845200166800E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b94.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AK NH3+ + NH = NH4+ + N}
+\begin{small}\begin{verbatim}
+   b0 -2.289318429743E+01    b1 -5.000000018164E-01    b2 -2.303568193971E-09
+   b3 -1.639801354397E-09    b4 -7.151531646047E-10    b5 -1.951520773247E-10
+   b6 -3.242435734298E-11    b7 -2.983863276617E-12    b8 -1.155432594465E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b95.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 54 N2+ + H2 = N2H+ + H}
+\begin{small}\begin{verbatim}
+   b0 -2.003011865639E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b96.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 55 N2+ + NH3 = NH3+ + N2}
+\begin{small}\begin{verbatim}
+   b0 -2.005543646437E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b97.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AL N2+ + N = N+ + N2}
+\begin{small}\begin{verbatim}
+   b0 -2.532843602293E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b98.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 56 N2H+ + NH3 = NH4+ + N2}
+\begin{small}\begin{verbatim}
+   b0 -1.989035671401E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b99.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AM N2H+ + H2 = H3+ + N2}
+\begin{small}\begin{verbatim}
+   b0 -3.981729113416E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b100.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AO H2 + H2 = H2 + H + H }
+\begin{small}\begin{verbatim}
+   b0 -2.696426662024E+01    b1  2.746576251943E+00    b2 -1.050552760935E+01
+   b3 -4.823787997126E+00    b4 -3.635045792807E+00    b5 -1.134852158008E+00
+   b6 -2.845431171969E-01    b7 -3.623051668352E-02    b8 -2.694960668238E-03
+  bl0 -2.707198088436E+01   bl1  1.314507353825E+01   bl2 -3.227071549049E+01
+  br0 -2.710281729457E+01   br1  2.650918166130E+00   br2 -8.382666259136E+00
+TEMIN= 1.01065E+00 eV
+TEMAX= 1.24340E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b101.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AP H2 + H = 3H}
+\begin{small}\begin{verbatim}
+   b0 -2.381915581932E+01    b1  7.962151505816E-01    b2 -6.870440167331E+00
+   b3 -3.154677044982E+00    b4 -2.377259434294E+00    b5 -7.421744189427E-01
+   b6 -1.860864617664E-01    b7 -2.369415477215E-02    b8 -1.762459413704E-03
+  bl0 -2.334616879663E+01   bl1  2.871482965852E+00   bl2 -1.600417466885E+01
+  br0 -2.390976565371E+01   br1  7.336563548411E-01   br2 -5.482124186065E+00
+TEMIN= 8.70150E-01 eV
+TEMAX= 1.24340E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b102.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AQ H2 + N = NH + H}
+\begin{small}\begin{verbatim}
+   b0 -2.203677971440E+01    b1  5.909547855171E-01    b2 -2.260374813605E+00
+   b3 -1.037888746589E+00    b4 -7.821183532573E-01    b5 -2.441753836278E-01
+   b6 -6.122244587988E-02    b7 -7.795376915334E-03    b8 -5.798491468765E-04
+  bl0 -2.201844376547E+01   bl1  2.021767915464E-01   bl2 -2.695832815667E+00
+  br0 -2.206624861117E+01   br1  3.038995820056E-01   br2 -2.209738921039E+00
+TEMIN= 5.88270E-01 eV
+TEMAX= 1.60184E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b103.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AR H2 + NH2 = NH3 + H}
+\begin{small}\begin{verbatim}
+   b0 -2.430134589741E+01    b1  2.119533835672E-01    b2 -8.107119454755E-01
+   b3 -3.722518957301E-01    b4 -2.805166153577E-01    b5 -8.757658207336E-02
+   b6 -2.195820260768E-02    b7 -2.795910275707E-03    b8 -2.079702113924E-04
+  bl0 -2.434732682018E+01   bl1  6.296578954548E-02   bl2 -7.589489467725E-01
+  br0 -2.426293708133E+01   br1  1.163872678137E-01   br2 -1.276727368176E+00
+TEMIN= 2.23633E-01 eV
+TEMAX= 2.21123E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b104.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AS H2 + NH = NH2 + H}
+\begin{small}\begin{verbatim}
+   b0 -2.433392660574E+01    b1  2.541481071904E-01    b2 -9.721048352481E-01
+   b3 -4.463581308227E-01    b4 -3.363606022624E-01    b5 -1.050109343825E-01
+   b6 -2.632954285966E-02    b7 -3.352507521719E-03    b8 -2.493719857357E-04
+  bl0 -2.433964816426E+01   bl1  2.354808976038E-01   bl2 -8.056022781304E-01
+  br0 -2.430386294313E+01   br1  9.921552538571E-02   br2 -1.363324780855E+00
+TEMIN= 2.68870E-01 eV
+TEMAX= 2.06363E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b105.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AT H + NH2 = NH + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.362828906347E+01    b1  6.009155469604E-02    b2 -2.298474618058E-01
+   b3 -1.055382933279E-01    b4 -7.953013693836E-02    b5 -2.482910875909E-02
+   b6 -6.225438162482E-03    b7 -7.926771952545E-04    b8 -5.896227934612E-05
+  br0 -2.372402347627E+01   br1  6.801889018372E-01   br2 -1.011861033221E+00
+TEMAX= 3.88740E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b106.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AU H + NH3 = NH2 + H2}
+\begin{small}\begin{verbatim}
+   b0 -1.961475355238E+01    b1  2.562965700633E+00    b2 -6.233363002700E-01
+   b3 -2.862152455775E-01    b4 -2.156822654030E-01    b5 -6.733546099889E-02
+   b6 -1.688311717638E-02    b7 -2.149706042274E-03    b8 -1.599031358719E-04
+  bl0 -1.964606019453E+01   bl1  3.319972949675E+00   bl2 -2.041098000403E+00
+  br0 -1.964606019453E+01   br1  3.319972949675E+00   br2 -2.041098000403E+00
+TEMIN= 1.04617E+00 eV
+TEMAX= 3.30866E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b107.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AV H + NH = N + H2}
+\begin{small}\begin{verbatim}
+   b0 -2.365879916009E+01    b1  5.388639604441E-03    b2 -2.061132826434E-02
+   b3 -9.464036959063E-03    b4 -7.131781003725E-03    b5 -2.226524049453E-03
+   b6 -5.582595290652E-04    b7 -7.108247905394E-05    b8 -5.287378895012E-06
+  br0 -2.598553796453E+01   br1  2.768662822453E+00   br2 -8.914278866381E-01
+TEMAX= 1.65852E+01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b108.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AW N + NH = N2 + H}
+\begin{small}\begin{verbatim}
+   b0 -2.372300613190E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b109.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AX NH + NH = N2 + H + H}
+\begin{small}\begin{verbatim}
+   b0 -2.318836985944E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b110.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AY NH + NH = NH2 + N}
+\begin{small}\begin{verbatim}
+   b0 -2.161810841353E+01    b1  1.499999995506E+00    b2 -6.169272393228E-09
+   b3 -4.782398095465E-09    b4 -2.289625742652E-09    b5 -6.932775712898E-10
+   b6 -1.296647471885E-10    b7 -1.369812742491E-11    b8 -6.259358332704E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b111.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction AZ NH + NH2 = NH3 + N}
+\begin{small}\begin{verbatim}
+   b0 -2.710039286487E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b112.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BA      N2H4  + M  =  M + 2NH2 }
+\begin{small}\begin{verbatim}
+   b0 -2.092891758081E+01    b1  6.727642154328E-01    b2 -2.573292141534E+00
+   b3 -1.181569952382E+00    b4 -8.903917175497E-01    b5 -2.779780557347E-01
+   b6 -6.969783852452E-02    b7 -8.874537981438E-03    b8 -6.601211627768E-04
+  bl0 -2.085635382204E+01   bl1  2.523197905269E-01   bl2 -3.541781204375E+00
+  br0 -2.096877870224E+01   br1  3.868330486090E-01   br2 -2.420749925943E+00
+TEMIN= 6.45032E-01 eV
+TEMAX= 1.54746E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b113.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BB N2H4 + M = M + N2H3 + H }
+\begin{small}\begin{verbatim}
+   b0 -2.344346693000E+01    b1  1.045070638427E+00    b2 -3.997346999314E+00
+   b3 -1.835448457155E+00    b4 -1.383132759255E+00    b5 -4.318105702736E-01
+   b6 -1.082684867080E-01    b7 -1.378569003483E-02    b8 -1.025430930953E-03
+  bl0 -2.315560569736E+01   bl1  1.483715693008E+00   bl2 -8.206840235414E+00
+  br0 -2.351469516080E+01   br1  7.817169904137E-01   br2 -3.448447041718E+00
+TEMIN= 8.12065E-01 eV
+TEMAX= 1.41129E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b114.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BC N2H3 + M = M + N2H2 + H }
+\begin{small}\begin{verbatim}
+   b0 -2.042976292036E+01    b1  8.164614287281E-01    b2 -3.122927353608E+00
+   b3 -1.433944115263E+00    b4 -1.080572472087E+00    b5 -3.373520092273E-01
+   b6 -8.458475546858E-02    b7 -1.077007036420E-02    b8 -8.011179159485E-04
+  bl0 -2.025762614237E+01   bl1  5.537754522769E-01   bl2 -5.220953910905E+00
+  br0 -2.048404618976E+01   br1  5.394795959621E-01   br2 -2.804886415380E+00
+TEMIN= 7.23746E-01 eV
+TEMAX= 1.47780E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b115.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BD N2H3 + M = M + NH2 + NH  }
+\begin{small}\begin{verbatim}
+   b0 -2.002340925171E+01    b1  6.858276010790E-01    b2 -2.623258975556E+00
+   b3 -1.204513055552E+00    b4 -9.076808758901E-01    b5 -2.833756875350E-01
+   b6 -7.105119455069E-02    b7 -9.046859101163E-03    b8 -6.729390491700E-04
+  bl0 -1.994228140463E+01   bl1  2.677365999474E-01   bl2 -3.678979709443E+00
+  br0 -2.006404437539E+01   br1  3.943443734491E-01   br2 -2.467754775853E+00
+TEMIN= 6.52501E-01 eV
+TEMAX= 1.54746E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b116.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BE N2H2 + M = M + 2NH }
+\begin{small}\begin{verbatim}
+   b0 -2.185144297209E+01    b1  1.632922861522E+00    b2 -6.245854701319E+00
+   b3 -2.867888225723E+00    b4 -2.161144941771E+00    b5 -6.747040176978E-01
+   b6 -1.691695107906E-01    b7 -2.154014071243E-02    b8 -1.602235831147E-03
+  bl0 -2.155202826118E+01   bl1  5.176885243279E+00   bl2 -1.652674654900E+01
+  br0 -2.195238904977E+01   br1  1.425933953306E+00   br2 -5.132419184862E+00
+TEMIN= 9.32389E-01 eV
+TEMAX= 1.31708E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b117.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BF N2H + M = M + N2 + H }
+\begin{small}\begin{verbatim}
+   b0 -2.284781263330E+01    b1  3.265845688574E-01    b2 -1.249170944978E+00
+   b3 -5.735776487824E-01    b4 -4.322289900869E-01    b5 -1.349408040612E-01
+   b6 -3.383390225510E-02    b7 -4.308028152669E-03    b8 -3.204471666919E-04
+  bl0 -2.285264517775E+01   bl1  3.609334588681E-01   bl2 -9.675735952980E-01
+  br0 -2.283188664646E+01   br1  1.101093981506E-01   br2 -1.542204410620E+00
+TEMIN= 3.42416E-01 eV
+TEMAX= 1.90383E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b118.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BG N2H + M = M + NH + N  }
+\begin{small}\begin{verbatim}
+   b0 -2.374823218580E+01    b1  1.143045995553E+00    b2 -4.372098301507E+00
+   b3 -2.007521766427E+00    b4 -1.512801463379E+00    b5 -4.722928136757E-01
+   b6 -1.184186578008E-01    b7 -1.507809852559E-02    b8 -1.121565083068E-03
+  bl0 -2.343259798394E+01   bl1  2.007176210856E+00   bl2 -9.559417757866E+00
+  br0 -2.382571092349E+01   br1  8.796677068099E-01   br2 -3.737558333569E+00
+TEMIN= 8.40606E-01 eV
+TEMAX= 1.39513E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b119.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BH NH3 + M = M + NH2 + H  }
+\begin{small}\begin{verbatim}
+   b0 -2.178056950826E+01    b1  1.541479169864E+00    b2 -5.896086853409E+00
+   b3 -2.707286496789E+00    b4 -2.040120830556E+00    b5 -6.369205943611E-01
+   b6 -1.596960184935E-01    b7 -2.033389286489E-02    b8 -1.512510626084E-03
+  bl0 -2.146814967888E+01   bl1  4.592639871197E+00   bl2 -1.527263728012E+01
+  br0 -2.187846800624E+01   br1  1.315266791344E+00   br2 -4.879525437246E+00
+TEMIN= 9.21715E-01 eV
+TEMAX= 1.33233E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b120.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BI NH3 + M = M + NH + H2 }
+\begin{small}\begin{verbatim}
+   b0 -2.549792143959E+01    b1  1.534947489548E+00    b2 -5.871103419390E+00
+   b3 -2.695814932102E+00    b4 -2.031476245129E+00    b5 -6.342217765633E-01
+   b6 -1.590193401233E-01    b7 -2.024773226688E-02    b8 -1.506101681115E-03
+  bl0 -2.518682542407E+01   bl1  4.573179533862E+00   bl2 -1.520792266840E+01
+  br0 -2.559540511285E+01   br1  1.309693639026E+00   br2 -4.858849473383E+00
+TEMIN= 9.21715E-01 eV
+TEMAX= 1.33233E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b121.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BJ NH2 + M = M + NH + H }
+\begin{small}\begin{verbatim}
+   b0 -2.404043242719E+01    b1 -4.977109602235E-01    b2 -5.746186315569E+00
+   b3 -2.638457160327E+00    b4 -1.988253342970E+00    b5 -6.207276952482E-01
+   b6 -1.556359497360E-01    b7 -1.981692943540E-02    b8 -1.474056963745E-03
+  bl0 -2.370981663074E+01   bl1 -9.036629104283E-01   bl2 -9.802063182810E+00
+  br0 -2.409889455104E+01   br1 -4.580443065994E-01   br2 -4.511337778874E+00
+TEMIN= 7.32127E-01 eV
+TEMAX= 1.18743E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b122.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BK NH + M = M + N + H  }
+\begin{small}\begin{verbatim}
+   b0 -2.823924894436E+01    b1 -6.283447873423E-01    b2 -5.246517936774E+00
+   b3 -2.409026100008E+00    b4 -1.815361746457E+00    b5 -5.667513734489E-01
+   b6 -1.421023887953E-01    b7 -1.809371816955E-02    b8 -1.345878096817E-03
+  bl0 -2.799068650135E+01   bl1 -1.246800381820E+00   bl2 -8.262334194999E+00
+  br0 -2.829262740516E+01   br1 -5.921274081345E-01   br2 -4.119047535807E+00
+TEMIN= 6.99173E-01 eV
+TEMAX= 1.18743E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b123.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BL N2H4 + H = H2 + N2H3  }
+\begin{small}\begin{verbatim}
+   b0 -2.471450008403E+01    b1  4.114965527105E-02    b2 -1.573955393912E-01
+   b3 -7.227078380576E-02    b4 -5.446085268013E-02    b5 -1.700254125772E-02
+   b6 -4.263071667420E-03    b7 -5.428115447081E-04    b8 -4.037634284977E-05
+  br0 -2.495467199085E+01   br1  9.551073376045E-01   br2 -9.839556372211E-01
+TEMAX= 4.72789E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b124.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BM N2H4 + H = NH2 + NH3}
+\begin{small}\begin{verbatim}
+   b0 -3.405540044124E+01    b1  5.094718741288E-02    b2 -1.948706746692E-01
+   b3 -8.947811877476E-02    b4 -6.742772508512E-02    b5 -2.105076621879E-02
+   b6 -5.278088896147E-03    b7 -6.720524067615E-04    b8 -4.998975867108E-05
+  br0 -3.420329337119E+01   br1  7.861374921583E-01   br2 -9.925280892082E-01
+TEMAX= 4.21369E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b125.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BN N2H3 + H = N2H2 + H2 }
+\begin{small}\begin{verbatim}
+   b0 -2.720198128343E+01    b1  3.265845275819E-02    b2 -1.249170998387E-01
+   b3 -5.735776876858E-02    b4 -4.322290075117E-02    b5 -1.349408089682E-02
+   b6 -3.383390310207E-03    b7 -4.308028234413E-04    b8 -3.204471700596E-05
+  br0 -2.754525657470E+01   br1  1.102877037535E+00   br2 -9.542460322586E-01
+TEMAX= 5.30484E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b126.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BO N2H3 + H =  2NH2 }
+\begin{small}\begin{verbatim}
+   b0 -2.667550967090E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b127.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BP N2H3 + H = NH + NH3}
+\begin{small}\begin{verbatim}
+   b0 -2.940297795786E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b128.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BQ N2H2 + H = H2 + N2H }
+\begin{small}\begin{verbatim}
+   b0 -2.484860198207E+01    b1  1.632922359499E-02    b2 -6.245855355615E-02
+   b3 -2.867888706383E-02    b4 -2.161145159392E-02    b5 -6.747040798658E-03
+   b6 -1.691695217315E-03    b7 -2.154014179679E-04    b8 -1.602235877477E-05
+  br0 -2.570716118051E+01   br1  1.697342340886E+00   br2 -9.266385438635E-01
+TEMAX= 7.93761E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b129.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BR N2H + H = H2 + N2  }
+\begin{small}\begin{verbatim}
+   b0 -2.359374900180E+01    b1  4.898767865117E-02    b2 -1.873756508272E-01
+   b3 -8.603665430488E-02    b4 -6.483435184066E-02    b5 -2.024112161349E-02
+   b6 -5.075085525879E-03    b7 -6.462042427391E-04    b8 -4.806707591320E-05
+  br0 -2.375923411932E+01   br1  8.226914603417E-01   br2 -9.946074071822E-01
+TEMAX= 4.31185E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b130.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BS NH3 + H = H2 + NH2 }
+\begin{small}\begin{verbatim}
+   b0 -2.338310025915E+01    b1  3.533645035060E-01    b2 -1.351602962390E+00
+   b3 -6.206110158630E-01    b4 -4.676717671848E-01    b5 -1.460059499565E-01
+   b6 -3.660828223069E-02    b7 -4.661286459931E-03    b8 -3.467238342890E-04
+  bl0 -2.339577039969E+01   bl1  3.673771113593E-01   bl2 -1.057914941329E+00
+  br0 -2.337213618239E+01   br1  1.208926644237E-01   br2 -1.611987356522E+00
+TEMIN= 3.71156E-01 eV
+TEMAX= 1.86049E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b131.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BT NH2 + H = H2 + NH}
+\begin{small}\begin{verbatim}
+   b0 -2.416528521313E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b132.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BU N + NH2 = H2 + N2 }
+\begin{small}\begin{verbatim}
+   b0 -2.284352937315E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b133.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BV N2H4 + NH = NH2 + N2H3 }
+\begin{small}\begin{verbatim}
+   b0 -2.253788555373E+01    b1  5.326584523650E-01    b2 -1.249171003025E-01
+   b3 -5.735776906945E-02    b4 -4.322290086803E-02    b5 -1.349408092450E-02
+   b6 -3.383390314085E-03    b7 -4.308028237328E-04    b8 -3.204471701487E-05
+  br0 -2.308589048538E+01   br1  2.009689138724E+00   br2 -1.138287737452E+00
+TEMAX= 5.88406E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b134.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BW N2H2 + NH = N2H + NH2 }
+\begin{small}\begin{verbatim}
+   b0 -2.484860198207E+01    b1  1.632922359499E-02    b2 -6.245855355615E-02
+   b3 -2.867888706383E-02    b4 -2.161145159392E-02    b5 -6.747040798658E-03
+   b6 -1.691695217315E-03    b7 -2.154014179679E-04    b8 -1.602235877477E-05
+  br0 -2.570716118051E+01   br1  1.697342340886E+00   br2 -9.266385438635E-01
+TEMAX= 7.93761E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b135.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BX N2H + NH = N2 + NH2 }
+\begin{small}\begin{verbatim}
+   b0 -2.414732346361E+01    b1  5.326584602754E-01    b2 -1.249170896738E-01
+   b3 -5.735776098318E-02    b4 -4.322289705700E-02    b5 -1.349407978481E-02
+   b6 -3.383390102820E-03    b7 -4.308028015319E-04    b8 -3.204471600200E-05
+  br0 -2.469532834669E+01   br1  2.009689013912E+00   br2 -1.138287632248E+00
+TEMAX= 5.88406E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b136.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BY NH + NH = N2 + H2 }
+\begin{small}\begin{verbatim}
+   b0 -2.697189708924E+01    b1  9.999999949711E-01    b2 -6.872542217226E-09
+   b3 -5.303904524598E-09    b4 -2.527570319855E-09    b5 -7.615316077845E-10
+   b6 -1.416645555477E-10    b7 -1.487898449876E-11    b8 -6.757021830936E-13
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b137.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction BZ NH + NH = N2H + H }
+\begin{small}\begin{verbatim}
+   b0 -2.271889295836E+01    b1  5.163292262952E-01    b2 -6.245855016915E-02
+   b3 -2.867888467247E-02    b4 -2.161145055453E-02    b5 -6.747040513874E-03
+   b6 -1.691695169278E-03    b7 -2.154014134061E-04    b8 -1.602235858798E-05
+  br0 -2.397621501399E+01   br1  2.748613028790E+00   br2 -1.108161118011E+00
+TEMAX= 8.90625E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b138.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CA N2H4 + NH2  = NH3 + N2H3}
+\begin{small}\begin{verbatim}
+   b0 -2.350728610916E+01    b1  5.326584576680E-01    b2 -1.249170933627E-01
+   b3 -5.735776393498E-02    b4 -4.322289851799E-02    b5 -1.349408024277E-02
+   b6 -3.383390191598E-03    b7 -4.308028112622E-04    b8 -3.204471646367E-05
+  br0 -2.405529101118E+01   br1  2.009689062911E+00   br2 -1.138287672457E+00
+TEMAX= 5.88406E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b139.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CB N2H3 + NH2  = NH3 + N2H2 }
+\begin{small}\begin{verbatim}
+   b0 -2.473888223088E+01    b1  4.999999909009E-01    b2 -1.252288180630E-08
+   b3 -9.740196382601E-09    b4 -4.682862879700E-09    b5 -1.425228340047E-09
+   b6 -2.682081542161E-10    b7 -2.854101745411E-11    b8 -1.315306849704E-12
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b140.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CC N2H2 + NH2  = NH3 + N2H }
+\begin{small}\begin{verbatim}
+   b0 -2.500098460761E+01    b1  6.531690967044E-02    b2 -2.498341942865E-01
+   b3 -1.147155335862E-01    b4 -8.644579971549E-02    b5 -2.698816128360E-02
+   b6 -6.766780530776E-03    b7 -8.616056380250E-04    b8 -6.408943363558E-05
+  br0 -2.506972910264E+01   br1  6.129345284852E-01   br2 -1.011180982332E+00
+TEMAX= 3.71242E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b141.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CD N2H2 + NH2  = NH + N2H3 }
+\begin{small}\begin{verbatim}
+   b0 -2.646588531989E+01    b1  1.055193767911E+00    b2 -2.123590605188E+00
+   b3 -9.750820018544E-01    b4 -7.347892825853E-01    b5 -2.293993667175E-01
+   b6 -5.751763379524E-02    b7 -7.323647855047E-03    b8 -5.447601831483E-04
+  bl0 -2.639437261575E+01   bl1  7.268824964832E-01   bl2 -3.035173166357E+00
+  br0 -2.647726781724E+01   br1  7.281318793257E-01   br2 -2.261844855409E+00
+TEMIN= 6.60058E-01 eV
+TEMAX= 1.71642E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b142.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CE N2H + NH = N2 + NH3}
+\begin{small}\begin{verbatim}
+   b0 -2.479780777187E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b143.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CF NH3 + NH2  = N2H3 + N2 }
+\begin{small}\begin{verbatim}
+   b0 -2.377033307596E+01    b1  8.543442558806E-01    b2 -1.355350477056E+00
+   b3 -6.223317502405E-01    b4 -4.689684548518E-01    b5 -1.464107725851E-01
+   b6 -3.670978397938E-02    b7 -4.674210549023E-03    b8 -3.476851760129E-04
+  bl0 -2.379421633321E+01   bl1  7.418706061233E-01   bl2 -1.204425811171E+00
+  br0 -2.374291085724E+01   br1  6.223496150741E-01   br2 -1.765193343244E+00
+TEMIN= 4.61920E-01 eV
+TEMAX= 1.97074E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b144.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CG NH2 + NH2  = NH + NH3 }
+\begin{small}\begin{verbatim}
+   b0 -2.583637811126E+01    b1  1.632922770044E-01    b2 -6.245854823952E-01
+   b3 -2.867888318610E-01    b4 -2.161144985246E-01    b5 -6.747040305731E-02
+   b6 -1.691695131471E-02    b7 -2.154014095617E-03    b8 -1.602235842058E-04
+  bl0 -2.601273995647E+01   bl1 -2.586974298463E-01   bl2 -7.351264470145E-01
+  br0 -2.579415432754E+01   br1  1.729129339188E-01   br2 -1.180042774814E+00
+TEMIN= 1.71602E-01 eV
+TEMAX= 2.45267E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b145.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CH NH2 + NH2  = N2H2 + H2 }
+\begin{small}\begin{verbatim}
+   b0 -2.405089687724E+01    b1  1.959507406339E-01    b2 -7.495025678272E-01
+   b3 -3.441465898399E-01    b4 -2.593373942811E-01    b5 -8.096448249087E-02
+   b6 -2.030034135994E-02    b7 -2.584816891937E-03    b8 -1.922683000102E-04
+  bl0 -2.412736580717E+01   bl1 -2.779254372521E-02   bl2 -7.487272869511E-01
+  br0 -2.400958405031E+01   br1  1.329061059270E-01   br2 -1.253028944111E+00
+TEMIN= 2.06315E-01 eV
+TEMAX= 2.28895E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b146.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CI NH2 + NH = N2H2 + H }
+\begin{small}\begin{verbatim}
+   b0 -2.373057160757E+01    b1  1.632922319726E-02    b2 -6.245855454798E-02
+   b3 -2.867888818227E-02    b4 -2.161145229905E-02    b5 -6.747041064367E-03
+   b6 -1.691695276958E-03    b7 -2.154014253426E-04    b8 -1.602235916207E-05
+  br0 -2.458913083680E+01   br1  1.697342400784E+00   br2 -9.266385759030E-01
+TEMAX= 7.93761E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b147.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CJ N2H4 + N2H2  =  2N2H3 }
+\begin{small}\begin{verbatim}
+   b0 -2.765592328912E+01    b1  9.898768553234E-01    b2 -1.873756414556E+00
+   b3 -8.603664708274E-01    b4 -6.483434839625E-01    b5 -2.024112057243E-01
+   b6 -5.075085331116E-02    b7 -6.462042221143E-03    b8 -4.806707496634E-04
+  bl0 -2.763203430893E+01   bl1  6.651641001005E-01   bl2 -2.313306612067E+00
+  br0 -2.765620607984E+01   br1  6.826700974621E-01   br2 -2.091544963451E+00
+TEMIN= 6.01974E-01 eV
+TEMAX= 1.77674E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b148.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CK N2H3 + N2H2  = N2H4 + N2H}
+\begin{small}\begin{verbatim}
+   b0 -2.530574985861E+01    b1  1.632922819981E-01    b2 -6.245854756144E-01
+   b3 -2.867888266545E-01    b4 -2.161144960521E-01    b5 -6.747040231379E-02
+   b6 -1.691695117642E-02    b7 -2.154014081072E-03    b8 -1.602235835433E-04
+  bl0 -2.548211170489E+01   bl1 -2.586974291356E-01   bl2 -7.351264467779E-01
+  br0 -2.526352607551E+01   br1  1.729129388485E-01   br2 -1.180042759897E+00
+TEMIN= 1.71602E-01 eV
+TEMAX= 2.45267E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b149.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CL N2H2 + N2H2  = N2H + N2H3}
+\begin{small}\begin{verbatim}
+   b0 -2.530574985861E+01    b1  1.632922819981E-01    b2 -6.245854756144E-01
+   b3 -2.867888266545E-01    b4 -2.161144960521E-01    b5 -6.747040231379E-02
+   b6 -1.691695117642E-02    b7 -2.154014081072E-03    b8 -1.602235835433E-04
+  bl0 -2.548211170489E+01   bl1 -2.586974291356E-01   bl2 -7.351264467779E-01
+  br0 -2.526352607551E+01   br1  1.729129388485E-01   br2 -1.180042759897E+00
+TEMIN= 1.71602E-01 eV
+TEMAX= 2.45267E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b150.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CM N2H + N2H = N2H2 + N2 }
+\begin{small}\begin{verbatim}
+   b0 -2.530574985861E+01    b1  1.632922819981E-01    b2 -6.245854756144E-01
+   b3 -2.867888266545E-01    b4 -2.161144960521E-01    b5 -6.747040231379E-02
+   b6 -1.691695117642E-02    b7 -2.154014081072E-03    b8 -1.602235835433E-04
+  bl0 -2.548211170489E+01   bl1 -2.586974291356E-01   bl2 -7.351264467779E-01
+  br0 -2.526352607551E+01   br1  1.729129388485E-01   br2 -1.180042759897E+00
+TEMIN= 1.71602E-01 eV
+TEMAX= 2.45267E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b151.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CN NH2 + N = N2 + 2H }
+\begin{small}\begin{verbatim}
+   b0 -2.284352937315E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b152.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction CO N2H + N = NH + N2 }
+\begin{small}\begin{verbatim}
+   b0 -2.378136581554E+01    b1  3.265845386299E-02    b2 -1.249170984012E-01
+   b3 -5.735776771641E-02    b4 -4.322290027883E-02    b5 -1.349408076421E-02
+   b6 -3.383390287591E-03    b7 -4.308028213161E-04    b8 -3.204471692274E-05
+  br0 -2.412464110304E+01   br1  1.102877026699E+00   br2 -9.542460211268E-01
+TEMAX= 5.30484E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b153.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DA N2*(A) + N  = N2 + N}
+\begin{small}\begin{verbatim}
+   b0 -2.693787393537E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b154.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DC N2*(A) + N2 =  2N2}
+\begin{small}\begin{verbatim}
+   b0 -3.574274919924E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b155.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DD N2*(A) + NH3 =  N2(X) + H + NH2}
+\begin{small}\begin{verbatim}
+   b0 -2.318836985944E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b156.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DG N2*(A) + N2*(A)  = N2 + N2*(B)}
+\begin{small}\begin{verbatim}
+   b0 -2.192723864127E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b157.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DH N2*(A) + N2*(A)  = N2 + N2*(C)}
+\begin{small}\begin{verbatim}
+   b0 -2.262038582183E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b158.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DI N2*(A) + N2*(X, v  6)  = N2*(B) + N2*(X, v- 6)}
+\begin{small}\begin{verbatim}
+   b0 -2.422982373427E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b159.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DJ N2*(B) + N2*(X,v- 6)  = N2*(A) + N2*(X,v ~ 6)}
+\begin{small}\begin{verbatim}
+   b0 -2.422982373427E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b160.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DK N2*(B) + N2 =  2N2 }
+\begin{small}\begin{verbatim}
+   b0 -2.693787393537E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b161.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DL N2*(B)+ H2  = N2*(A)+ H2}
+\begin{small}\begin{verbatim}
+   b0 -2.441214529106E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b162.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DM N2(C) + N2(X)  = N2(a') + N2}
+\begin{small}\begin{verbatim}
+   b0 -2.532843602293E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b163.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DN N2*(a')+ N2  = N2*(B) + N2}
+\begin{small}\begin{verbatim}
+   b0 -2.929175232275E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b164.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DO N2*(a') + H = N2 + H}
+\begin{small}\begin{verbatim}
+   b0 -2.262038582183E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b165.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DP N2*(a') + H2 = N2 + 2H}
+\begin{small}\begin{verbatim}
+   b0 -2.437292457791E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b166.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DQ N2*(a') + M = N2*(a) + M }
+\begin{small}\begin{verbatim}
+   b0 -2.491334966794E+01    b1  5.551937465612E-02    b2 -2.123590632336E-01
+   b3 -9.750820211534E-02    b4 -7.347892909455E-02    b5 -2.293993689667E-02
+   b6 -5.751763415969E-03    b7 -7.323647887183E-04    b8 -5.447601843037E-05
+  br0 -2.502951248413E+01   br1  7.196130571950E-01   br2 -9.953625620633E-01
+TEMAX= 4.02402E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b167.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DR N2(a) + M = N2*(a') + M }
+\begin{small}\begin{verbatim}
+   b0 -2.543379653859E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b168.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DS N2*(a') + N2*(A) = N4+ + e}
+\begin{small}\begin{verbatim}
+   b0 -2.624472675481E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b169.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DT 2N2(a') = N4+ + e }
+\begin{small}\begin{verbatim}
+   b0 -2.532843602293E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b170.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DU N2*(v=16) + N2*(v=16) = N2*(a') + N2}
+\begin{small}\begin{verbatim}
+   b0 -3.171574443248E+01    b1  5.551937076721E-02    b2 -2.123590686304E-01
+   b3 -9.750820635699E-02    b4 -7.347893115968E-02    b5 -2.293993753453E-02
+   b6 -5.751763538053E-03    b7 -7.323648019616E-04    b8 -5.447601905402E-05
+  br0 -3.183190725224E+01   br1  7.196130738993E-01   br2 -9.953625925721E-01
+TEMAX= 4.02402E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b171.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DV N2*(a") + N2 = N2 + N2}
+\begin{small}\begin{verbatim}
+   b0 -2.219294180701E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b172.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EB N*(2D) + H2 = NH + H}
+\begin{small}\begin{verbatim}
+   b0 -2.679811199299E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b173.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ED N*(2P) + N = N*(2D) + N}
+\begin{small}\begin{verbatim}
+   b0 -2.704323445103E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b174.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EE N*(2P) + N2(X) = N + N2}
+\begin{small}\begin{verbatim}
+   b0 -4.075338449333E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b175.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EF N*(2P) + H2 = NH + H}
+\begin{small}\begin{verbatim}
+   b0 -3.131990057004E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b176.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EG N + N + N2 = N2*(A) + N2}
+\begin{small}\begin{verbatim}
+   b0 -3.934728750492E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b177.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EH N + N + N = N2*(A)+ N}
+\begin{small}\begin{verbatim}
+   b0 -3.757533066298E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b178.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EI N + N + N2 = N2*(B) + N2}
+\begin{small}\begin{verbatim}
+   b0 -3.900244701863E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b179.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EJ N + N + N = N2*(B)+ N}
+\begin{small}\begin{verbatim}
+   b0 -3.723885842636E+01    b1  0.000000000000E+00    b2  0.000000000000E+00
+   b3  0.000000000000E+00    b4  0.000000000000E+00    b5  0.000000000000E+00
+   b6  0.000000000000E+00    b7  0.000000000000E+00    b8  0.000000000000E+00
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b180.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZH e + N2*(A) = N2+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -3.147162063553E+01    b1  1.272883456482E+01    b2 -6.341281325376E+00
+   b3  2.198832086232E+00    b4 -5.790429011869E-01    b5  1.085334884146E-01
+   b6 -1.291564834564E-02    b7  8.508444500434E-04    b8 -2.337785141424E-05
+  bl0 -2.701224544029E+01   bl1  4.871815753077E+00   bl2 -7.628026221011E-01
+TEMIN= 5.30484E+00 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b181.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZI e + N*(2D) = N+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -1.925227159754E+01    b1  4.628140723366E-01    b2 -4.099114875437E-01
+   b3  1.421363420228E-01    b4 -3.743034330102E-02    b5  7.015794033028E-03
+   b6 -8.348900410347E-04    b7  5.500006959003E-05    b8 -1.511185099207E-06
+  bl0 -1.926812582730E+01   bl1  2.349107441142E-01   bl2 -8.317112801488E-01
+TEMIN= 2.91438E-01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b182.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZJ e + N*(2P) = N+ + 2e}
+\begin{small}\begin{verbatim}
+   b0 -2.007053027034E+01    b1  6.309093686186E-01    b2 -5.185627252059E-01
+   b3  1.798110350890E-01    b4 -4.735163911575E-02    b5  8.875402089977E-03
+   b6 -1.056186196490E-03    b7  6.957840128863E-05    b8 -1.911740185745E-06
+  bl0 -2.005484279905E+01   bl1  5.641514665647E-01   bl2 -8.411520754421E-01
+TEMIN= 3.62707E-01 eV
+   \end{verbatim}\end{small}
+\begin{figure}[h!]
+\label{n2rates}
+\epsfxsize=16truecm
+\epsffile{./Plots/b183.eps}
+\end{figure}
+\newpage
+
+
+\section{Appendix}
+\newpage
+\begin{thebibliography}{99}
+\bibitem{kn:Ehrhardt}  A.B.Ehrhardt, W.D.Langer, report: PPPL 2477
+                       (1987)
+\bibitem{kn:Janev} R.K. Janev, B. Langer et al.  Springer Series on Atoms+Plasmas,
+                   Vol 4, (1987)
+ \end{thebibliography}
+\end{document}

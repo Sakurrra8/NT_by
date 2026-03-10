@@ -1,0 +1,982 @@
+\documentclass[12pt]{article}
+
+\pdfminorversion=7
+\usepackage{epsf}
+
+\oddsidemargin 0. true cm
+\topmargin -2.5 true cm
+\textheight 24 true cm
+\textwidth 16 true cm
+\usepackage{color}
+\pagecolor{white}
+\setcounter{secnumdepth}{3}
+\usepackage{times}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french, english]{babel}
+
+\usepackage[unicode=true,
+% hypertex, % use for activating links in DVI file
+ %dvipdfmx, % use for bookmarks in final version
+ bookmarks=true,bookmarksnumbered=true,bookmarksopen=true,
+ breaklinks=false,pdfborder={0 0 0},backref=false,colorlinks=true]
+ {hyperref}
+\hypersetup{pdftitle={AMMONX Documentation},linkcolor=blue, citecolor=blue, urlcolor=blue, filecolor=blue}
+ \usepackage{bookmark} % use only together with dvipdfm option of hyperref package!
+\usepackage{graphicx}
+\usepackage{epstopdf}
+
+\begin{document}
+\selectlanguage{english}
+\parindent 0pt
+%titlepage
+{\Large \bf \center
+\vspace*{3truecm}
+
+A partial data file from AMMONX database \\(Arrhenius Format):\\
+Touchard B (with metastables) scheme\\Generated from ammonx.lspm.cnrs.fr
+\vspace*{3truecm}
+
+Version: \today
+
+}
+%end titlepage
+\newpage
+\tableofcontents
+\newpage
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+Get the complete data file at :\\
+ammonx.lspm.cnrs.fr\\
+S. Touchard, J. Mougenot, C. Rond, K. Hassouni\\
+LSPM -- 99 avenue J.B. Clement\\
+93430 Villetaneuse \\
+%Post-box 1917 \\
+FR\\
+Available via e-mail from ammonx@lspm.cnrs.fr
+
+\subsection*{H.2: Rate coefficients vs. temperature fits}
+The rate coefficients $k$ (H.2 part) are fitted with 9 coefficients $a_i$ (from $i=0$ to $i=8$) as:
+\begin{equation}
+\ln(k) = \sum_{i=0}^8  a_i \ln^i(T)
+\end{equation}
+with $k$ in cm$^3$/s and $T$ in eV (electronic temperature for electronic reactions ; gas temperature for the others).
+
+This formalism is based on the AMJUEL formalism (http://www.eirene.de/html/amjuel.html).
+
+\subsection*{End of preface:}
+This next string is searched by EIRENE in subroutine SLREAC
+to initialize search for a particular set of fit coefficients.
+From here on, a character string \textbf{`H.n'}, with n an integer, must only appear in the
+section title,
+but not in the text. Likewise: identifiers p0, a0, b-1, ....,h0, k0 are used
+in SLREAC and must not
+appear in the text elsewhere, from here on.
+
+\bigskip
+\begin{small}\begin{verbatim}
+...........................................
+.                                         .
+.       ##BEGIN DATA HERE##               .
+.                                         .
+...........................................
+\end{verbatim}\end{small}
+\newpage
+
+\setcounter{section}{0}
+
+\section{H.1 : Fits for cross-section }
+
+\subsection{
+Reaction DB N2*(A) + N  = N2 + N*(2P)}
+\begin{small}\begin{verbatim}
+   a0 -3.525604931656E+01    a1 -1.169467047039E+00    a2 -3.016619218433E-04
+   a3 -1.131053596850E-04    a4  5.075664503871E-05    a5  5.186112097513E-06
+   a6 -2.519799999214E-06    a7  4.025963385058E-08    a8  1.886635246743E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/DB.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DE N2*(A) + H = N2 + H}
+\begin{small}\begin{verbatim}
+   a0 -3.636724579729E+01    a1 -4.996921680518E-01    a2 -3.004238048443E-04
+   a3 -7.027601268270E-05    a4  4.639562577142E-05    a5  4.000298458661E-06
+   a6 -2.200508309113E-06    a7  1.127902891757E-08    a8  1.890104031525E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/DE.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DF N2*(A) + H2  = N2 + 2H}
+\begin{small}\begin{verbatim}
+   a0 -3.652800397725E+01    a1 -4.578607537346E-02    a2 -2.399741909925E-01
+   a3  7.519012714366E-02    a4 -1.537136580981E-02    a5  3.557144220075E-03
+   a6 -9.047956443652E-04    a7  1.282478836314E-04    a8 -6.737601321279E-06
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/DF.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EC N*(2D) + NH3  = NH + NH2}
+\begin{small}\begin{verbatim}
+   a0 -3.597312484632E+01    a1 -4.992860132291E-01    a2  2.221724976694E-04
+   a3 -2.185431927439E-04    a4 -1.875235453436E-05    a5  1.801683905709E-05
+   a6 -5.631533912406E-07    a7 -4.004005884577E-07    a8  3.456994046962E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/EC.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 32 NH3 + H+ = H + NH3+}
+\begin{small}\begin{verbatim}
+   a0 -3.512950843118E+01    a1 -9.995197673296E-01    a2 -1.089341894829E-04
+   a3 -1.324296798829E-04    a4  1.991180950364E-05    a5  1.021163226029E-05
+   a6 -1.537210572679E-06    a7 -1.883169541811E-07    a8  2.892314580928E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/32.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZL H+ + NH2 = NH2+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.537490331955E+01    a1 -9.993461448873E-01    a2 -1.949720016317E-04
+   a3 -1.729087654282E-04    a4  3.569519275369E-05    a5  1.165878099393E-05
+   a6 -2.244838297527E-06    a7 -1.767355711604E-07    a8  3.403726702521E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZL.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZM 	H+ + NH = NH+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.569871167432E+01    a1 -9.983552723791E-01    a2 -2.774822166591E-04
+   a3 -4.556629385908E-04    a4  5.969049346956E-05    a5  3.538344846415E-05
+   a6 -4.659439894078E-06    a7 -7.556905829568E-07    a8  1.034211511159E-07
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZM.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 33 H2+ + H = H2 + H+}
+\begin{small}\begin{verbatim}
+   a0 -3.543361362397E+01    a1 -4.992788117844E-01    a2  4.583388077472E-04
+   a3 -1.407924001098E-04    a4 -4.505298269726E-05    a5  1.169063046928E-05
+   a6  6.572405609520E-07    a7 -2.867139255236E-07    a8  1.628565543476E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/33.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 34 H2+ + H2 = H3+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.409202391649E+01    a1 -4.990685444208E-01    a2  1.437669809837E-04
+   a3 -2.595121452718E-04    a4  9.995622582894E-07    a5  1.869798439979E-05
+   a6 -1.485708040220E-06    a7 -3.285779522997E-07    a8  3.583715168109E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/34.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 35 H2+ + NH3 = NH3+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.275288968305E+01    a1 -4.994787050446E-01    a2 -2.188016275804E-04
+   a3 -1.033806506382E-04    a4  3.316204729448E-05    a5  4.858481757960E-06
+   a6 -1.522128427499E-06    a7 -1.004154955784E-08    a8  1.187729688822E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/35.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 36 H2+ + N2 = N2H+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.377920738035E+01    a1 -4.997687175351E-01    a2 -9.948208681396E-05
+   a3 -5.978514387256E-05    a4  1.295890511041E-05    a5  6.455654301945E-06
+   a6 -1.012966875438E-06    a7 -1.864498029942E-07    a8  2.762522101525E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/36.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZN H2+ + N = N+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.519826157435E+01    a1 -4.998014584796E-01    a2  1.530815192373E-04
+   a3  5.036422855746E-05    a4 -5.083768450143E-06    a5 -5.745853671067E-06
+   a6  4.837645055788E-09    a7  1.667353837445E-07    a8 -8.813920612450E-09
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZN.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZO H2+ + N = NH+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.386357554600E+01    a1 -4.994103923210E-01    a2  2.706129685180E-04
+   a3 -2.095646572375E-04    a4 -2.749472868472E-05    a5  2.142732365011E-05
+   a6 -3.458818819641E-07    a7 -6.382759584083E-07    a8  5.716798847223E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZO.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZR H2+ + NH2 = NH2+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.537889371688E+01    a1 -9.988111947000E-01    a2 -2.580324837846E-04
+   a3 -2.911740540974E-04    a4  5.386582495464E-05    a5  1.997041706219E-05
+   a6 -3.537831334797E-06    a7 -3.296643009103E-07    a8  5.745822253520E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZR.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZT H2+ + NH = NH+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.639877685839E+01    a1 -9.991932271353E-01    a2 -3.786106055822E-04
+   a3 -2.000209526831E-04    a4  6.490058121546E-05    a5  1.204772346475E-05
+   a6 -3.491148657210E-06    a7 -1.039499856348E-07    a8  3.854441560333E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZT.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 39 H3+ + NH3 = NH4+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.445855504336E+01    a1 -9.991800597753E-01    a2 -4.749471155324E-04
+   a3 -2.864635224663E-04    a4  7.700583560252E-05    a5  2.201247421731E-05
+   a6 -4.531304197853E-06    a7 -4.179190244699E-07    a8  7.678547276233E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/39.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZU H3+ + NH2 = NH3+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.535718875007E+01    a1 -9.988041211578E-01    a2 -1.327073962939E-04
+   a3 -3.024750238876E-04    a4  3.537215304242E-05    a5  2.306215109979E-05
+   a6 -2.938634729118E-06    a7 -4.885550353885E-07    a8  6.619909023077E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZU.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZV H3+ + NH = NH2+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.568779264120E+01    a1 -9.991262523277E-01    a2 -1.490267028808E-04
+   a3 -2.583679126152E-04    a4  3.122615471999E-05    a5  2.265333790401E-05
+   a6 -2.824905844315E-06    a7 -5.468812609031E-07    a8  7.313382420176E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZV.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 40 H3+ + N2 = N2H+ + H2}
+\begin{small}\begin{verbatim}
+   a0 -3.364424583043E+01    a1 -5.001053947537E-01    a2 -3.489472719550E-04
+   a3  5.217830017246E-05    a4  4.832027801732E-05    a5 -6.339876962418E-06
+   a6 -1.623185920202E-06    a7  2.249465107832E-07    a8 -2.791634048550E-10
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/40.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 41 H2 + N+ = NH+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.519826157435E+01    a1 -4.998014584796E-01    a2  1.530815192373E-04
+   a3  5.036422855746E-05    a4 -5.083768450143E-06    a5 -5.745853671067E-06
+   a6  4.837645055788E-09    a7  1.667353837445E-07    a8 -8.813920612450E-09
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/41.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction ZZ N+ + H = H+ + N}
+\begin{small}\begin{verbatim}
+   a0 -3.642877046760E+01    a1 -4.993284140026E-01    a2  1.110120593205E-04
+   a3 -2.158746434780E-04    a4 -8.302489080848E-06    a5  2.011967096965E-05
+   a6 -9.264918567094E-07    a7 -5.415644349055E-07    a8  5.239164855073E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/ZZ.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 46 NH+ + H2 = NH2+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.450120601495E+01    a1 -4.994452038861E-01    a2  7.638532994153E-05
+   a3 -1.448123543562E-04    a4  4.073634739478E-06    a5  1.176427290163E-05
+   a6 -1.088326346202E-06    a7 -2.720391880305E-07    a8  3.287797730196E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/46.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction 50 NH2+ + H2 = NH3+ + H}
+\begin{small}\begin{verbatim}
+   a0 -3.610585832408E+01    a1 -4.994904651358E-01    a2 -2.952907279827E-04
+   a3 -6.005065614576E-05    a4  5.388044003298E-05    a5 -4.149821036921E-06
+   a6 -1.914629649127E-06    a7  3.669195429192E-07    a8 -1.813946931009E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/50.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction DD N2*(A) + NH3 =  N2(X) + H + NH2}
+\begin{small}\begin{verbatim}
+   a0 -3.606850050331E+01    a1 -4.985692234760E-01    a2 -2.554692077144E-04
+   a3 -4.069952082798E-04    a4  5.028150025855E-05    a5  3.019730055286E-05
+   a6 -3.697880512623E-06    a7 -6.049288920032E-07    a8  7.786467574166E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/DD.eps}
+\end{figure}
+\newpage
+
+\subsection{
+Reaction EB N*(2D) + H2  = NH + H}
+\begin{small}\begin{verbatim}
+   a0 -4.058426808527E+01    a1 -5.002334190407E-01    a2 -7.888387115786E-05
+   a3  9.295612376230E-05    a4  1.599541494452E-05    a5 -9.072793765241E-06
+   a6 -4.451575724006E-07    a7  3.001864279963E-07    a8 -1.820461730557E-08
+   \end{verbatim}\end{small}
+\begin{figure}[h!] \label{n2rates}
+\epsfxsize=16truecm
+\epsffile{../../sigma-eps/EB.eps}
+\end{figure}
+\newpage
+
+
+\section{H.2 : Fits for rate coefficient }
+
+\subsection{
+Reaction 01 e + N = N+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 16.6600000000E+00
+   b0 -18.4932514400E+00   b1  0.56000000000E+00
+
+          Eth  14.53
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 02 e + N2 = N+ + N + 2e }
+\begin{small}\begin{verbatim}
+   b-1 29.7100000000E+00
+   b0 -19.6585551000E+00   b1  0.72000000000E+00
+
+          Eth  15.6
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 03 e + N2 = N2+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 17.0700000000E+00
+   b0 -18.1583164800E+00   b1  0.56000000000E+00
+
+          Eth  15.6
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 04 e + H = H+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 15.2800000000E+00
+   b0 -18.3253705600E+00   b1  0.29000000000E+00
+
+          Eth  13.59
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 05 e + H2 = H+ + H + 2e }
+\begin{small}\begin{verbatim}
+   b-1 29.9400000000E+00
+   b0 -20.7851412400E+00   b1  0.45000000000E+00
+
+          Eth  15.44
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 06 e + H2 = H2+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 17.8700000000E+00
+   b0 -17.5877716200E+00   b1  0.19000000000E+00
+
+          Eth  15.44
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 07 e + NH = NH+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 15.4900000000E+00
+   b0 -17.6787434000E+00   b1  0.37000000000E+00
+
+          Eth  13.1
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 09 e + NH2 = NH2+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 12.4000000000E+00
+   b0 -18.1583164800E+00   b1  0.50000000000E+00
+
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 11 e + NH3 = NH3+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 13.6100000000E+00
+   b0 -18.0152156400E+00   b1  0.40000000000E+00
+
+          Eth  10.17
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 12 e + NH3 = NH2+ + H + 2e }
+\begin{small}\begin{verbatim}
+   b-1 15.4100000000E+00
+   b0 -17.9506771100E+00   b1  0.34000000000E+00
+
+          Eth  10.17
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 14 e + N2 = N + N*(2D) + e }
+\begin{small}\begin{verbatim}
+   b-1 15.5300000000E+00
+   b0 -17.5452120100E+00   b1  0.27000000000E+00
+
+          Eth  9.76
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 17 e + NH2 = NH + H + e }
+\begin{small}\begin{verbatim}
+   b-1 7.61000000000E+00
+   b0 -16.9166033500E+00   b1  0.22000000000E+00
+
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 18 e + NH3 = NH2 + H + e }
+\begin{small}\begin{verbatim}
+   b-1 7.59000000000E+00
+   b0 -16.9855962200E+00   b1  0.19000000000E+00
+
+          Eth  4.07
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 20 e + H2+ = H + H }
+\begin{small}\begin{verbatim}
+   b0 -19.5200303700E+00   b1 -0.43000000000E+00
+
+          Eth  0.0
+          KER  1.09905266E+01
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 21 e + H3+ = 3H }
+\begin{small}\begin{verbatim}
+   b0 -18.8460312300E+00   b1 -0.52000000000E+00
+
+          Eth  0.0
+          KER  4.76394775E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 22 e + H3+ = H2 + H }
+\begin{small}\begin{verbatim}
+   b0 -19.4683523600E+00   b1 -0.52000000000E+00
+
+          Eth  0.0
+          KER  9.29021553E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 23 e + N2+ = N*(2D) + N }
+\begin{small}\begin{verbatim}
+   b0 -16.6823650200E+00   b1 -0.30000000000E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 24 e + NH+ = N + H }
+\begin{small}\begin{verbatim}
+   b0 -18.7868950900E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  1.01230664E+01
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 25 e + NH2+ = NH + H }
+\begin{small}\begin{verbatim}
+   b0 -17.5581565200E+00   b1 -0.40000000000E+00
+
+          Eth  0.0
+          KER  7.21446041E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 27 e + NH3+ = NH + 2H }
+\begin{small}\begin{verbatim}
+   b0 -17.5046700900E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  1.55993362E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 28 e + NH3+ = NH2 + H }
+\begin{small}\begin{verbatim}
+   b0 -17.5046700900E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  5.56608080E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 29 e + NH4+ = NH3 + H }
+\begin{small}\begin{verbatim}
+   b0 -16.169001900E+00   b1 -0.60000000000E+00
+
+          Eth  0.0
+          KER  3.88222089E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 31 e + N2H+ = N2 + H }
+\begin{small}\begin{verbatim}
+   b0 -16.7857551600E+00   b1 -0.72000000000E+00
+
+          Eth  0.0
+          KER  3.26832671E-01
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 32 NH3 + H+ = H + NH3+ }
+\begin{small}\begin{verbatim}
+   b0 -21.2397623900E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  3.41562318E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 33 H2+ + H = H2 + H+ }
+\begin{small}\begin{verbatim}
+   b0 -21.1695529400E+00
+
+          Eth  0.0
+          KER  1.83154700E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 34 H2+ + H2 = H3+ + H }
+\begin{small}\begin{verbatim}
+   b0 -20.0301186600E+00
+
+          Eth  0.0
+          KER  1.70031106E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 35 H2+ + NH3 = NH3+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -20.8076290300E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  5.24717019E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 36 H2+ + N2 = N2H+ + H }
+\begin{small}\begin{verbatim}
+   b0 -20.0301186600E+00
+
+          Eth  0.0
+          KER  1.06636939E+01
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 39 H3+ + NH3 = NH4+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -21.0664906700E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  4.45414949E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 40 H3+ + N2 = N2H+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -20.0814119500E+00
+
+          Eth  0.0
+          KER  8.96338285E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 41 H2 + N+ = NH+ + H }
+\begin{small}\begin{verbatim}
+   b0 -21.4164130200E+00
+
+          Eth  0.0
+          KER  -1.72946133E-02
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 46 NH+ + H2 = NH2+ + H }
+\begin{small}\begin{verbatim}
+   b0 -20.7232658400E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction 50 NH2+ + H2 = NH3+ + H }
+\begin{small}\begin{verbatim}
+   b0 -22.3327037500E+00
+
+          Eth  0.0
+          KER  1.12825901E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction DB N2*(A) + N = N2 + N*(2P) }
+\begin{small}\begin{verbatim}
+   b0 -26.3874130200E+00   b1 -0.67000000000E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction DD N2*(A) + NH3 = N2(X) + H + NH2 }
+\begin{small}\begin{verbatim}
+   b0 -23.1871940800E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction DE N2*(A) + H = N2 + H }
+\begin{small}\begin{verbatim}
+   b0 -22.2886868600E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction DF N2*(A) + H2 = N2 + 2H }
+\begin{small}\begin{verbatim}
+   b-1 0.30160000000E+00
+   b0 -22.3327037500E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction EB N*(2D) + H2 = NH + H }
+\begin{small}\begin{verbatim}
+   b0 -26.802469300E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction EC N*(2D) + NH3 = NH + NH2 }
+\begin{small}\begin{verbatim}
+   b0 -22.9305407500E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction EK e + N2 = N2*(A) + e }
+\begin{small}\begin{verbatim}
+   b-1 7.34000000000E+00
+   b0 -18.2383591900E+00
+
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction EM e + N = N*(2D) + e }
+\begin{small}\begin{verbatim}
+   b-1 3.35000000000E+00
+   b0 -17.4274289700E+00   b1 -0.40000000000E+00
+
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZE e + NH3 = NH + 2H + e }
+\begin{small}\begin{verbatim}
+   b-1 11.0600000000E+00
+   b0 -18.1583164800E+00   b1  0.38000000000E+00
+
+          Eth  4.05
+          KER  0.0
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZH e + N2*(A) = N2+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 12.8400000000E+00
+   b0 -18.6070103200E+00
+
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZI e + N*(2D) = N+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 0.83000000000E+00
+   b0 -18.4206807400E+00   b1 -0.36000000000E+00
+
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZJ e + N*(2P) = N+ + 2e }
+\begin{small}\begin{verbatim}
+   b-1 1.05000000000E+00
+   b0 -19.0185177400E+00   b1 -0.41000000000E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZL H+ + NH2 = NH2+ + H }
+\begin{small}\begin{verbatim}
+   b0 -21.4833844700E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  2.46463978E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZM H+ + NH = NH+ + H }
+\begin{small}\begin{verbatim}
+   b0 -21.8061578600E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  9.84562404E-02
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZN H2+ + N = N+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -21.4164130200E+00
+
+          Eth  0.0
+          KER  8.84754767E-01
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZO H2+ + N = NH+ + H }
+\begin{small}\begin{verbatim}
+   b0 -20.0814119500E+00
+
+          Eth  0.0
+          KER  8.67460154E-01
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZR H2+ + NH2 = NH2+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -21.8061578600E+00   b1 -0.50000000000E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZT H2+ + NH = NH+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -22.8225320500E+00   b1 -0.50000000000E+00
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZU H3+ + NH2 = NH3+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -21.9603085400E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  3.72413472E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZV H3+ + NH = NH2+ + H2 }
+\begin{small}\begin{verbatim}
+   b0 -22.2857309400E+00   b1 -0.50000000000E+00
+
+          Eth  0.0
+          KER  2.07575512E+00
+
+\end{verbatim}\end{small}
+\newpage
+
+\subsection{
+Reaction ZZ N+ + H = H+ + N }
+\begin{small}\begin{verbatim}
+   b0 -22.3327037500E+00
+\end{verbatim}\end{small}
+\newpage
+
+
+
+\section{Appendix}
+\newpage
+\begin{thebibliography}{99}
+\bibitem{kn:Ehrhardt}  A.B.Ehrhardt, W.D.Langer, PPPL 2477 (1987)
+\bibitem{kn:Janev} R.K. Janev, B. Langer et al.  Springer Series on Atoms+Plasmas,
+                   Vol 4, 1987
+ \end{thebibliography}
+\end{document}

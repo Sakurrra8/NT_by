@@ -1,0 +1,307 @@
+#include "Global.h"
+
+void Initialize(int Input, char *settingfile[])
+{
+    string Inputstring, line;
+    double number_temp;
+    std::ifstream In;
+    K_Puff = (int *)malloc(sizeof(int) * 5);
+    In.open(settingfile[1], std::ios::in); // ios::in means read
+    if (!In.is_open())
+    {
+        std::cerr << "This file READING for setting.log have some problem!!!\n";
+    }
+    // std::cout << settingfile << " " << "Successfully read" << endl;
+    std::getline(In, line);
+    In >> Inputstring >> Inputpath;
+    std::getline(In, line);
+    In >> Inputstring >> Casepath;
+    std::getline(In, line);
+    In >> Inputstring >> Outputpath;
+
+    if (Input == 3)
+    {
+        Outputpath = settingfile[2];
+    }
+
+    std::getline(In, line);
+    In >> Inputstring >> N_poloidal;
+    std::getline(In, line);
+    In >> Inputstring >> N_radial;
+    /// read the N_Trimesh
+
+    const int P = N_poloidal;
+    const int R = N_radial;
+    const int T = 8010;
+
+    // 三维：Grid[P][R][8]，B[P][R][4]
+    Grid.assign(P, std::vector<std::vector<double>>(R, std::vector<double>(8, 0.0)));
+    B.assign(P, std::vector<std::vector<double>>(R, std::vector<double>(4, 0.0)));
+
+    // 二维：每个都是 [P][R]
+    auto make2D = [&](std::vector<std::vector<double>> &a)
+    {
+        a.assign(P, std::vector<double>(R, 0.0));
+    };
+
+    // 一维：每个都是 [T]
+    auto make1D = [&](std::vector<double> &a)
+    {
+        a.assign(T, double(0.0));
+    };
+
+    make2D(ne);
+    make2D(n_H_1);
+    make2D(n_D_1);
+    make2D(n_T_1);
+    make2D(Te);
+    make2D(Ti);
+    // make2D(Te_coll);
+    // make2D(Ti_coll);
+
+    make2D(ua_H_1);
+    make2D(ua_D_1);
+    make2D(ua_T_1);
+    make2D(Ti_H_thermal);
+    make2D(Ti_D_thermal);
+    make2D(Ti_T_thermal);
+
+    make1D(n_H_0_Tri);
+    make1D(T_H2_0_Tri);
+    make1D(T_H_0_Tri);
+    make1D(n_H2_0_Tri);
+    make1D(ua_H_0_Tri);
+    make1D(ua_H2_0_Tri);
+    make2D(n_H_0);
+    make2D(T_H2_0);
+    make2D(T_H_0);
+    make2D(n_H2_0);
+    make2D(n_H2_1);
+    make2D(Vi_H);
+
+    make1D(n_D_0_Tri);
+    make1D(T_D2_0_Tri);
+    make1D(T_D_0_Tri);
+    make1D(n_D2_0_Tri);
+    make1D(ua_D_0_Tri);
+    make1D(ua_D2_0_Tri);
+    make2D(n_D_0);
+    make2D(T_D2_0);
+    make2D(T_D_0);
+    make2D(n_D2_0);
+    make2D(n_D2_1);
+    make2D(Vi_D);
+
+    make1D(n_T_0_Tri);
+    make1D(T_T2_0_Tri);
+    make1D(T_T_0_Tri);
+    make1D(n_T2_0_Tri);
+    make1D(ua_T_0_Tri);
+    make1D(ua_T2_0_Tri);
+    make2D(n_T_0);
+    make2D(T_T2_0);
+    make2D(T_T_0);
+    make2D(n_T2_0);
+    make2D(n_T2_1);
+    make2D(Vi_T);
+
+    make2D(Volume);
+    make2D(Area);
+    make2D(Btot);
+    make2D(Btor);
+    make2D(Brad);
+    make2D(Bpol);
+    make2D(Erad);
+    make2D(Epol);
+    make2D(Etor);
+    make2D(vdEp);
+    make2D(vdEr);
+
+    std::getline(In, line);
+    In >> Inputstring >> K_log;
+    std::cout << K_log << endl;
+    std::getline(In, line);
+    In >> Inputstring >> StepLog;
+    // std::cout << StepLog << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_H2_elastic;
+    // std::cout << K_H2_elastic << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_EcrossBDrift;
+    // std::cout << K_EcrossBDrift << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Recyc;
+    // std::cout << K_Recyc << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Rec;
+    // std::cout << K_Rec << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Methane;
+    // std::cout << K_Methane << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_C;
+    // std::cout << K_C << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Ar;
+    // std::cout << K_Ar << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_database;
+    // std::cout << K_database << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_database_Pra;
+    // std::cout << K_database_Pra << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Maxwell;
+    // std::cout << K_Maxwell << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Ei;
+    // std::cout << K_Ei << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_WallRefl;
+    // std::cout << K_WallRefl << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_backScatter;
+    // std::cout << K_backScatter << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_MarColl;
+    // std::cout << K_MarColl << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_flight;
+    // std::cout << K_flight << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_CX_impurity;
+    // std::cout << K_CX_impurity << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Puff[0] >> K_Puff[1] >> K_Puff[2] >> K_Puff[3] >> K_Puff[4];
+    // std::cout << K_Puff[0] << '\t' << K_Puff[1] << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_D2Flight;
+    // std::cout << K_D2Flight << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_abnormal_transport;
+    // std::cout << K_abnormal_transport << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Reflect;
+    // std::cout << K_Reflect << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_ReflectDirection;
+    // std::cout << K_ReflectDirection << endl;
+    std::getline(In, line);
+    In >> Inputstring >> backGridBoundry;
+    std::getline(In, line);
+    In >> Inputstring >> K_Prob;
+    // std::cout << K_Prob << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_H;
+    // std::cout << K_H << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_D;
+    // std::cout << K_D << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_T;
+    // std::cout << K_T << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_back;
+    // std::cout << K_back << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_dn;
+    // std::cout << K_dn << endl;
+    std::getline(In, line);
+    In >> Inputstring >> Ratio_T;
+    // std::cout << Ratio_T << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_CX_DT;
+    // std::cout << K_CX_DT << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_DT;
+    // std::cout << K_DT << endl;
+    std::getline(In, line);
+    In >> Inputstring >> K_Wallelement;
+    // std::cout << K_Wallelement << endl;
+
+    std::getline(In, line);
+    In >> Inputstring >> dt;
+    // std::cout << dt << endl;
+    std::getline(In, line);
+    In >> Inputstring >> t_max;
+    // std::cout << t_max << endl;
+    std::getline(In, line);
+    In >> Inputstring >> numPar_flight;
+    // std::cout << numPar_flight << endl;
+    std::getline(In, line);
+    In >> Inputstring >> numPar_flight_D2;
+    // std::cout << numPar_flight_D2 << endl;
+    std::getline(In, line);
+    In >> Inputstring >> numPar_flight_T2;
+    // std::cout << numPar_flight_T2 << endl;
+    std::getline(In, line);
+    In >> Inputstring >> numPar_flight_CD4;
+    // std::cout << numPar_flight_CD4 << endl;
+    std::getline(In, line);
+    In >> Inputstring >> numPar_flight_Target;
+    // std::cout << numPar_flight_Target << endl;
+    std::getline(In, line);
+    In >> Inputstring >> Num_D2_pump;
+    // std::cout << Num_D2_pump << endl;
+    std::getline(In, line);
+    In >> Inputstring >> Num_T2_pump;
+    // std::cout << Num_T2_pump << endl;
+    std::getline(In, line);
+    In >> Inputstring >> Num_CD4_pump;
+    // std::cout << Num_CD4_pump << endl;
+    std::getline(In, line);
+    In >> Inputstring >> coeff_recyc_target;
+    // std::cout << coeff_recyc_target << endl;
+    std::getline(In, line);
+    In >> Inputstring >> coeff_ercyc_wall;
+    // std::cout << coeff_ercyc_wall << endl;
+    std::getline(In, line);
+    In >> Inputstring >> coeff_puff;
+    // std::cout << coeff_puff << endl;
+
+    /// Extern Mode
+    std::getline(In, line);
+    In >> Inputstring >> MeshMode;
+    // std::cout << MeshMode << endl;
+    if (MeshMode == 2)
+    {
+        std::getline(In, line);
+        In >> Inputstring >> number_temp;
+        Grid3.Set_nx(number_temp);
+        // std::cout << Grid3.nx() << endl;
+        std::getline(In, line);
+        In >> Inputstring >> number_temp;
+        Grid3.Set_ny(number_temp);
+        // std::cout << Grid3.ny() << endl;
+        std::getline(In, line);
+        In >> Inputstring >> number_temp;
+        Grid3.Set_nCv(number_temp);
+        // std::cout << Grid3.nCv() << endl;
+        std::getline(In, line);
+        In >> Inputstring >> number_temp;
+        Grid3.Set_nVx(number_temp);
+        // std::cout << Grid3.nVx() << endl;
+        std::getline(In, line);
+        In >> Inputstring >> number_temp;
+        Grid3.Set_nFc(number_temp);
+        // std::cout << Grid3.nFc() << endl;
+        std::getline(In, line);
+        In >> Inputstring >> number_temp;
+        Grid3.Set_nCmxVx(number_temp);
+        // std::cout << Grid3.nCmxVx() << endl;
+    }
+    else
+    {
+        Grid3.Set_nx(0);
+        Grid3.Set_ny(0);
+        Grid3.Set_nCv(0);
+        Grid3.Set_nVx(0);
+        Grid3.Set_nFc(0);
+        Grid3.Set_nCmxVx(0);
+    }
+
+    In.close();
+
+    V_1.assign(3, 0.0);
+    V_2.assign(3, 0.0);
+}
