@@ -1,6 +1,6 @@
 #setting_D.log
 Inputpath Inputfile/                # Path for input
-Casepath 2MW-4.6e19/                  # Path for SOLPS case
+Casepath case_input/2MW-4.6e19/                  # Path for SOLPS case
 Outputpath Outputfile/test/data/    # Path for output
 
 N_poloidal          98      # number of the poloidal grid
