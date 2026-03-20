@@ -62,9 +62,10 @@ int K_test1 = 0;
 int K_test2 = 0;
 int K_test3 = 0;
 int K_CD4;
-int K_Tn = 1; // 1 for relative speed energy for collision, 2 for 1.5*Tn for speed;
-int K_Vi = 1; // 1 for Ti maxwell and calculate the relative v; 2 for don't calculate the relative v;
-int K_mu = 3; // 3 is the default option;
+int K_Tn = 1;       // 1 for relative speed energy for collision, 2 for 1.5*Tn for speed;
+int K_Vi = 1;       // 1 for Ti maxwell and calculate the relative v; 2 for don't calculate the relative v;
+int K_mu = 3;       // 3 is the default option;
+int K_PartoPar = 0; // OP: if the PartoPar is working
 
 int MeshMode; // Option 1: Orthogonal grid; 2: Full grid; 3: Triangular grid
 

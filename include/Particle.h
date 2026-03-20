@@ -105,6 +105,9 @@ public:
 	double Sn(int X, int Y);
 	double Smu(int X, int Y);
 	double SE(int X, int Y);
+	double Sn(int XY);
+	double Smu(int XY);
+	double SE(int XY);
 	void Setcs(int i, double cs);
 	void Setcs(int i, int j, double cs);
 	double cs(int XY[3], double Zone);

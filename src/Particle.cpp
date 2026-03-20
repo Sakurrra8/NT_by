@@ -861,13 +861,9 @@ void Particle::Init(int k, int z)
 		Charge_ = 0;
 		fate_[0] = 4;
 		sourcePar_[0] = 12;
-
-		if (K_Maxwell == 1)
-			vel = Maxwell(Tn_, mass_);
-		else if (K_Maxwell == 2)
-			vel = sqrt((3.0 * qe * Tn_) / mass_);
 		double Vtheta = 2 * pi * Random();
 		double Vphi = pi * Random();
+
 		/*VtoVcharge();
 		VchargetoV();*/
 		if (MeshMode == 3)
@@ -875,6 +871,10 @@ void Particle::Init(int k, int z)
 			int a = Tri_B2_[z][0];
 			int b = Tri_B2_[z][1];
 			Tn_ = Ti[a][b];
+			if (K_Maxwell == 1)
+				vel = Maxwell(Tn_, mass_);
+			else if (K_Maxwell == 2)
+				vel = sqrt((3.0 * qe * Tn_) / mass_);
 			Tri_Index_ = z;
 			Weight_ = Weight_Grid_[a][b];
 			NumPar_now = Tri_NumPar_Grid_[z];
@@ -895,6 +895,7 @@ void Particle::Init(int k, int z)
 				Zone_ = 5;
 
 			Rec_[1].n_Add(Tri_Index_, Weight_ * NumPar_now);
+			Rec_[1].n_Add(XY_, Weight_ * NumPar_now);
 			if (this == &D)
 			{
 				V_[0] = sin(Vphi) * cos(Vtheta) + ua_D_1[a][b] * B[a][b][0] / vel;
@@ -902,6 +903,8 @@ void Particle::Init(int k, int z)
 				V_[2] = cos(Vphi) + ua_D_1[a][b] * B[a][b][2] / vel;
 				Rec_[1].Mu_Add(Tri_Index_, -mass_ * ua_D_1[a][b] * Weight_ * NumPar_now);
 				Rec_[1].E_Add(Tri_Index_, -(3. / 2 * Ti[a][b] * qe + 1.0 / 2 * mass_ * ua_D_1[a][b] * ua_D_1[a][b]) * Weight_ * NumPar_now);
+				Rec_[1].Mu_Add(XY_, -mass_ * ua_D_1[a][b] * Weight_ * NumPar_now);
+				Rec_[1].E_Add(XY_, -(3. / 2 * Ti[a][b] * qe + 1.0 / 2 * mass_ * ua_D_1[a][b] * ua_D_1[a][b]) * Weight_ * NumPar_now);
 			}
 			else if (this == &T)
 			{
@@ -910,30 +913,50 @@ void Particle::Init(int k, int z)
 				V_[2] = cos(Vphi) + ua_T_1[a][b] * B[a][b][2] / vel;
 				Rec_[1].Mu_Add(Tri_Index_, -mass_ * ua_T_1[a][b] * Weight_ * NumPar_now);
 				Rec_[1].E_Add(Tri_Index_, -(3. / 2 * Ti[a][b] * qe + 1.0 / 2 * mass_ * ua_T_1[a][b] * ua_T_1[a][b]) * Weight_ * NumPar_now);
+				Rec_[1].Mu_Add(XY_, -mass_ * ua_T_1[a][b] * Weight_ * NumPar_now);
+				Rec_[1].E_Add(XY_, -(3. / 2 * Ti[a][b] * qe + 1.0 / 2 * mass_ * ua_T_1[a][b] * ua_T_1[a][b]) * Weight_ * NumPar_now);
 			}
 			if (K_DT)
 			{
 				if (this == &D)
 				{
 					if (K_database_Pra == 1)
+					{
 						Rec_[1].Pra_Add(Tri_Index_, ne[a][b] * n_D_1[a][b] * PRB12_H.cal(Te[a][b], ne[a][b]));
+						Rec_[1].Pra_Add(XY_, ne[a][b] * n_D_1[a][b] * PRB12_H.cal(Te[a][b], ne[a][b]));
+					}
 					if (K_database_Pra == 2)
+					{
 						Rec_[1].Pra_Add(Tri_Index_, ne[a][b] * n_D_1[a][b] * R2_1_8_H10.cal(ne[a][b], Te[a][b]) * qe);
+						Rec_[1].Pra_Add(XY_, ne[a][b] * n_D_1[a][b] * R2_1_8_H10.cal(ne[a][b], Te[a][b]) * qe);
+					}
 				}
 				if (this == &T)
 				{
 					if (K_database_Pra == 1)
+					{
 						Rec_[1].Pra_Add(Tri_Index_, ne[a][b] * n_T_1[a][b] * PRB12_H.cal(Te[a][b], ne[a][b]));
+						Rec_[1].Pra_Add(XY_, ne[a][b] * n_T_1[a][b] * PRB12_H.cal(Te[a][b], ne[a][b]));
+					}
 					if (K_database_Pra == 2)
+					{
 						Rec_[1].Pra_Add(Tri_Index_, ne[a][b] * n_T_1[a][b] * R2_1_8_H10.cal(ne[a][b], Te[a][b]) * qe);
+						Rec_[1].Pra_Add(XY_, ne[a][b] * n_T_1[a][b] * R2_1_8_H10.cal(ne[a][b], Te[a][b]) * qe);
+					}
 				}
 			}
 			else
 			{
 				if (K_database_Pra == 1)
+				{
 					Rec_[1].Pra_Add(Tri_Index_, ne[a][b] * n_D_1[a][b] * PRB12_H.cal(Te[a][b], ne[a][b]));
+					Rec_[1].Pra_Add(XY_, ne[a][b] * n_D_1[a][b] * PRB12_H.cal(Te[a][b], ne[a][b]));
+				}
 				if (K_database_Pra == 2)
+				{
 					Rec_[1].Pra_Add(Tri_Index_, ne[a][b] * n_D_1[a][b] * R2_1_8_H10.cal(ne[a][b], Te[a][b]) * qe);
+					Rec_[1].Pra_Add(XY_, ne[a][b] * n_D_1[a][b] * R2_1_8_H10.cal(ne[a][b], Te[a][b]) * qe);
+				}
 			}
 		}
 		else
@@ -941,6 +964,10 @@ void Particle::Init(int k, int z)
 			int a = z / N_radial;
 			int b = z % N_radial;
 			Tn_ = Ti[a][b];
+			if (K_Maxwell == 1)
+				vel = Maxwell(Tn_, mass_);
+			else if (K_Maxwell == 2)
+				vel = sqrt((3.0 * qe * Tn_) / mass_);
 			Weight_ = Weight_Grid_[a][b];
 			NumPar_now = NumPar_Grid_[a][b];
 			X_[0] = (Grid[a][b][0] + Grid[a][b][1] + Grid[a][b][2] + Grid[a][b][3]) / 4.;
@@ -4021,6 +4048,18 @@ void Particle::Coll()
 					Ion_[Charge_].n_Add(XY_, Weight_ * NumPar_now);
 					if (K_mu == 2 || K_mu == 3)
 					{
+						Ion_[Charge_].Mu_Add(XY_, mass_ * V_temp2 * Weight_ * NumPar_now);
+						Ion_[Charge_].E_Add(XY_, 1.5 * Tn_ * qe * Weight_ * NumPar_now);
+					}
+					else if (K_mu == 1)
+					{
+						Ion_[Charge_].Mu_Add(XY_, mass_ * ua_D_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
+						Ion_[Charge_].E_Add(XY_, (1.5 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
+					}
+
+					Ion_[Charge_].n_Add(Tri_Index_, Weight_ * NumPar_now);
+					if (K_mu == 2 || K_mu == 3)
+					{
 						Ion_[Charge_].Mu_Add(Tri_Index_, mass_ * V_temp2 * Weight_ * NumPar_now);
 						Ion_[Charge_].E_Add(Tri_Index_, 1.5 * Tn_ * qe * Weight_ * NumPar_now);
 					}
@@ -4109,19 +4148,28 @@ void Particle::Coll()
 				}
 				else if (MeshMode == 3)
 				{
-					CX_[Charge_].n_Add(Tri_Index_, Weight_ * NumPar_now);
-					if (K_mu == 3)
+					CX_[Charge_].n_Add(XY_, Weight_ * NumPar_now);
+					if (this == &D)
 					{
-						if (this == &D)
-						{
-							CX_[Charge_].Mu_Add(Tri_Index_, -Dmass * Weight_ * NumPar_now * (CX_[Charge_].V_relative(0) * B[XY_[0]][XY_[1]][0] + CX_[Charge_].V_relative(1) * B[XY_[0]][XY_[1]][1] + CX_[Charge_].V_relative(2) * B[XY_[0]][XY_[1]][2]));
-							CX_[Charge_].E_Add(Tri_Index_, -0.5 * Dmass * CX_[0].V_2_relative() * Weight_ * NumPar_now);
-						}
-						if (this == &T)
-						{
-							CX_[Charge_].Mu_Add(Tri_Index_, -Tmass * Weight_ * NumPar_now * (CX_[Charge_].V_relative(0) * B[XY_[0]][XY_[1]][0] + CX_[Charge_].V_relative(1) * B[XY_[0]][XY_[1]][1] + CX_[Charge_].V_relative(2) * B[XY_[0]][XY_[1]][2]));
-							CX_[Charge_].E_Add(Tri_Index_, -0.5 * Tmass * CX_[0].V_2_relative() * Weight_ * NumPar_now);
-						}
+						CX_[Charge_].Mu_Add(XY_, -Dmass * Weight_ * NumPar_now * (CX_[Charge_].V_relative(0) * B[XY_[0]][XY_[1]][0] + CX_[Charge_].V_relative(1) * B[XY_[0]][XY_[1]][1] + CX_[Charge_].V_relative(2) * B[XY_[0]][XY_[1]][2]));
+						CX_[Charge_].E_Add(XY_, -0.5 * Dmass * CX_[0].V_2_relative() * Weight_ * NumPar_now);
+					}
+					if (this == &T)
+					{
+						CX_[Charge_].Mu_Add(XY_, -Tmass * Weight_ * NumPar_now * (CX_[Charge_].V_relative(0) * B[XY_[0]][XY_[1]][0] + CX_[Charge_].V_relative(1) * B[XY_[0]][XY_[1]][1] + CX_[Charge_].V_relative(2) * B[XY_[0]][XY_[1]][2]));
+						CX_[Charge_].E_Add(XY_, -0.5 * Tmass * CX_[0].V_2_relative() * Weight_ * NumPar_now);
+					}
+
+					CX_[Charge_].n_Add(Tri_Index_, Weight_ * NumPar_now);
+					if (this == &D)
+					{
+						CX_[Charge_].Mu_Add(Tri_Index_, -Dmass * Weight_ * NumPar_now * (CX_[Charge_].V_relative(0) * B[XY_[0]][XY_[1]][0] + CX_[Charge_].V_relative(1) * B[XY_[0]][XY_[1]][1] + CX_[Charge_].V_relative(2) * B[XY_[0]][XY_[1]][2]));
+						CX_[Charge_].E_Add(Tri_Index_, -0.5 * Dmass * CX_[0].V_2_relative() * Weight_ * NumPar_now);
+					}
+					if (this == &T)
+					{
+						CX_[Charge_].Mu_Add(Tri_Index_, -Tmass * Weight_ * NumPar_now * (CX_[Charge_].V_relative(0) * B[XY_[0]][XY_[1]][0] + CX_[Charge_].V_relative(1) * B[XY_[0]][XY_[1]][1] + CX_[Charge_].V_relative(2) * B[XY_[0]][XY_[1]][2]));
+						CX_[Charge_].E_Add(Tri_Index_, -0.5 * Tmass * CX_[0].V_2_relative() * Weight_ * NumPar_now);
 					}
 					for (int i = 0; i < 3; i++)
 						SetV(i, V_D_1_now[i]);
@@ -4230,22 +4278,43 @@ void Particle::Coll()
 				}
 				else if (MeshMode == 3)
 				{
-					CX_[Charge_].n_Add(Tri_Index_, Weight_ * NumPar_now);
+					CX_DT_[Charge_].n_Add(XY_, Weight_ * NumPar_now);
 					if (K_mu == 3)
 					{
 						if (this == &D)
 						{
-							CX_[Charge_].Mu_Add(Tri_Index_, Weight_ * NumPar_now * (Dmass * V_temp1 - Tmass * (V_T_1_now[0] * B[XY_[0]][XY_[1]][0] + V_T_1_now[1] * B[XY_[0]][XY_[1]][1] + V_T_1_now[2] * B[XY_[0]][XY_[1]][2])));
-							CX_[Charge_].E_Add(Tri_Index_, 0.5 * Weight_ * NumPar_now * (Dmass * (V_[1] * V_[1] + V_[1] * V_[1] + V_[2] * V_[2]) - Tmass * (V_T_1_now[1] * V_T_1_now[1] + V_T_1_now[1] * V_T_1_now[1] + V_T_1_now[2] * V_T_1_now[2])));
+							CX_DT_[Charge_].Mu_Add(XY_, Weight_ * NumPar_now * (Dmass * V_temp1 - Tmass * (V_T_1_now[0] * B[XY_[0]][XY_[1]][0] + V_T_1_now[1] * B[XY_[0]][XY_[1]][1] + V_T_1_now[2] * B[XY_[0]][XY_[1]][2])));
+							CX_DT_[Charge_].E_Add(XY_, 0.5 * Weight_ * NumPar_now * (Dmass * (V_[1] * V_[1] + V_[1] * V_[1] + V_[2] * V_[2]) - Tmass * (V_T_1_now[1] * V_T_1_now[1] + V_T_1_now[1] * V_T_1_now[1] + V_T_1_now[2] * V_T_1_now[2])));
+							for (int i = 0; i < 3; i++)
+								SetV(i, V_T_1_now[i]);
 						}
 						if (this == &T)
 						{
-							CX_[Charge_].Mu_Add(Tri_Index_, Weight_ * NumPar_now * (Tmass * V_temp1 - Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2])));
-							CX_[Charge_].E_Add(Tri_Index_, 0.5 * Weight_ * NumPar_now * (Tmass * (V_[1] * V_[1] + V_[1] * V_[1] + V_[2] * V_[2]) - Dmass * (V_D_1_now[1] * V_D_1_now[1] + V_D_1_now[1] * V_D_1_now[1] + V_D_1_now[2] * V_D_1_now[2])));
+							CX_DT_[Charge_].Mu_Add(XY_, Weight_ * NumPar_now * (Tmass * V_temp1 - Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2])));
+							CX_DT_[Charge_].E_Add(XY_, 0.5 * Weight_ * NumPar_now * (Tmass * (V_[1] * V_[1] + V_[1] * V_[1] + V_[2] * V_[2]) - Dmass * (V_D_1_now[1] * V_D_1_now[1] + V_D_1_now[1] * V_D_1_now[1] + V_D_1_now[2] * V_D_1_now[2])));
+							for (int i = 0; i < 3; i++)
+								SetV(i, V_D_1_now[i]);
 						}
 					}
-					for (int i = 0; i < 3; i++)
-						SetV(i, V_T_1_now[i]);
+
+					CX_DT_[Charge_].n_Add(Tri_Index_, Weight_ * NumPar_now);
+					if (K_mu == 3)
+					{
+						if (this == &D)
+						{
+							CX_DT_[Charge_].Mu_Add(Tri_Index_, Weight_ * NumPar_now * (Dmass * V_temp1 - Tmass * (V_T_1_now[0] * B[XY_[0]][XY_[1]][0] + V_T_1_now[1] * B[XY_[0]][XY_[1]][1] + V_T_1_now[2] * B[XY_[0]][XY_[1]][2])));
+							CX_DT_[Charge_].E_Add(Tri_Index_, 0.5 * Weight_ * NumPar_now * (Dmass * (V_[1] * V_[1] + V_[1] * V_[1] + V_[2] * V_[2]) - Tmass * (V_T_1_now[1] * V_T_1_now[1] + V_T_1_now[1] * V_T_1_now[1] + V_T_1_now[2] * V_T_1_now[2])));
+							for (int i = 0; i < 3; i++)
+								SetV(i, V_T_1_now[i]);
+						}
+						if (this == &T)
+						{
+							CX_DT_[Charge_].Mu_Add(Tri_Index_, Weight_ * NumPar_now * (Tmass * V_temp1 - Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2])));
+							CX_DT_[Charge_].E_Add(Tri_Index_, 0.5 * Weight_ * NumPar_now * (Tmass * (V_[1] * V_[1] + V_[1] * V_[1] + V_[2] * V_[2]) - Dmass * (V_D_1_now[1] * V_D_1_now[1] + V_D_1_now[1] * V_D_1_now[1] + V_D_1_now[2] * V_D_1_now[2])));
+							for (int i = 0; i < 3; i++)
+								SetV(i, V_T_1_now[i]);
+						}
+					}
 					setfate(0, 1, Index_); // CX with D
 				}
 			}
@@ -4433,6 +4502,10 @@ void Particle::Coll()
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
 					Ion_[0].n_Add(XY_, Weight_ * NumPar_now);
+					if (MeshMode == 3)
+					{
+						Ion_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
+					}
 					// Init(); // electron collision
 					setfate(0, 5, Index_);
 					T_D_0_temp = 0;
@@ -4472,6 +4545,10 @@ void Particle::Coll()
 				else if (rand_one < Sum_factor[1] / Sum_factor[Num_Collision_D2 - 1])
 				{
 					MAR_[0].n_Add(XY_, Weight_ * NumPar_now);
+					if (MeshMode == 3)
+					{
+						MAR_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
+					}
 					if (this == &H2)
 						P = &H;
 					else if (this == &D2)
@@ -4492,6 +4569,10 @@ void Particle::Coll()
 				else if (rand_one < Sum_factor[2] / Sum_factor[Num_Collision_D2 - 1])
 				{
 					Diss1_[0].n_Add(XY_, Weight_ * NumPar_now);
+					if (MeshMode == 3)
+					{
+						Diss1_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
+					}
 					if (this == &H2)
 						P = &H;
 					else if (this == &D2)
@@ -4518,39 +4599,86 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[3] / Sum_factor[Num_Collision_D2 - 1])
 				{
-					V_temp2 = B[XY_[0]][XY_[1]][0] * V_[0] + B[XY_[0]][XY_[1]][1] * V_[1] + B[XY_[0]][XY_[1]][2] * V_[2];
-					Diss2_[0].n_Add(XY_, Weight_ * NumPar_now);
-					if (K_mu == 1)
+					if (MeshMode == 1)
 					{
-						Diss2_[0].Mu_Add(XY_, 0.5 * Dmass * ua_D_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
-						Diss2_[0].E_Add(XY_, 0.5 * (1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * ua_D_1[XY_[0]][XY_[1]]) * Weight_ * NumPar_now);
+						V_temp2 = B[XY_[0]][XY_[1]][0] * V_[0] + B[XY_[0]][XY_[1]][1] * V_[1] + B[XY_[0]][XY_[1]][2] * V_[2];
+						Diss2_[0].n_Add(XY_, Weight_ * NumPar_now);
+						if (K_mu == 1)
+						{
+							Diss2_[0].Mu_Add(XY_, 0.5 * Dmass * ua_D_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
+							Diss2_[0].E_Add(XY_, 0.5 * (1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * ua_D_1[XY_[0]][XY_[1]]) * Weight_ * NumPar_now);
+						}
+						else if (K_mu == 2 || K_mu == 3)
+						{
+							if (this == &H2)
+							{
+								Diss2_[0].Mu_Add(XY_, 0.5 * Hmass * V_temp2 * Weight_ * NumPar_now);
+								Diss2_[0].E_Add(XY_, 0.5 * (0.5 * Hmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+								P = &H;
+							}
+							else if (this == &D2)
+							{
+								Diss2_[0].Mu_Add(XY_, 0.5 * Dmass * V_temp2 * Weight_ * NumPar_now);
+								Diss2_[0].E_Add(XY_, 0.5 * (0.5 * Dmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+								P = &D;
+							}
+							else if (this == &T2)
+							{
+								Diss2_[0].Mu_Add(XY_, 0.5 * Tmass * V_temp2 * Weight_ * NumPar_now);
+								Diss2_[0].E_Add(XY_, 0.5 * (0.5 * Tmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+								P = &T;
+							}
+						}
 					}
-					else if (K_mu == 2 || K_mu == 3)
+					if (MeshMode == 3)
+					{
+						Vector3 v_H2(V_[0], V_[0], V_[0]);
+						double E_FrankCondon = 3.0;											// 3 eV
+						Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
+						V_[0] = v_H.x;
+						V_[1] = v_H.y;
+						V_[2] = v_H.z;
+
+						Diss2_[0].n_Add(XY_, Weight_ * NumPar_now);
 						if (this == &H2)
 						{
 							Diss2_[0].Mu_Add(XY_, 0.5 * Hmass * V_temp2 * Weight_ * NumPar_now);
-							Diss2_[0].E_Add(XY_, 0.5 * (0.5 * Hmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+							Diss2_[0].E_Add(XY_, 0.5 * (0.5 * H2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
 							P = &H;
 						}
 						else if (this == &D2)
 						{
 							Diss2_[0].Mu_Add(XY_, 0.5 * Dmass * V_temp2 * Weight_ * NumPar_now);
-							Diss2_[0].E_Add(XY_, 0.5 * (0.5 * Dmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+							Diss2_[0].E_Add(XY_, 0.5 * (0.5 * D2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
 							P = &D;
 						}
 						else if (this == &T2)
 						{
 							Diss2_[0].Mu_Add(XY_, 0.5 * Tmass * V_temp2 * Weight_ * NumPar_now);
-							Diss2_[0].E_Add(XY_, 0.5 * (0.5 * Tmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+							Diss2_[0].E_Add(XY_, 0.5 * (0.5 * T2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
 							P = &T;
 						}
 
-					Vector3 v_H2(V_[0], V_[0], V_[0]);									// 假设分子沿 X 轴运动
-					double E_FrankCondon = 3.0;											// 3 eV
-					Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
-					V_[0] = v_H.x;
-					V_[1] = v_H.y;
-					V_[2] = v_H.z;
+						Diss2_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
+						if (this == &H2)
+						{
+							Diss2_[0].Mu_Add(Tri_Index_, 0.5 * Hmass * V_temp2 * Weight_ * NumPar_now);
+							Diss2_[0].E_Add(Tri_Index_, 0.5 * (0.5 * H2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+							P = &H;
+						}
+						else if (this == &D2)
+						{
+							Diss2_[0].Mu_Add(Tri_Index_, 0.5 * Dmass * V_temp2 * Weight_ * NumPar_now);
+							Diss2_[0].E_Add(Tri_Index_, 0.5 * (0.5 * D2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+							P = &D;
+						}
+						else if (this == &T2)
+						{
+							Diss2_[0].Mu_Add(Tri_Index_, 0.5 * Tmass * V_temp2 * Weight_ * NumPar_now);
+							Diss2_[0].E_Add(Tri_Index_, 0.5 * (0.5 * T2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2])) * Weight_ * NumPar_now);
+							P = &T;
+						}
+					}
 					P->Particlefrom(this, 1, 0);
 					P->CalTn();
 					P->setfate(0, 8, this->Index_);
@@ -4565,31 +4693,60 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[4] / Sum_factor[Num_Collision_D2 - 1])
 				{
-					CX_[0].n_Add(XY_, Weight_ * NumPar_now);
-					if (this == &D2)
+					if (MeshMode == 1)
 					{
-						if (K_mu == 1 || K_Vi == 2)
+						CX_[0].n_Add(XY_, Weight_ * NumPar_now);
+						if (this == &D2)
 						{
-							CX_[0].Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
-							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
+							if (K_mu == 1 || K_Vi == 2)
+							{
+								CX_[0].Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
+							}
+							else if (K_mu == 2 || K_mu == 3)
+							{
+								CX_[0].Mu_Add(XY_, -Dmass * V_temp1 * Weight_ * NumPar_now);
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * Weight_ * NumPar_now);
+							}
 						}
-						else if (K_mu == 2 || K_mu == 3)
+						else if (this == &T2)
 						{
-							CX_[0].Mu_Add(XY_, -Dmass * V_temp1 * Weight_ * NumPar_now);
-							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * Weight_ * NumPar_now);
+							if (K_mu == 1 || K_Vi == 2)
+							{
+								CX_[0].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
+							}
+							else if (K_mu == 2 || K_mu == 3)
+							{
+								CX_[0].Mu_Add(XY_, -Tmass * V_temp3 * Weight_ * NumPar_now);
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * Weight_ * NumPar_now);
+							}
 						}
 					}
-					else if (this == &T2)
+					if (MeshMode == 3)
 					{
-						if (K_mu == 1 || K_Vi == 2)
+						CX_[0].n_Add(XY_, Weight_ * NumPar_now);
+						if (this == &D2)
 						{
-							CX_[0].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
-							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
+							CX_[0].Mu_Add(XY_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]) * Weight_ * NumPar_now);
+							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * Weight_ * NumPar_now);
 						}
-						else if (K_mu == 2 || K_mu == 3)
+						else if (this == &T2)
 						{
-							CX_[0].Mu_Add(XY_, -Tmass * V_temp3 * Weight_ * NumPar_now);
-							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * Weight_ * NumPar_now);
+							CX_[0].Mu_Add(XY_, -Tmass * (V_T_1_now[0] * B[XY_[0]][XY_[1]][0] + V_T_1_now[1] * B[XY_[0]][XY_[1]][1] + V_T_1_now[2] * B[XY_[0]][XY_[1]][2]) * Weight_ * NumPar_now);
+							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_T_1_now[0], 2) + pow(V_T_1_now[1], 2) + pow(V_T_1_now[2], 2))) * Weight_ * NumPar_now);
+						}
+
+						CX_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
+						if (this == &D2)
+						{
+							CX_[0].Mu_Add(Tri_Index_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]) * Weight_ * NumPar_now);
+							CX_[0].E_Add(Tri_Index_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * Weight_ * NumPar_now);
+						}
+						else if (this == &T2)
+						{
+							CX_[0].Mu_Add(Tri_Index_, -Tmass * (V_T_1_now[0] * B[XY_[0]][XY_[1]][0] + V_T_1_now[1] * B[XY_[0]][XY_[1]][1] + V_T_1_now[2] * B[XY_[0]][XY_[1]][2]) * Weight_ * NumPar_now);
+							CX_[0].E_Add(Tri_Index_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_T_1_now[0], 2) + pow(V_T_1_now[1], 2) + pow(V_T_1_now[2], 2))) * Weight_ * NumPar_now);
 						}
 					}
 					setfate(0, 1, Index_);
@@ -4668,76 +4825,98 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[5] / Sum_factor[Num_Collision_D2 - 1])
 				{
-					Ela_.begin()->n_Add(XY_, Weight_ * NumPar_now);
-					if (this == &D2)
+					if (MeshMode == 1)
 					{
-						if (K_mu == 1 || K_Vi == 2)
-						{
-							Ela_.begin()->Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
-							Ela_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
-						}
-						else if (K_mu == 2)
-						{
-							Ela_.begin()->Mu_Add(XY_, -Dmass * V_temp1 * Weight_ * NumPar_now);
-							Ela_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * Weight_ * NumPar_now);
-						}
-					}
-					else if (this == &T2)
-					{
-						if (K_mu == 1 || K_Vi == 2)
-						{
-							Ela_.begin()->Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
-							Ela_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
-						}
-						else if (K_mu == 2)
-						{
-							Ela_.begin()->Mu_Add(XY_, -Tmass * V_temp3 * Weight_ * NumPar_now);
-							Ela_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * Weight_ * NumPar_now);
-						}
-					}
-					setfate(0, 9, Index_);
-					// std::cout << name_ + " before Ela V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
-					Init(2, 1);
-					if (K_mu == 2)
-					{
-						V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2];
+						Ela_[0].n_Add(XY_, Weight_ * NumPar_now);
 						if (this == &D2)
 						{
-							Ela_[Charge_].Mu_Add(XY_, Dmass * V_temp2 * Weight_ * NumPar_now);
-							if (V_temp2 < 0)
-								Ela_[Charge_].E_Add(XY_, -(1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
-							else
-								Ela_[Charge_].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+							if (K_mu == 1 || K_Vi == 2)
+							{
+								Ela_[0].Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
+							}
+							else if (K_mu == 2)
+							{
+								Ela_[0].Mu_Add(XY_, -Dmass * V_temp1 * Weight_ * NumPar_now);
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * Weight_ * NumPar_now);
+							}
 						}
 						else if (this == &T2)
 						{
-							Ela_[Charge_].Mu_Add(XY_, Tmass * V_temp2 * Weight_ * NumPar_now);
-							if (V_temp2 < 0)
-								Ela_[Charge_].E_Add(XY_, -(1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
-							else
-								Ela_[Charge_].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+							if (K_mu == 1 || K_Vi == 2)
+							{
+								Ela_[0].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * Weight_ * NumPar_now);
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * Weight_ * NumPar_now);
+							}
+							else if (K_mu == 2)
+							{
+								Ela_[0].Mu_Add(XY_, -Tmass * V_temp3 * Weight_ * NumPar_now);
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * Weight_ * NumPar_now);
+							}
+						}
+						setfate(0, 9, Index_);
+						// std::cout << name_ + " before Ela V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
+						Init(2, 1);
+						if (K_mu == 2)
+						{
+							V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2];
+							if (this == &D2)
+							{
+								Ela_[0].Mu_Add(XY_, Dmass * V_temp2 * Weight_ * NumPar_now);
+								if (V_temp2 < 0)
+									Ela_[0].E_Add(XY_, -(1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+								else
+									Ela_[0].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+							}
+							else if (this == &T2)
+							{
+								Ela_[0].Mu_Add(XY_, Tmass * V_temp2 * Weight_ * NumPar_now);
+								if (V_temp2 < 0)
+									Ela_[0].E_Add(XY_, -(1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+								else
+									Ela_[0].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+							}
+						}
+						else if (K_mu == 3)
+						{
+							if (this == &D2)
+							{
+								V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp1;
+								Ela_[0].Mu_Add(XY_, Dmass * V_temp2 * Weight_ * NumPar_now);
+								if (V_temp2 * ua_D_1[XY_[0]][XY_[1]] < 0)
+									Ela_[0].E_Add(XY_, -(1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+								else
+									Ela_[0].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+							}
+							else if (this == &T2)
+							{
+								V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp3;
+								Ela_[0].Mu_Add(XY_, Tmass * V_temp2 * Weight_ * NumPar_now);
+								if (V_temp2 * ua_T_1[XY_[0]][XY_[1]] < 0)
+									Ela_[0].E_Add(XY_, -(1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+								else
+									Ela_[0].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
+							}
 						}
 					}
-					else if (K_mu == 3)
+					else if (MeshMode == 3)
 					{
-						if (this == &D2)
-						{
-							V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp1;
-							Ela_[Charge_].Mu_Add(XY_, Dmass * V_temp2 * Weight_ * NumPar_now);
-							if (V_temp2 * ua_D_1[XY_[0]][XY_[1]] < 0)
-								Ela_[Charge_].E_Add(XY_, -(1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
-							else
-								Ela_[Charge_].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
-						}
-						else if (this == &T2)
-						{
-							V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp3;
-							Ela_[Charge_].Mu_Add(XY_, Tmass * V_temp2 * Weight_ * NumPar_now);
-							if (V_temp2 * ua_T_1[XY_[0]][XY_[1]] < 0)
-								Ela_[Charge_].E_Add(XY_, -(1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
-							else
-								Ela_[Charge_].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * Weight_ * NumPar_now);
-						}
+						Ela_[0].n_Add(XY_, Weight_ * NumPar_now);
+						Ela_[0].Mu_Add(XY_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
+						Ela_[0].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * Weight_ * NumPar_now);
+						Ela_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
+
+						Ela_[0].Mu_Add(Tri_Index_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
+						Ela_[0].E_Add(Tri_Index_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * Weight_ * NumPar_now);
+
+						setfate(0, 9, Index_);
+						Init(2, 1);
+
+						Ela_[0].Mu_Add(XY_, Dmass * (V_2[0] * B[XY_[0]][XY_[1]][0] + V_2[1] * B[XY_[0]][XY_[1]][1] * B[XY_[0]][XY_[1]][2]) * Weight_ * NumPar_now);
+						Ela_[0].E_Add(XY_, +(0.5 * Dmass * (V_2[0] * V_2[0] + V_2[1] * V_2[1] + V_2[2] * V_2[2]) * Weight_ * NumPar_now));
+
+						Ela_[0].Mu_Add(Tri_Index_, Dmass * (V_2[0] * B[XY_[0]][XY_[1]][0] + V_2[1] * B[XY_[0]][XY_[1]][1] * B[XY_[0]][XY_[1]][2]) * Weight_ * NumPar_now);
+						Ela_[0].E_Add(Tri_Index_, +(0.5 * Dmass * (V_2[0] * V_2[0] + V_2[1] * V_2[1] + V_2[2] * V_2[2]) * Weight_ * NumPar_now));
 					}
 					CalTn();
 					// std::cout << name_ + " after Ela V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
@@ -5804,6 +5983,25 @@ int Particle::H2PCollCal()
 				DS_[1][0].E_Add(XY_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
 			}
 		}
+		if (MeshMode == 3)
+		{
+			DS_[1][0].n_Add(Tri_Index_, Weight_ * NumPar_now);
+			if (this == &H2)
+			{
+				DS_[1][0].Mu_Add(Tri_Index_, mass_ * V_temp2 * Weight_ * NumPar_now);
+				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
+			}
+			else if (this == &D2)
+			{
+				DS_[1][0].Mu_Add(Tri_Index_, mass_ * V_temp2 * Weight_ * NumPar_now);
+				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
+			}
+			else if (this == &T2)
+			{
+				DS_[1][0].Mu_Add(Tri_Index_, mass_ * V_temp2 * Weight_ * NumPar_now);
+				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
+			}
+		}
 		if (K_test1 || K_test2)
 		{
 			std::cout << "coll_7 DS1" << endl;
@@ -5845,6 +6043,25 @@ int Particle::H2PCollCal()
 				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
 			}
 		}
+		if (MeshMode == 3)
+		{
+			DS_[1][1].n_Add(Tri_Index_, Weight_ * NumPar_now);
+			if (this == &H2)
+			{
+				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * Weight_ * NumPar_now);
+				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
+			}
+			else if (this == &D2)
+			{
+				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * Weight_ * NumPar_now);
+				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
+			}
+			else if (this == &T2)
+			{
+				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * Weight_ * NumPar_now);
+				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
+			}
+		}
 		return 1;
 	}
 	else if (rand_one < Sum_factor[2] / Sum_factor[Num_Collision_D2 - 1])
@@ -5866,27 +6083,17 @@ int Particle::H2PCollCal()
 		else if (K_mu == 2 || K_mu == 3)
 		{
 			// there is no source to Ion
-			/*if (this == &H2)
-			{
-				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * Weight_ * NumPar_now);
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
-			}
-			else if (this == &D2)
-			{
-				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * Weight_ * NumPar_now);
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
-			}
-			else if (this == &T2)
-			{
-				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * Weight_ * NumPar_now);
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * Weight_ * NumPar_now);
-			}*/
+		}
+		if (MeshMode == 3)
+		{
+			DS_[1][2].n_Add(Tri_Index_, Weight_ * NumPar_now);
 		}
 		return 2;
 	}
 	else
 	{
 		return -1;
+		std::cout << "there is something wrong in H2PCollCal();" << endl;
 	}
 }
 
@@ -5990,22 +6197,38 @@ void Particle::Stat(int n)
 		}
 		if (this == &H2 || this == &D2 || this == &T2)
 		{
-			Ion_[k].Stat(0, n_, NULL);
-			CX_[k].Stat(0, n_, NULL);
-			Ela_[k].Stat(0, n_, NULL);
-			MAR_[k].Stat(0, n_, NULL);
-			Diss1_[k].Stat(0, n_, NULL);
-			Diss2_[k].Stat(0, n_, NULL);
-			for (int i = 0; i < 3; i++)
+			if (k == 0)
 			{
-				DS_[1][i].Stat(0, n_, NULL);
+				Ion_[k].Stat(0, n_, NULL);
+				CX_[k].Stat(0, n_, NULL);
+				Ela_[k].Stat(0, n_, NULL);
+				MAR_[k].Stat(0, n_, NULL);
+				Diss1_[k].Stat(0, n_, NULL);
+				Diss2_[k].Stat(0, n_, NULL);
 			}
-			for (int m = 1; m < N_poloidal - 1; m++)
+			else if (k == 1)
 			{
-				for (int n = 1; n < N_radial - 1; n++)
+				for (int i = 0; i < 3; i++)
 				{
-					double Var_temp = R2_2_14_H2.cal(ne[m][n], Te[m][n]);
-					DS_[1][2].SetPra(m, n, ne[m][n] * n_[m][n][1] * R2_2_14_H8.cal(ne[m][n], Te[m][n], &Var_temp));
+					DS_[1][i].Stat(0, n_, NULL);
+				}
+				for (int a = 1; a < N_poloidal - 1; a++)
+				{
+					for (int b = 1; b < N_radial - 1; b++)
+					{
+						n_[a][b][1] = (D2.Ion_[0].Sn(a, b) + D2.CX_[0].Sn(a, b)) / ne[a][b] / (R2_2_11_H4.cal(ne[a][b], Te[a][b]) + R2_2_12_H4.cal(ne[a][b], Te[a][b]) + R2_2_14_H4.cal(ne[a][b], Te[a][b]));
+						double Var_temp = R2_2_14_H2.cal(ne[a][b], Te[a][b]);
+						DS_[1][2].SetPra(a, b, ne[a][a] * n_[a][b][1] * R2_2_14_H8.cal(ne[a][b], Te[a][b], &Var_temp));
+					}
+				}
+				for (int a = 0; a < num_trimesh_; a++)
+				{
+					if (Grid4.if_in_plasmagrid(a))
+					{
+						Tri_n_[a][1] = (D2.Ion_[0].Sn(a) + D2.CX_[0].Sn(a)) / ne[Tri_B2_[a][0]][Tri_B2_[a][1]] / (R2_2_11_H4.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]) + R2_2_12_H4.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]) + R2_2_14_H4.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]));
+						double Var_temp = R2_2_14_H2.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]);
+						DS_[1][2].SetPra_Tri(a, ne[Tri_B2_[a][0]][Tri_B2_[a][1]] * Tri_n_[a][1] * R2_2_14_H8.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]], &Var_temp));
+					}
 				}
 			}
 		}
@@ -6181,78 +6404,71 @@ void Particle::Stat_Tri(int n)
 					Tri_E_[i][k] = Tri_Sum_E_[i][k] / Tri_Sum_n_[i][k];
 					Tri_T_[i][k] = 2. / 3. * (Tri_E_[i][k] - 0.5 * mass_ * (pow(Tri_V_Grid_[i][0][k], 2) + pow(Tri_V_Grid_[i][1][k], 2) + pow(Tri_V_Grid_[i][2][k], 2)) / 1.6e-19);
 				}
+				Tri_n_[i][k] = Tri_Sum_n_[i][k] / Grid4.triVolume(i);
 			}
 		}
 	}
-	for (int k = 0; k < MaxCharge_; k++)
+	if (this == &H || this == &D || this == &T)
 	{
-		if (this == &H || this == &D || this == &T)
+		if (this == &D)
 		{
-			if (k != MaxCharge_)
+			CX_[0].Stat_Tri(0, Tri_n_, &PRC96_D, n_D_1);
+			if (K_DT)
+			{
+				CX_DT_[0].Stat_Tri(0, Tri_n_, &PRC96_D, n_T_1);
+			}
+		}
+		else if (this == &T)
+		{
+			CX_[0].Stat_Tri(0, Tri_n_, &PRC96_D, n_T_1);
+			if (K_DT)
+			{
+				CX_DT_[0].Stat_Tri(0, Tri_n_, &PRC96_D, n_D_1);
+			}
+		}
+		if (K_database_Pra == 1)
+		{
+			Ion_[0].Stat_Tri(0, Tri_n_, &PLT12_H);
+		}
+		else
+		{
+			Ion_[0].StatEIRENE_Tri(0, Tri_n_, &R2_1_5_H10, 13.6);
+		}
+
+		for (int i = 0; i < Grid4.num_tris(); i++)
+		{
+			if (Grid4.if_in_plasmagrid(i))
 			{
 				if (this == &D)
 				{
-					CX_[k].Stat_Tri(k, Tri_n_, &PRC96_D, n_D_1);
-					if (K_DT)
-					{
-						CX_DT_[0].Stat_Tri(k, Tri_n_, &PRC96_D, n_T_1);
-					}
+					Tri_n_[i][1] = n_D_1[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)];
 				}
 				else if (this == &T)
 				{
-					CX_[k].Stat_Tri(k, Tri_n_, &PRC96_D, n_T_1);
-					if (K_DT)
-					{
-						CX_DT_[0].Stat_Tri(k, Tri_n_, &PRC96_D, n_D_1);
-					}
+					Tri_n_[i][1] = n_T_1[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)];
 				}
-				if (K_database_Pra == 1)
-				{
-					Ion_[k].Stat_Tri(k, Tri_n_, &PLT12_H);
-				}
-				else
-				{
-					Ion_[k].StatEIRENE_Tri(k, Tri_n_, &R2_1_5_H10, 13.6);
-				}
-			}
-			if (k != 0)
-			{
-				for (int i = 0; i < Grid4.num_tris(); i++)
-				{
-					if (this == &D)
-					{
-						Tri_n_[i][k] = n_D_1[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)];
-					}
-					else if (this == &D)
-					{
-						Tri_n_[i][k] = n_T_1[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)];
-					}
-				}
-				Rec_[k].RecStat_Tri(k, Tri_n_, &PRB12_H);
 			}
 		}
-		if (this == &H2 || this == &D2 || this == &T2)
+		Rec_[1].RecStat_Tri(1, Tri_n_, &PRB12_H);
+	}
+	if (this == &H2 || this == &D2 || this == &T2)
+	{
+		Ion_[0].Stat_Tri(0, Tri_n_, NULL);
+		CX_[0].Stat_Tri(0, Tri_n_, NULL);
+		Ela_[0].Stat_Tri(0, Tri_n_, NULL);
+		MAR_[0].Stat_Tri(0, Tri_n_, NULL);
+		Diss1_[0].Stat_Tri(0, Tri_n_, NULL);
+		Diss2_[0].Stat_Tri(0, Tri_n_, NULL);
+		for (int i = 0; i < 3; i++)
 		{
-			if (k == 0)
+			DS_[1][i].Stat_Tri(1, Tri_n_, NULL);
+		}
+		for (int i = 0; i < Grid4.num_tris(); i++)
+		{
+			if (Grid4.if_in_plasmagrid(i))
 			{
-				Ion_[k].Stat_Tri(0, Tri_n_, NULL);
-				CX_[k].Stat_Tri(0, Tri_n_, NULL);
-				Ela_[k].Stat_Tri(0, Tri_n_, NULL);
-				MAR_[k].Stat_Tri(0, Tri_n_, NULL);
-				Diss1_[k].Stat_Tri(0, Tri_n_, NULL);
-				Diss2_[k].Stat_Tri(0, Tri_n_, NULL);
-			}
-			else if (k == 1)
-			{
-				for (int i = 0; i < 3; i++)
-				{
-					DS_[k][i].Stat_Tri(0, Tri_n_, NULL);
-				}
-				for (int i = 0; i < Grid4.num_tris(); i++)
-				{
-					double Var_temp = R2_2_14_H2.cal(ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)]);
-					DS_[1][2].SetPra_Tri(i, ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)] * Tri_n_[i][1] * R2_2_14_H8.cal(ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], &Var_temp));
-				}
+				double Var_temp = R2_2_14_H2.cal(ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)]);
+				DS_[1][2].SetPra_Tri(i, ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)] * Tri_n_[i][1] * R2_2_14_H8.cal(ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], &Var_temp));
 			}
 		}
 	}
@@ -7708,130 +7924,261 @@ void Particle::Dump_Tri(string type, string coll, int Charge)
 		if (coll == "Ion")
 		{
 			Ion_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "Rec")
 		{
 			Rec_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "CX")
 		{
 			CX_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "CXDT")
 		{
 			CX_DT_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "Ela")
 		{
 			Ela_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "Mar")
 		{
 			MAR_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "Diss1")
 		{
 			Diss1_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "Diss2")
 		{
 			Diss2_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "Diss3")
 		{
 			Diss3_[Charge].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "DS1")
 		{
 			DS_[Charge][0].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "DS2")
 		{
 			DS_[Charge][1].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "DS3")
 		{
 			DS_[Charge][2].OutSn_Tri(out);
+			out.close();
 			return;
 		}
 		if (coll == "DS4")
 		{
 			DS_[Charge][3].OutSn_Tri(out);
+			out.close();
 			return;
 		}
-		out.close();
-		return;
+		if (coll == "R_with_H")
+		{
+			R_with_H_[Charge].OutSn_Tri(out);
+			out.close();
+			return;
+		}
+		if (coll == "R_with_H2")
+		{
+			R_with_H2_[Charge].OutSn_Tri(out);
+			out.close();
+			return;
+		}
 	}
 	if (type == "Smu")
 	{
 		if (coll == "Ion")
+		{
 			Ion_[Charge].OutSmu_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "Rec")
+		{
 			Rec_[Charge].OutSmu_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "CX")
+		{
 			CX_[Charge].OutSmu_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "CXDT")
+		{
 			CX_DT_[Charge].OutSmu_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "Ela")
+		{
 			Ela_[Charge].OutSmu_Tri(out);
+			out.close();
+			return;
+		}
+		if (coll == "R_with_H")
+		{
+			R_with_H_[Charge].OutSmu_Tri(out);
+			out.close();
+			return;
+		}
+		if (coll == "R_with_H2")
+		{
+			R_with_H2_[Charge].OutSmu_Tri(out);
+			out.close();
+			return;
+		}
 	}
 	if (type == "Smu1")
 	{
 		if (coll == "CX")
+		{
 			CX_[Charge].OutSmu1(out);
+			out.close();
+			return;
+		}
 	}
 	if (type == "Smu2")
 	{
 		if (coll == "CX")
+		{
 			CX_[Charge].OutSmu2(out);
+			out.close();
+			return;
+		}
 	}
 	if (type == "SE")
 	{
 		if (coll == "Ion")
+		{
 			Ion_[Charge].OutSE_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "Rec")
+		{
 			Rec_[Charge].OutSE_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "CX")
+		{
 			CX_[Charge].OutSE_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "CXDT")
+		{
 			CX_DT_[Charge].OutSE_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "Ela")
+		{
 			Ela_[Charge].OutSE_Tri(out);
+			out.close();
+			return;
+		}
+		if (coll == "R_with_H")
+		{
+			R_with_H_[Charge].OutSE_Tri(out);
+			out.close();
+			return;
+		}
+		if (coll == "R_with_H2")
+		{
+			R_with_H2_[Charge].OutSE_Tri(out);
+			out.close();
+			return;
+		}
 	}
 	if (type == "SE_n")
 	{
 		if (coll == "Ion")
+		{
 			Ion_[Charge].OutSE_n(out);
+			out.close();
+			return;
+		}
 		if (coll == "Rec")
+		{
 			Rec_[Charge].OutSE_n(out);
+			out.close();
+			return;
+		}
 		if (coll == "CX")
+		{
 			CX_[Charge].OutSE_n(out);
+			out.close();
+			return;
+		}
 		if (coll == "CXDT")
+		{
 			CX_DT_[Charge].OutSE_n(out);
+			out.close();
+			return;
+		}
 		if (coll == "Ela")
+		{
 			Ela_[Charge].OutSE_n(out);
+			out.close();
+			return;
+		}
 	}
 	if (type == "Pra")
 	{
 		if (coll == "Ion")
+		{
 			Ion_[Charge].OutPra_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "Rec")
+		{
 			Rec_[Charge].OutPra_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "CX")
+		{
 			CX_[Charge].OutPra_Tri(out);
+			out.close();
+			return;
+		}
 		if (coll == "DS3")
+		{
 			DS_[Charge][2].OutPra_Tri(out);
+			out.close();
+			return;
+		}
 	}
 	/*for (int i = 0; i < N_poloidal; i++)
 	{
@@ -7839,7 +8186,6 @@ void Particle::Dump_Tri(string type, string coll, int Charge)
 					out << VarOut[i][j] << " ";
 			out << endl;
 	}*/
-	out.close();
 }
 
 /*void Particle::FluxCal_Grid()
@@ -9059,33 +9405,27 @@ int ParCollCar::K()
 
 void ParCollCar::Stat(int Charge, double *n[98][38], ADAS *PraADAS, const std::vector<std::vector<double>> &ni)
 {
-	if (MeshMode == 1)
-	{
-		for (int i = 1; i < N_poloidal - 1; i++)
-			for (int j = 1; j < N_radial - 1; j++)
+	for (int i = 1; i < N_poloidal - 1; i++)
+		for (int j = 1; j < N_radial - 1; j++)
+		{
+			Sn_[i][j] = Num_n_[i][j];
+			if (Num_n_[i][j] >= 1e-8)
 			{
-				Sn_[i][j] = Num_n_[i][j];
-				if (Num_n_[i][j] >= 1e-8)
-				{
-					Smu_[i][j] = Num_mu_[i][j] / Volume[i][j];
-					SE_[i][j] = Num_E_[i][j] / Volume[i][j];
-					SE_n_[i][j] = Num_E_n_[i][j] / Volume[i][j];
-				}
+				Smu_[i][j] = Num_mu_[i][j] / Volume[i][j];
+				SE_[i][j] = Num_E_[i][j] / Volume[i][j];
+				SE_n_[i][j] = Num_E_n_[i][j] / Volume[i][j];
 			}
-		if (PraADAS == NULL)
-			return;
-		for (int i = 0; i < N_poloidal; i++)
-			for (int j = 0; j < N_radial; j++)
-			{
-				if (e_or_i_ == 1)
-					Pra_[i][j] = n[i][j][Charge] * ne[i][j] * PraADAS->cal(Te[i][j], ne[i][j], Charge);
-				if (e_or_i_ == 2)
-					Pra_[i][j] = n[i][j][Charge] * ni[i][j] * PraADAS->cal(Ti[i][j], ni[i][j], Charge);
-			}
-	}
-	else if (MeshMode == 3)
-	{
-	}
+		}
+	if (PraADAS == NULL)
+		return;
+	for (int i = 0; i < N_poloidal; i++)
+		for (int j = 0; j < N_radial; j++)
+		{
+			if (e_or_i_ == 1)
+				Pra_[i][j] = n[i][j][Charge] * ne[i][j] * PraADAS->cal(Te[i][j], ne[i][j], Charge);
+			if (e_or_i_ == 2)
+				Pra_[i][j] = n[i][j][Charge] * ni[i][j] * PraADAS->cal(Ti[i][j], ni[i][j], Charge);
+		}
 }
 
 void ParCollCar::Stat_Tri(int Charge, const std::vector<std::vector<double>> &n, ADAS *PraADAS, const std::vector<std::vector<double>> &ni)
@@ -9177,10 +9517,13 @@ void ParCollCar::RecStat_Tri(int Charge, const std::vector<std::vector<double>> 
 {
 	for (int i = 0; i < Grid4.num_tris(); i++)
 	{
-		Tri_Sn_[i] = Tri_Num_n_[i];
-		Tri_Smu_[i] = Tri_Num_mu_[i] / Grid4.triVolume(i);
-		Tri_SE_[i] = Tri_Num_E_[i] / Grid4.triVolume(i);
-		Tri_Pra_[i] = n[i][Charge] * ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)] * PraADAS->cal(Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Charge - 1);
+		if (Grid4.if_in_plasmagrid(i))
+		{
+			Tri_Sn_[i] = Tri_Num_n_[i];
+			Tri_Smu_[i] = Tri_Num_mu_[i] / Grid4.triVolume(i);
+			Tri_SE_[i] = Tri_Num_E_[i] / Grid4.triVolume(i);
+			Tri_Pra_[i] = n[i][Charge] * ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)] * PraADAS->cal(Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Charge - 1);
+		}
 	}
 }
 
@@ -9290,16 +9633,29 @@ double ParCollCar::Sn(int X, int Y)
 	return Sn_[X][Y];
 }
 
+double ParCollCar::Sn(int XY)
+{
+	return Tri_Sn_[XY];
+}
+
 double ParCollCar::Smu(int X, int Y)
 {
 	return Smu_[X][Y];
 }
 
+double ParCollCar::Smu(int XY)
+{
+	return Tri_Smu_[XY];
+}
 double ParCollCar::SE(int X, int Y)
 {
 	return SE_[X][Y];
 }
 
+double ParCollCar::SE(int XY)
+{
+	return Tri_SE_[XY];
+}
 void ParCollCar::Setcs(int i, double cs)
 {
 	Tri_cs_[i] = cs;

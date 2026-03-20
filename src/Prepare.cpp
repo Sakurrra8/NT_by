@@ -253,60 +253,17 @@ void Prepare()
 				if (K_H)
 				{
 					H.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j]));
-					if (n_H_0[i][j] != 0)
-					{
-						H.CX_[0].Setcs(i, j, n_H_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_D_0[i][j], Ti[i][j]));
-					}
-					else
-					{
-						H.CX_[0].Setcs(i, j, n_H_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_N, Ti[i][j]));
-					}
-					H.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j]));
 				}
 
 				if (K_D)
 				{
-					D.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j] / 1));
-					D.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j] / 1));
-					if (n_D_0[i][j] != 0)
-					{
-						D.CX_[0].Setcs(i, j, n_D_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_D_0[i][j] / coefficient_D, Ti[i][j] / coefficient_D)); // * Ratio_D_Coll;
-					}
-					else
-					{
-						D.CX_[0].Setcs(i, j, n_D_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_N / coefficient_D, Ti[i][j] / coefficient_D)); // * Ratio_D_Coll;
-					}
-					if (K_CX_DT)
-					{
-						if (n_D_0[i][j] != 0)
-							D.CX_DT_[0].Setcs(i, j, n_T_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_D_0[i][j] / coefficient_D, Ti[i][j] / coefficient_T)); // * Ratio_DT_Coll;
-						else
-							D.CX_DT_[0].Setcs(i, j, n_T_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_N / coefficient_D, Ti[i][j] / coefficient_T)); // * Ratio_DT_Coll;
-					}
+					D.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+					D.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
 				}
 				if (K_T)
 				{
-					T.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j] / 1));
-					T.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j] / 1));
-					if (n_T_0[i][j] != 0)
-					{
-						T.CX_[0].Setcs(i, j, n_T_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_T_0[i][j] / coefficient_T, Ti[i][j] / coefficient_T)); // * Ratio_T_Coll;
-					}
-					else
-					{
-						T.CX_[0].Setcs(i, j, n_T_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_N / coefficient_T, Ti[i][j] / coefficient_T)); // * Ratio_T_Coll;
-					}
-					if (K_CX_DT)
-					{
-						if (n_T_0[i][j] != 0)
-						{
-							T.CX_DT_[0].Setcs(i, j, n_D_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_T_0[i][j] / coefficient_T, Ti[i][j] / coefficient_D)); // * Ratio_DT_Coll;
-						}
-						else
-						{
-							T.CX_DT_[0].Setcs(i, j, n_D_1[i][j] * R3_1_8_H3.cal(3. / 2. * T_N / coefficient_T, Ti[i][j] / coefficient_D)); // * Ratio_DT_Coll;
-						}
-					}
+					T.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j]) / sqrt(Tmass / Hmass));
+					T.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j]) / sqrt(Tmass / Hmass));
 				}
 			}
 			if (K_MarColl == 1)
@@ -320,36 +277,12 @@ void Prepare()
 				if (K_D)
 				{
 					D2.MAR_[0].Setcs(i, j, 0.);
-					D2.DS_[1][2].Setcs(i, j, ne[i][j] * R2_2_14_H4.cal(ne[i][j], Te[i][j]));
-					if (n_D2_0[i][j] != 0)
-					{
-						D2.CX_[0].Setcs(i, j, n_D_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_D2_0[i][j] / coefficient_D, Ti[i][j] / coefficient_D));
-						if (K_CX_DT)
-							D2.CX_DT_[0].Setcs(i, j, n_T_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_D2_0[i][j] / coefficient_D, Ti[i][j] / coefficient_T));
-					}
-					else
-					{
-						D2.CX_[0].Setcs(i, j, n_D_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_N / coefficient_D, Ti[i][j] / coefficient_D));
-						if (K_CX_DT)
-							D2.CX_DT_[0].Setcs(i, j, n_T_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_N / coefficient_D, Ti[i][j] / coefficient_T));
-					}
+					D2.DS_[1][2].Setcs(i, j, ne[i][j] * R2_2_14_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
 				}
 				if (K_T)
 				{
 					T2.MAR_[0].Setcs(i, j, 0.);
 					T2.DS_[1][2].Setcs(i, j, ne[i][j] * R2_2_14_H4.cal(ne[i][j], Te[i][j] / 1));
-					if (n_T2_0[i][j] != 0)
-					{
-						T2.CX_[0].Setcs(i, j, n_T_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_T2_0[i][j] / coefficient_T, Ti[i][j] / coefficient_T));
-						if (K_CX_DT)
-							T2.CX_DT_[0].Setcs(i, j, n_D_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_T2_0[i][j] / coefficient_T, Ti[i][j] / coefficient_D));
-					}
-					else
-					{
-						T2.CX_[0].Setcs(i, j, n_T_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_N / coefficient_T, Ti[i][j] / coefficient_T));
-						if (K_CX_DT)
-							T2.CX_DT_[0].Setcs(i, j, n_D_1[i][j] * R3_2_3_H3.cal(3. / 2. * T_N / coefficient_T, Ti[i][j] / coefficient_D));
-					}
 				}
 			}
 			if (K_MarColl == 2)
@@ -357,69 +290,18 @@ void Prepare()
 				if (K_H)
 				{
 					H2.MAR_[0].Setcs(i, j, ne[i][j] * R3_2_3r_H4.cal(ne[i][j], Te[i][j]));
-					H2.CX_[0].Setcs(i, j, 0);
 					H2.DS_[1][2].Setcs(i, j, 0);
 				}
 				if (K_D)
 				{
 					D2.MAR_[0].Setcs(i, j, ne[i][j] * R3_2_3r_H4.cal(ne[i][j], Te[i][j] / 1));
-					D2.CX_[0].Setcs(i, j, 0);
-					D2.CX_DT_[0].Setcs(i, j, 0);
 					D2.DS_[1][2].Setcs(i, j, 0);
 				}
 				if (K_T)
 				{
 					T2.MAR_[0].Setcs(i, j, ne[i][j] * R3_2_3r_H4.cal(ne[i][j], Te[i][j] / 1));
-					T2.CX_[0].Setcs(i, j, 0);
-					T2.CX_DT_[0].Setcs(i, j, 0);
 					T2.DS_[1][2].Setcs(i, j, 0);
 				}
-			}
-			if (K_H2_elastic == 1)
-			{
-				if (K_H)
-				{
-					H2.Ela_[0].Setcs(i, j, n_H_1[i][j] * R0_3T_H3.cal(3. / 2. * T_N, Ti[i][j] / 1.));
-				}
-				if (K_D)
-				{
-					if (n_D2_0[i][j] != 0)
-					{
-						D2.Ela_[0].Setcs(i, j, n_D_1[i][j] * R0_3T_H3.cal(3. / 2. * T_D2_0[i][j] / coefficient_D, Ti[i][j] / coefficient_D));
-						if (K_CX_DT)
-							D2.Ela_DT_[0].Setcs(i, j, n_T_1[i][j] * R0_3T_H3.cal(3. / 2. * T_D2_0[i][j] / coefficient_D, Ti[i][j] / coefficient_T));
-					}
-					else
-					{
-						D2.Ela_[0].Setcs(i, j, n_D_1[i][j] * R0_3T_H3.cal(3. / 2. * T_N / coefficient_D, Ti[i][j] / coefficient_D));
-						if (K_CX_DT)
-							D2.Ela_DT_[0].Setcs(i, j, n_T_1[i][j] * R0_3T_H3.cal(3. / 2. * T_N / coefficient_D, Ti[i][j] / coefficient_T));
-					}
-				}
-				if (K_T)
-				{
-					if (T_T2_0[i][j] != 0)
-					{
-						T2.Ela_[0].Setcs(i, j, n_T_1[i][j] * R0_3T_H3.cal(3. / 2. * T_T2_0[i][j] / coefficient_T, Ti[i][j] / coefficient_T));
-						if (K_CX_DT)
-							T2.Ela_DT_[0].Setcs(i, j, n_D_1[i][j] * R0_3T_H3.cal(3. / 2. * T_T2_0[i][j] / coefficient_T, Ti[i][j] / coefficient_D));
-					}
-					else
-					{
-						T2.Ela_[0].Setcs(i, j, n_T_1[i][j] * R0_3T_H3.cal(3. / 2. * T_N / coefficient_T, Ti[i][j] / coefficient_T));
-						if (K_CX_DT)
-							T2.Ela_DT_[0].Setcs(i, j, n_D_1[i][j] * R0_3T_H3.cal(3. / 2. * T_N / coefficient_T, Ti[i][j] / coefficient_D));
-					}
-				}
-			}
-			else if (K_H2_elastic == 0)
-			{
-				if (K_H)
-					H2.Ela_[0].Setcs(i, j, 0);
-				if (K_D)
-					D2.Ela_[0].Setcs(i, j, 0);
-				if (K_T)
-					T2.Ela_[0].Setcs(i, j, 0);
 			}
 			if (K_H)
 			{
@@ -432,11 +314,11 @@ void Prepare()
 
 			if (K_D)
 			{
-				D2.Diss1_[0].Setcs(i, j, ne[i][j] * R2_2_5g_H4.cal(ne[i][j], Te[i][j] / 1));
-				D2.Ion_[0].Setcs(i, j, ne[i][j] * R2_2_9_H4.cal(ne[i][j], Te[i][j] / 1));
-				D2.Diss2_[0].Setcs(i, j, ne[i][j] * R2_2_10_H4.cal(ne[i][j], Te[i][j] / 1));
-				D2.DS_[1][0].Setcs(i, j, ne[i][j] * R2_2_11_H4.cal(ne[i][j], Te[i][j] / 1));
-				D2.DS_[1][1].Setcs(i, j, ne[i][j] * R2_2_12_H4.cal(ne[i][j], Te[i][j] / 1));
+				D2.Diss1_[0].Setcs(i, j, ne[i][j] * R2_2_5g_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+				D2.Ion_[0].Setcs(i, j, ne[i][j] * R2_2_9_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+				D2.Diss2_[0].Setcs(i, j, ne[i][j] * R2_2_10_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+				D2.DS_[1][0].Setcs(i, j, ne[i][j] * R2_2_11_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+				D2.DS_[1][1].Setcs(i, j, ne[i][j] * R2_2_12_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
 			}
 
 			if (K_T)

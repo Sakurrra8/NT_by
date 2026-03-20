@@ -43,11 +43,11 @@ K_Wallelement       1       # option: 1 for W wall, 2 for C wall
 
 dt                  1.e-8   # Time step
 t_max               10      # Max time for Particle
-numPar_flight       20      # number of test flight each Grid
+numPar_flight       5      # number of test flight each Grid
 numPar_flight_D2    10000   # number of pumping D2
 numPar_flight_T2    10000   # number of pumping T2
 numPar_flight_CD4   50000   # number of test flight of Methane
-numPar_flight_Target 500000 # sum of test flight from Wall recycling
+numPar_flight_Target 1000 # sum of test flight from Wall recycling
 Num_D2_pump         5e19    # number of test flight of pumping D2 particle
 Num_T2_pump         5e19    # number of test flight of pumping T2 particle
 Num_CD4_pump        1e19    # sum of test flight for CD4 seeding

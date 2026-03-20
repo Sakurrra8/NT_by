@@ -5,7 +5,7 @@ void HydrogenOutput(Particle *OutPar1, Particle *OutPar2);
 void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2);
 
 string n = "n", E = "E", Tn = "T", Sn = "Sn", SE = "SE", SE_n = "SE_n", Smu = "Smu", Smu1 = "Smu1", Smu2 = "Smu2", Pra = "Pra";
-string Ion = "Ion", Rec = "Rec", CX = "CX", Diss1 = "Diss1", Diss2 = "Diss2", Diss3 = "Diss3", Mar = "Mar", Ela = "Ela", CXDT = "CXDT";
+string Ion = "Ion", Rec = "Rec", CX = "CX", Diss1 = "Diss1", Diss2 = "Diss2", Diss3 = "Diss3", Mar = "Mar", Ela = "Ela", CXDT = "CXDT", R_with_H = "R_with_H", R_with_H2 = "R_with_H2";
 string DS[4] = {
     "DS1",
     "DS2",
@@ -566,6 +566,12 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
 
     OutPar1->Dump_Tri(Pra, Ion);
     OutPar1->Dump_Tri(Pra, CX);
+    OutPar1->Dump_Tri(Sn, R_with_H);
+    OutPar1->Dump_Tri(Sn, R_with_H2);
+    OutPar1->Dump_Tri(SE, R_with_H);
+    OutPar1->Dump_Tri(SE, R_with_H2);
+    OutPar1->Dump_Tri(Smu, R_with_H);
+    OutPar1->Dump_Tri(Smu, R_with_H2);
 
     if (K_Rec)
     {
@@ -578,6 +584,7 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
 
     OutPar2->Dump_Tri(n, n, 0);
     OutPar2->Dump_Tri(n, n, 1);
+    OutPar2->Dump_Tri(E, n, 0); // energy output
     // OutPar2->Dump_array_2D(n, n, 0);
     // OutPar2->Dump_array_2D(n, n, 1);
 
@@ -585,13 +592,19 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
     OutPar2->Dump_Tri(Sn, Ion);
     OutPar2->Dump_Tri(Sn, CX);
     OutPar2->Dump_Tri(Sn, Ela);
+    OutPar2->Dump_Tri(Sn, Diss1);
+    OutPar2->Dump_Tri(Sn, Diss2);
     OutPar2->Dump_Tri(SE, CX);
     OutPar2->Dump_Tri(SE_n, CX);
     OutPar2->Dump_Tri(SE, Ela);
     OutPar2->Dump_Tri(Smu, CX);
     OutPar2->Dump_Tri(Smu, Ela);
-    OutPar2->Dump_Tri(Sn, Diss1);
-    OutPar2->Dump_Tri(Sn, Diss2);
+    OutPar2->Dump_Tri(Sn, R_with_H);
+    OutPar2->Dump_Tri(Sn, R_with_H2);
+    OutPar2->Dump_Tri(SE, R_with_H);
+    OutPar2->Dump_Tri(SE, R_with_H2);
+    OutPar2->Dump_Tri(Smu, R_with_H);
+    OutPar2->Dump_Tri(Smu, R_with_H2);
     // OutPar2->Dump_Flux();
     for (int i = 0; i < 4; i++)
         OutPar2->Dump_Tri(Sn, DS[i], 1);

@@ -64,7 +64,7 @@ void read_extend_plasma();
 extern int N_poloidal, N_radial;
 extern bool K_log, StepLog, K_H2_elastic, K_EcrossBDrift, backGridBoundry, K_H, K_D, K_T;
 extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_Prob, K_back, K_dn, K_CX_DT, K_DT, K_flight, K_GRID, K_Pump, K_test1, K_test2, K_test3, K_Tn, K_Vi, K_Wallelement;
-extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, *K_Puff, K_database_Pra, K_mu;
+extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, *K_Puff, K_database_Pra, K_mu, K_PartoPar;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
 extern int K_T_array;
 extern double dt, Te_core, ne_core, NumPar_now, Tn_core, T_N, T_wall, Num_D2_pump, Num_T2_pump, coefficient_D, coefficient_T;

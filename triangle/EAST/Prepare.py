@@ -3,7 +3,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
-import matplotlib.colors as mcolors
 from matplotlib.lines import Line2D
 from matplotlib.legend_handler import HandlerTuple
 from matplotlib import rc
@@ -11,6 +10,8 @@ from matplotlib import rcParams
 from matplotlib.ticker import MultipleLocator
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.colors as colors
 import matplotlib.cm
 import copy
 import os
@@ -111,6 +112,7 @@ class Neutral:
         self.path = path
         self.IfT = IfT
         self.k_array=0
+        self.K_Tri=0
 
     def Neuread(self, K_Rec = 1):
         self.K_Rec = K_Rec
@@ -119,6 +121,12 @@ class Neutral:
         self.n_D2_1 = np.loadtxt(fname=self.path + "data/n_D2_1")
         self.T_D_0 = np.loadtxt(fname=self.path + "data/T_D_0")
         self.T_D2_0 = np.loadtxt(fname=self.path + "data/T_D2_0")
+
+        if(self.K_Tri): 
+            self.n_D_0_Tri = np.loadtxt(fname=self.path + "data/n_D_0_Tri")
+            self.n_D2_0_Tri = np.loadtxt(fname=self.path + "data/n_D2_0_Tri")
+            self.T_D_0_Tri = np.loadtxt(fname=self.path + "data/T_D_0_Tri")
+            self.T_D2_0_Tri = np.loadtxt(fname=self.path + "data/T_D2_0_Tri")
         
         if(self.k_array):
             self.n_D_0_array = Tn_array(39, self.path + "data/n_D_0_")
@@ -330,7 +338,9 @@ class Neutral:
                     self.Smu_Ela_D2_0_Ua[i, j] = abs(self.Smu_Ela_D2_0_Ua[i, j])
 
     def set_K_Rec(self):
-        self.K_Rec
+        self.K_Rec    
+    def set_K_Tri(self, K_Tri_):
+        self.K_Tri=K_Tri_
 def axset(ax_, p1, wall, ax_title, xlim, ylim, clim):
     ax_.add_collection(p1)
     ax_.autoscale_view()
@@ -369,7 +379,7 @@ def plot_scan(value, Value_label, file_name, Legend, cclim, iflog = 1):
                 zcol = com_zm[ix, iy, [1, 2, 4, 3]]
                 rcol.shape = (4, 1)
                 zcol.shape = (4, 1)
-                polygon = Polygon(np.column_stack((rcol, zcol)), True)
+                polygon = Polygon(np.column_stack((rcol, zcol)), closed=True)
                 patches.append(polygon)
 
         vals1 = np.zeros((ixe-ixs)*(iye-iys))
@@ -539,7 +549,7 @@ def row_scan(value1, value2, Value_magntude, Value_label, file_name, Legend, ccl
                 zcol = com_zm[ix, iy, [1, 2, 4, 3]]
                 rcol.shape = (4, 1)
                 zcol.shape = (4, 1)
-                polygon = Polygon(np.column_stack((rcol, zcol)), True)
+                polygon = Polygon(np.column_stack((rcol, zcol)), closed=True)
                 patches.append(polygon)
 
         vals1 = np.zeros((ixe-ixs)*(iye-iys))
