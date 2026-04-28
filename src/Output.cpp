@@ -611,40 +611,86 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
     OutPar2->Dump_Tri(Pra, DS[2], 1);
 
     string pathout;
-    pathout = Outputpath + OutPar1->name() + "_0_" + "Vx";
-    out.open(pathout);
-    for (int i = 0; i < N_poloidal; i++)
+    if (K_NNCs)
     {
-        for (int j = 0; j < N_radial; j++)
-            out << OutPar1->V_Grid(i, j, 0, 0) << "\t";
-        out << endl;
+        pathout = Casepath + OutPar1->name() + "_0_" + "V_Tri";
+        out.open(pathout);
+        for (int i = 0; i < Grid4.num_tris(); i++)
+        {
+            out << OutPar1->V_Grid_Tri(i, 0, 0) << "\t" << OutPar1->V_Grid_Tri(i, 1, 0) << "\t" << OutPar1->V_Grid_Tri(i, 2, 0) << endl;
+        }
+        out.close();
+
+        pathout = Casepath + OutPar2->name() + "_0_" + "V_Tri";
+        out.open(pathout);
+        for (int i = 0; i < Grid4.num_tris(); i++)
+        {
+            out << OutPar2->V_Grid_Tri(i, 0, 0) << "\t" << OutPar2->V_Grid_Tri(i, 1, 0) << "\t" << OutPar2->V_Grid_Tri(i, 2, 0) << endl;
+        }
+        out.close();
+
+        pathout = Casepath + OutPar1->name() + "_0_" + "T_Tri";
+        out.open(pathout);
+        for (int i = 0; i < Grid4.num_tris(); i++)
+        {
+            out << OutPar1->Tn_Tri(i, 0) << endl;
+        }
+        out.close();
+
+        pathout = Casepath + OutPar2->name() + "_0_" + "T_Tri";
+        out.open(pathout);
+        for (int i = 0; i < Grid4.num_tris(); i++)
+        {
+            out << OutPar2->Tn_Tri(i, 0) << endl;
+        }
+        out.close();
+
+        pathout = Casepath + OutPar1->name() + "_0_" + "n_Tri";
+        out.open(pathout);
+        for (int i = 0; i < Grid4.num_tris(); i++)
+        {
+            out << OutPar1->n_Tri(i, 0) << endl;
+        }
+        out.close();
+
+        pathout = Casepath + OutPar2->name() + "_0_" + "n_Tri";
+        out.open(pathout);
+        for (int i = 0; i < Grid4.num_tris(); i++)
+        {
+            out << OutPar2->n_Tri(i, 0) << endl;
+        }
+        out.close();
+    }
+
+    pathout = Outputpath + OutPar1->name() + "_0_" + "T_Tri";
+    out.open(pathout);
+    for (int i = 0; i < Grid4.num_tris(); i++)
+    {
+        out << OutPar1->Tn_Tri(i, 0) << endl;
     }
     out.close();
-    pathout = Outputpath + OutPar1->name() + "_0_" + "Vy";
+
+    pathout = Outputpath + OutPar2->name() + "_0_" + "T_Tri";
     out.open(pathout);
-    for (int i = 0; i < N_poloidal; i++)
+    for (int i = 0; i < Grid4.num_tris(); i++)
     {
-        for (int j = 0; j < N_radial; j++)
-            out << OutPar1->V_Grid(i, j, 1, 0) << "\t";
-        out << endl;
+        out << OutPar2->Tn_Tri(i, 0) << endl;
     }
     out.close();
-    pathout = Outputpath + OutPar2->name() + "_0_" + "Vx";
+
+    pathout = Outputpath + OutPar1->name() + "_0_" + "V_Tri";
     out.open(pathout);
-    for (int i = 0; i < N_poloidal; i++)
+    for (int i = 0; i < Grid4.num_tris(); i++)
     {
-        for (int j = 0; j < N_radial; j++)
-            out << OutPar2->V_Grid(i, j, 0, 0) << "\t";
-        out << endl;
+        out << OutPar1->V_Grid_Tri(i, 0, 0) << "\t" << OutPar1->V_Grid_Tri(i, 1, 0) << "\t" << OutPar1->V_Grid_Tri(i, 2, 0) << endl;
     }
     out.close();
-    pathout = Outputpath + OutPar2->name() + "_0_" + "Vy";
+
+    pathout = Outputpath + OutPar2->name() + "_0_" + "V_Tri";
     out.open(pathout);
-    for (int i = 0; i < N_poloidal; i++)
+    for (int i = 0; i < Grid4.num_tris(); i++)
     {
-        for (int j = 0; j < N_radial; j++)
-            out << OutPar2->V_Grid(i, j, 1, 0) << "\t";
-        out << endl;
+        out << OutPar2->V_Grid_Tri(i, 0, 0) << "\t" << OutPar2->V_Grid_Tri(i, 1, 0) << "\t" << OutPar2->V_Grid_Tri(i, 2, 0) << endl;
     }
     out.close();
 
@@ -667,7 +713,7 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
     }
     out.close();
 
-    pathout = Outputpath + "Vx_D_0_CX_Be";
+    /*pathout = Outputpath + "Vx_D_0_CX_Be";
     out.open(pathout);
     for (int i = 0; i < N_poloidal; i++)
     {
@@ -776,9 +822,9 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
             out << OutPar1->V_Grid_CX_Ion_Af(i, j, 2, 0) << "\t";
         out << endl;
     }
-    out.close();
+    out.close();*/
 
-    pathout = Outputpath + "Vx_Ua";
+    /*pathout = Outputpath + "Vx_Ua";
     out.open(pathout);
     for (int i = 0; i < N_poloidal; i++)
     {
@@ -832,5 +878,5 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
             out << OutPar1->V_D_1(i, j, 2, 0) << "\t";
         out << endl;
     }
-    out.close();
+    out.close();*/
 }

@@ -35,7 +35,7 @@ void Push(Particle *PP)
                 int num_intersect = 0;
                 for (int i = 0; i < 98; i++)
                 {
-                    if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][1][3], Grid[i][1][7], Grid[i][1][2], Grid[i][1][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                    if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][1][3], Grid[i][1][7], Grid[i][1][2], Grid[i][1][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
                         InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                         InterscePoint[num_intersect++][3] = i;
@@ -68,7 +68,7 @@ void Push(Particle *PP)
                 num_intersect = 0;
                 for (int i = 25; i < 73; i++)
                 {
-                    if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][36][0], Grid[i][36][4], Grid[i][36][1], Grid[i][36][5], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                    if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][36][0], Grid[i][36][4], Grid[i][36][1], Grid[i][36][5], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
                         InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                         InterscePoint[num_intersect++][3] = i;
@@ -92,7 +92,7 @@ void Push(Particle *PP)
                 /// search if the charged particle fly to target
                 num_intersect = 0;
                 for (int i = 24; i < 37; i++)
-                    if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                    if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
                         InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                         InterscePoint[num_intersect++][3] = i;
@@ -101,12 +101,12 @@ void Push(Particle *PP)
                 {
                     for (int i = 0; i < 38; i++)
                     {
-                        if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
                             InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                             InterscePoint[num_intersect++][3] = i;
                         }
-                        if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[96][i][1], Grid[96][i][5], Grid[96][i][2], Grid[96][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[96][i][1], Grid[96][i][5], Grid[96][i][2], Grid[96][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
                             InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                             InterscePoint[num_intersect++][3] = i + 38;
@@ -210,9 +210,9 @@ void Push(Particle *PP)
                         }
                         for (int i = 0; i < Grid1.Wall_num(); i++)
                         {
-                            if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                            if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                             {
-                                if (PointandLine(Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), PP->X_new(0), PP->X_new(1)))
+                                if (Tools::PointandLine(Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), PP->X_new(0), PP->X_new(1)))
                                 {
                                     InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                                     InterscePoint[num_intersect][3] = i;
@@ -234,9 +234,9 @@ void Push(Particle *PP)
                         // std::cout << PP->X(0) << '\t' << PP->X(1) << '\t' << PP->X_new(0) << '\t' << PP->X_new(1) << endl;
                         for (int i = 0; i < Grid1.PLasma_Grid_Boundry_num(); i++)
                         {
-                            if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 0), Grid1.PLasma_Grid_Boundry(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                            if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 0), Grid1.PLasma_Grid_Boundry(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                             {
-                                if (!PointandLine(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 0), Grid1.PLasma_Grid_Boundry(i + 1, 1), PP->X_new(0), PP->X_new(1)))
+                                if (!Tools::PointandLine(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 0), Grid1.PLasma_Grid_Boundry(i + 1, 1), PP->X_new(0), PP->X_new(1)))
                                 // if (InterscePoint[num_intersect][1] != PP->X(0) && InterscePoint[num_intersect][2] != PP->X(1))
                                 {
                                     InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
@@ -387,7 +387,7 @@ void Push(Particle *PP)
                     // std::cout << PP->X(0) << '\t' << PP->X(1) << '\t' << PP->X_new(0) << '\t' << PP->X_new(1) << endl;
                     for (int i = 0; i < Grid1.Wall_num(); i++)
                     {
-                        if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
                             if (InterscePoint[num_intersect][1] != PP->X(0) && InterscePoint[num_intersect][2] != PP->X(1))
                             {
@@ -530,12 +530,12 @@ void Push_Tri(Particle *PP)
              int num_intersect = 0;
              for (int i = 0; i < 38; i++)
              {
-                 if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                 if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                  {
                      InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                      InterscePoint[num_intersect++][3] = i;
                  }
-                 if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[96][i][1], Grid[96][i][5], Grid[96][i][2], Grid[96][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                 if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[96][i][1], Grid[96][i][5], Grid[96][i][2], Grid[96][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                  {
                      InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                      InterscePoint[num_intersect++][3] = i + 38;
@@ -547,7 +547,7 @@ void Push_Tri(Particle *PP)
              {
                  for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
                  {
-                     if (get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                     if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                      {
                          InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                          InterscePoint[num_intersect++][3] = i;

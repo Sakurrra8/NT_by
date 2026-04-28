@@ -35,13 +35,13 @@ void WallReflect()
 
         if (P == &H)
         {
-            if (Random() > coeff_recyc)
+            if (Tools::Random() > coeff_recyc)
             {
                 P->SetWeight(0.);
                 return;
             }
             // P->AddWallEro(InterscePoint[0][3]);
-            if (Random() < coeff_reflect / coeff_recyc)
+            if (Tools::Random() < coeff_reflect / coeff_recyc)
             {
                 P->setfate(0, 15, InterscePoint[0][4]);
                 P->Init(3, 0);
@@ -63,7 +63,7 @@ void WallReflect()
         }
         else if (P == &D)
         {
-            if (Random() > coeff_recyc)
+            if (Tools::Random() > coeff_recyc)
             {
                 P->SetWeight(0.);
                 return;
@@ -78,7 +78,7 @@ void WallReflect()
                 P->AddTargetEro(InterscePoint[0][3]);
             }
 
-            if (Random() < coeff_reflect / coeff_recyc)
+            if (Tools::Random() < coeff_reflect / coeff_recyc)
             {
                 P->setfate(0, 15, InterscePoint[0][4]);
                 P->Init(3, 0);
@@ -100,13 +100,13 @@ void WallReflect()
         }
         else if (P == &T)
         {
-            if (Random() > coeff_recyc)
+            if (Tools::Random() > coeff_recyc)
             {
                 P->SetWeight(0.);
                 return;
             }
             // P->AddWallEro(InterscePoint[0][3]);
-            if (Random() < coeff_reflect / coeff_recyc)
+            if (Tools::Random() < coeff_reflect / coeff_recyc)
             {
                 P->setfate(0, 15, InterscePoint[0][4]);
                 P->Init(3, 0);
@@ -128,7 +128,7 @@ void WallReflect()
         }
         else if (P == &H2 || P == &D2 || P == &T2)
         {
-            if (Random() > coeff_recyc)
+            if (Tools::Random() > coeff_recyc)
             {
                 P->SetWeight(0.);
                 return;
@@ -222,13 +222,13 @@ void WallReflect()
         {
             if (P == &H)
             {
-                if (Random() > coeff_recyc)
+                if (Tools::Random() > coeff_recyc)
                 {
                     P->SetWeight(0.);
                     return;
                 }
                 // P->AddWallEro(InterscePoint[0][3]);
-                if (Random() < coeff_reflect / coeff_recyc)
+                if (Tools::Random() < coeff_reflect / coeff_recyc)
                 {
                     P->setfate(0, 15, InterscePoint[0][4]);
                     P->Init(3, 0);
@@ -250,7 +250,7 @@ void WallReflect()
             }
             else if (P == &D)
             {
-                if (Random() > coeff_recyc)
+                if (Tools::Random() > coeff_recyc)
                 {
                     P->SetWeight(0.);
                     return;
@@ -265,7 +265,7 @@ void WallReflect()
                     P->AddTargetEro(InterscePoint[0][3]);
                 }
 
-                if (Random() < coeff_reflect / coeff_recyc)
+                if (Tools::Random() < coeff_reflect / coeff_recyc)
                 {
                     P->setfate(0, 15, InterscePoint[0][4]);
                     P->Init(3, 0);
@@ -287,13 +287,13 @@ void WallReflect()
             }
             else if (P == &T)
             {
-                if (Random() > coeff_recyc)
+                if (Tools::Random() > coeff_recyc)
                 {
                     P->SetWeight(0.);
                     return;
                 }
                 // P->AddWallEro(InterscePoint[0][3]);
-                if (Random() < coeff_reflect / coeff_recyc)
+                if (Tools::Random() < coeff_reflect / coeff_recyc)
                 {
                     P->setfate(0, 15, InterscePoint[0][4]);
                     P->Init(3, 0);
@@ -315,7 +315,7 @@ void WallReflect()
             }
             else if (P == &H2 || P == &D2 || P == &T2)
             {
-                if (Random() > coeff_recyc)
+                if (Tools::Random() > coeff_recyc)
                 {
                     P->SetWeight(0.);
                     return;

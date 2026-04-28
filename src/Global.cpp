@@ -1,6 +1,11 @@
 #include "Global.h"
 #include "Particle.h"
 
+// 1. 定义并初始化全局引擎
+// 使用 random_device 产生种子
+std::random_device rd;
+std::mt19937 g_gen(rd());
+
 /// path initialization
 string Inputpath;            // path for Inputfiles
 string Casepath;             //
@@ -66,6 +71,7 @@ int K_Tn = 1;       // 1 for relative speed energy for collision, 2 for 1.5*Tn f
 int K_Vi = 1;       // 1 for Ti maxwell and calculate the relative v; 2 for don't calculate the relative v;
 int K_mu = 3;       // 3 is the default option;
 int K_PartoPar = 0; // OP: if the PartoPar is working
+int K_NNCs = 0;
 
 int MeshMode; // Option 1: Orthogonal grid; 2: Full grid; 3: Triangular grid
 
@@ -111,21 +117,24 @@ std::vector<std::vector<double>> n_H_1, n_D_1, n_T_1;
 std::vector<double> n_H_1_Tri, n_D_1_Tri, n_T_1_Tri;
 
 // H 相关
-std::vector<double> n_H_0_Tri, T_H_0_Tri, T_H2_0_Tri, n_H2_0_Tri, ua_H_0_Tri, ua_H2_0_Tri;
+std::vector<double> n_H_0_Tri, T_H_0_Tri, T_H2_0_Tri, n_H2_0_Tri;
+std::vector<std::vector<double>> ua_H_0_Tri, ua_H2_0_Tri;
 std::vector<std::vector<double>> n_H_0, T_H_0, T_H2_0, n_H2_0;
 std::vector<std::vector<double>> n_H2_1, ua_H_1;
 std::array<double, 3> V_H_1_now, V_H_0_now, V_H2_0_now;
 std::vector<std::vector<double>> Vi_H, Ti_H_thermal;
 
 // D 相关
-std::vector<double> n_D_0_Tri, T_D_0_Tri, T_D2_0_Tri, n_D2_0_Tri, ua_D_0_Tri, ua_D2_0_Tri;
+std::vector<double> n_D_0_Tri, T_D_0_Tri, T_D2_0_Tri, n_D2_0_Tri;
+std::vector<std::vector<double>> ua_D_0_Tri, ua_D2_0_Tri;
 std::vector<std::vector<double>> n_D_0, T_D_0, T_D2_0, n_D2_0;
 std::vector<std::vector<double>> n_D2_1, ua_D_1;
 std::array<double, 3> V_D_1_now, V_D_0_now, V_D2_0_now;
 std::vector<std::vector<double>> Vi_D, Ti_D_thermal;
 
 // T 相关
-std::vector<double> n_T_0_Tri, T_T_0_Tri, T_T2_0_Tri, n_T2_0_Tri, ua_T_0_Tri, ua_T2_0_Tri;
+std::vector<double> n_T_0_Tri, T_T_0_Tri, T_T2_0_Tri, n_T2_0_Tri;
+std::vector<std::vector<double>> ua_T_0_Tri, ua_T2_0_Tri;
 std::vector<std::vector<double>> n_T_0, T_T_0, T_T2_0, n_T2_0;
 std::vector<std::vector<double>> n_T2_1, ua_T_1;
 std::array<double, 3> V_T_1_now, V_T_0_now, V_T2_0_now;
@@ -336,7 +345,10 @@ Particle *P;
 
 /// EIRENE
 EIRENE R3_2_3r_H4(EIRENE_H4, 6710);  // Mar via H2+
+EIRENE R3_2_3d_H4(EIRENE_H4, 6767);  // Mar via H2+
+EIRENE R3_2_3i_H4(EIRENE_H4, 6827);  // Mar via H2+
 EIRENE R2_2_17r_H4(EIRENE_H4, 7007); // Mar via H-
+EIRENE R2_2_17d_H4(EIRENE_H4, 7061); // Mar via H-
 EIRENE R2_2_5_H4(EIRENE_H4, 4511);   //$ e + H_2 = e + H + H$
 EIRENE R2_2_14_H2(EIRENE_H2, 2157);  //$ e + H_2^+ = H + H  $
 EIRENE R2_2_14_H4(EIRENE_H4, 4844);  //$ e + H_2^+ = H + H  $
@@ -357,6 +369,9 @@ EIRENE R0_3D_H3(EIRENE_H3, 3026);  //$ p + H_2 = p + H_2 ,\ $  elastic
 
 EIRENE R2_2_12_H4(EIRENE_H4, 4788); //$ e + H_2^+ = e + H + H^+  $
 EIRENE R2_2_11_H4(EIRENE_H4, 4732); //$ e + H_2^+ = 2e + H^+ + H^+ $
+EIRENE R2_2_17_H2(EIRENE_H2, 2188); // $ e + H_2^+ = H + H^- $
+EIRENE R7_2_3a_H4(EIRENE_H4, 6888);
+EIRENE R7_2_3b_H4(EIRENE_H4, 6948);
 
 EIRENE R5_3_1_H3(EIRENE_H3, 5533, "hydhel"); //$ He+ + He = He + He+
 

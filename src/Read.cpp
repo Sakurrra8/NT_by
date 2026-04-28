@@ -93,8 +93,8 @@ void Read()
     /*for (int i = 0; i < 10000; i++)
     {
         Zone_temp = 0;
-        x_temp[0] = Random() * (Grid1.Rectangular_End(0) - Grid1.Rectangular_Start(0)) + Grid1.Rectangular_Start(0);
-        x_temp[1] = Random() * (Grid1.Rectangular_End(1) - Grid1.Rectangular_Start(1)) + Grid1.Rectangular_Start(1);
+        x_temp[0] = Tools::Random() * (Grid1.Rectangular_End(0) - Grid1.Rectangular_Start(0)) + Grid1.Rectangular_Start(0);
+        x_temp[1] = Tools::Random() * (Grid1.Rectangular_End(1) - Grid1.Rectangular_Start(1)) + Grid1.Rectangular_Start(1);
         D.SetX_new(0, x_temp[0]);
         D.SetX_new(1, x_temp[1]);
         D.Find();
@@ -200,6 +200,24 @@ void Read()
         for (int j = 0; j < 38; j++)
         {
             Etor[i][j] = 0.;
+        }
+    }
+
+    T_0_read_Tri(Casepath + "D_0_n_Tri", n_D_0_Tri);
+    T_0_read_Tri(Casepath + "D2_0_n_Tri", n_D2_0_Tri);
+    T_0_read_Tri(Casepath + "D_0_T_Tri", T_D_0_Tri);
+    T_0_read_Tri(Casepath + "D2_0_T_Tri", T_D2_0_Tri);
+    V_0_read_Tri(Casepath + "D_0_V_Tri", ua_D_0_Tri);
+    V_0_read_Tri(Casepath + "D2_0_V_Tri", ua_D2_0_Tri);
+    for (int i = 0; i < Grid4.num_tris(); i++)
+    {
+        if (T_D_0_Tri[i] < 0.1)
+        {
+            T_D_0_Tri[i] = 0.1;
+        }
+        if (T_D2_0_Tri[i] < 0.1)
+        {
+            T_D2_0_Tri[i] = 0.1;
         }
     }
 
@@ -401,6 +419,34 @@ void PlasmaRead(string Path, std::vector<std::vector<double>> &Plasma, std::vect
     }
     out_temp.close();
     fp.close();*/
+}
+
+void V_0_read_Tri(string Path, std::vector<std::vector<double>> &Plasma)
+{
+    std::ifstream fp;            // file stream
+    fp.open(Path, std::ios::in); // ios::in means read
+    if (!fp.is_open())
+    {
+        cerr << "This file READING for " + Path + " have some problem!!!\n";
+    }
+    for (int i = 0; i < Grid4.num_tris(); i++)
+    {
+        fp >> Plasma[i][0] >> Plasma[i][1] >> Plasma[i][2];
+    }
+}
+
+void T_0_read_Tri(string Path, std::vector<double> &Plasma)
+{
+    std::ifstream fp;            // file stream
+    fp.open(Path, std::ios::in); // ios::in means read
+    if (!fp.is_open())
+    {
+        cerr << "This file READING for " + Path + " have some problem!!!\n";
+    }
+    for (int i = 0; i < Grid4.num_tris(); i++)
+    {
+        fp >> Plasma[i];
+    }
 }
 
 void PlasmaRead(string Path, std::vector<std::vector<double>> &Plasma)

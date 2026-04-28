@@ -17,6 +17,7 @@
 #include "Grid.h"
 #include "WallImpactTracker.h"
 #include "WallEro.h"
+#include "utils.h"
 // #include <sys/stat.h>
 // #include <sys/types.h>
 // #include <dirent.h>
@@ -55,8 +56,6 @@ void Moncar();
 void Output();
 void Dump_2D_Global(double Var[98][38], string name);
 void flight(int i, int j);
-double intersect(double *A, double *B, int i);
-double randomSign();
 double Xrecycling(double rand_, int a, int b);
 void read_extend_plasma();
 
@@ -66,7 +65,7 @@ extern bool K_log, StepLog, K_H2_elastic, K_EcrossBDrift, backGridBoundry, K_H, 
 extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_Prob, K_back, K_dn, K_CX_DT, K_DT, K_flight, K_GRID, K_Pump, K_test1, K_test2, K_test3, K_Tn, K_Vi, K_Wallelement;
 extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, *K_Puff, K_database_Pra, K_mu, K_PartoPar;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
-extern int K_T_array;
+extern int K_T_array, K_NNCs;
 extern double dt, Te_core, ne_core, NumPar_now, Tn_core, T_N, T_wall, Num_D2_pump, Num_T2_pump, coefficient_D, coefficient_T;
 extern double Num_CD4_pump, t_max, Ratio_T, Ratio_D_Coll, Ratio_T_Coll, Ratio_DT_Coll, coeff_puff;
 extern double DTmass, D2Tmass, DT2mass, HH2mass, DD2mass, TT2mass, H2H2mass, D2D2mass, T2T2mass;
@@ -88,21 +87,24 @@ extern std::vector<std::vector<double>> ne, Te, Ti, Te_coll, Ti_coll;
 extern std::vector<std::vector<double>> n_H_1, n_D_1, n_T_1;
 
 // H 相关
-extern std::vector<double> n_H_0_Tri, T_H_0_Tri, T_H2_0_Tri, n_H2_0_Tri, ua_H_0_Tri, ua_H2_0_Tri;
+extern std::vector<double> n_H_0_Tri, T_H_0_Tri, T_H2_0_Tri, n_H2_0_Tri;
+extern std::vector<std::vector<double>> ua_H_0_Tri, ua_H2_0_Tri;
 extern std::vector<std::vector<double>> n_H_0, T_H_0, T_H2_0, n_H2_0;
 extern std::vector<std::vector<double>> n_H2_1, ua_H_1;
 extern std::array<double, 3> V_H_1_now, V_H_0_now, V_H2_0_now; // 原来是固定长度 3 的数组
 extern std::vector<std::vector<double>> Vi_H, Ti_H_thermal;
 
 // D 相关
-extern std::vector<double> n_D_0_Tri, T_D_0_Tri, T_D2_0_Tri, n_D2_0_Tri, ua_D_0_Tri, ua_D2_0_Tri;
+extern std::vector<double> n_D_0_Tri, T_D_0_Tri, T_D2_0_Tri, n_D2_0_Tri;
+extern std::vector<std::vector<double>> ua_D_0_Tri, ua_D2_0_Tri;
 extern std::vector<std::vector<double>> n_D_0, T_D_0, T_D2_0, n_D2_0;
 extern std::vector<std::vector<double>> n_D2_1, ua_D_1;
 extern std::array<double, 3> V_D_1_now, V_D_0_now, V_D2_0_now; // 原来是固定长度 3 的数组
 extern std::vector<std::vector<double>> Vi_D, Ti_D_thermal;
 
 // T 相关
-extern std::vector<double> n_T_0_Tri, T_T_0_Tri, T_T2_0_Tri, n_T2_0_Tri, ua_T_0_Tri, ua_T2_0_Tri;
+extern std::vector<double> n_T_0_Tri, T_T_0_Tri, T_T2_0_Tri, n_T2_0_Tri;
+extern std::vector<std::vector<double>> ua_T_0_Tri, ua_T2_0_Tri;
 extern std::vector<std::vector<double>> n_T_0, T_T_0, T_T2_0, n_T2_0;
 extern std::vector<std::vector<double>> n_T2_1, ua_T_1;
 extern std::array<double, 3> V_T_1_now, V_T_0_now, V_T2_0_now;
@@ -264,8 +266,11 @@ enum EireneFit
     EIRENE_H10
 };
 /// EIRENE
-extern EIRENE R3_2_3r_H4;  // Mar via H2+
-extern EIRENE R2_2_17r_H4; // Mar via H-
+extern EIRENE R3_2_3r_H4;  // MAR via H2+
+extern EIRENE R3_2_3d_H4;  // MAD via H2+
+extern EIRENE R3_2_3i_H4;  // MAI via H2+
+extern EIRENE R2_2_17r_H4; // MAR via H-
+extern EIRENE R2_2_17d_H4; // MAD via H-
 extern EIRENE R2_2_5_H4;   //$ e + H_2 = e + H + H$
 extern EIRENE R2_2_14_H2;
 extern EIRENE R2_2_14_H4; //$ e + H_2^+ = H + H  $
@@ -284,6 +289,9 @@ extern EIRENE R0_3T_H3;   //$ p + H_2 = p + H_2 ,\ $  elastic
 extern EIRENE R0_3D_H3;   //$ p + H_2 = p + H_2 ,\ $  elastic
 extern EIRENE R2_2_12_H4; //$ e + H_2^+ = e + H + H^+  $
 extern EIRENE R2_2_11_H4; //$ e + H_2^+ = 2e + H^+ + H^+ $
+extern EIRENE R2_2_17_H2; //
+extern EIRENE R7_2_3a_H4;
+extern EIRENE R7_2_3b_H4;
 
 extern EIRENE R5_3_1_H3; //$ He+ + He = He + He+
 

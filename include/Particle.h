@@ -14,18 +14,11 @@
 using namespace std;
 using namespace H5;
 
-double Maxwell(double E, double Mass);
-double Random();
 void Edge(int Start[2], int End[2], double a[], double b[], int *k);
 bool IfinEdge(double a[], double b[], int k, double x, double y);
 int Xfind(int Start[], int End[], double x, double y);
 int Yfind(int Start[], int End[], double x, double y);
-void Vinit_cosine(std::vector<double> &Vt, double Rcos, double Rsin);
-int get_line_intersection(double p0_x, double p0_y, double p1_x, double p1_y,
-						  double p2_x, double p2_y, double p3_x, double p3_y, double *i_x, double *i_y);
-
 int ZonefromXY(int X, int Y);
-int PointandLine(double line_x1, double line_y1, double line_x2, double line_y2, double point_x, double point_y);
 string fatename(int i);
 string sourcename(int i);
 
@@ -493,6 +486,7 @@ public:
 	double V(int i);
 	double V_Charge(int i);
 	double V_Grid(int i, int j, int k, int m);
+	double V_Grid_Tri(int i, int k, int m);
 	double V_D_1(int i, int j, int k, int m);
 	double V_Grid_CX_Ion_Af(int i, int j, int k, int m);
 	double V_Grid_CX_Ion_Be(int i, int j, int k, int m);
@@ -506,6 +500,7 @@ public:
 	int boundary_start();
 	void SetXY(int i, int j);
 	double Tn();
+	double Tn_Tri(int i, int k);
 	int IfColl();
 	int IfParticleOut(int i);
 	int IfFlightOut();
@@ -516,6 +511,7 @@ public:
 	void addCollProb(int zhonglei, ADAS *Coll1 = NULL, EIRENE *Coll2 = NULL);
 	void CalTn();
 	double n(int i, int j, int k);
+	double n_Tri(int i, int k);
 	double T_n(int i, int j, int k);
 	double Gamma();
 	double Weight_Target(int i);

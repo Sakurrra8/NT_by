@@ -319,10 +319,10 @@ void Particle::Vinit_ionReflect(std::vector<double> &Vt, double Rcos, double Rsi
 	if (K_ReflectDirection == 1)
 		do
 		{
-			double ztheta = 6.283185307 * Random();
+			double ztheta = 6.283185307 * Tools::Random();
 			double zcost = cos(ztheta);
 			double zsint = sin(ztheta);
-			double zpsi = Random() * 3.1415927;
+			double zpsi = Tools::Random() * 3.1415927;
 			double zcosp = abs(cos(zpsi));
 			double zsinp = sin(zpsi);
 			double Vx = zsint * zsinp;
@@ -351,14 +351,14 @@ void Particle::Vinit_ionReflect(std::vector<double> &Vt, double Rcos, double Rsi
 		z = (B_target[0] * normalLine[0] + B_target[1] * normalLine[1]) * (B_target[1] * normalLine[0] - B_target[0] * normalLine[1]); // Determine which quadrant B is in the target plate
 		if (z < 0)
 		{
-			double R = Random() * pi / 2.;
+			double R = Tools::Random() * pi / 2.;
 			V_incident[0] = -(normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[1] = -(normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[2] = sin(R);
 		}
 		else
 		{
-			double R = Random() * pi / 2.;
+			double R = Tools::Random() * pi / 2.;
 			V_incident[0] = (normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[1] = (normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[2] = sin(R);
@@ -366,10 +366,10 @@ void Particle::Vinit_ionReflect(std::vector<double> &Vt, double Rcos, double Rsi
 
 		do
 		{
-			double ztheta = 2 * pi * Random();
+			double ztheta = 2 * pi * Tools::Random();
 			double zcost = cos(ztheta);
 			double zsint = sin(ztheta);
-			double zpsi = Random() * pi;
+			double zpsi = Tools::Random() * pi;
 			double zcosp = abs(cos(zpsi));
 			double zsinp = sin(zpsi);
 			double Vx = zsint * zsinp;
@@ -401,14 +401,14 @@ void Particle::Vinit_ionReflect(std::vector<double> &Vt, double Rcos, double Rsi
 		double z_temp = (B_target[0] * normalLine[0] + B_target[1] * normalLine[1]) * (B_target[1] * normalLine[0] - B_target[0] * normalLine[1]); // Determine which quadrant B is in the target plate
 		if (z_temp < 0)
 		{
-			double R = Random() * pi / 2.;
+			double R = Tools::Random() * pi / 2.;
 			V_incident[0] = -(normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[1] = -(normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[2] = -sin(R);
 		}
 		else
 		{
-			double R = Random() * pi / 2.;
+			double R = Tools::Random() * pi / 2.;
 			V_incident[0] = (normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[1] = (normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
 			V_incident[2] = -sin(R);
@@ -429,10 +429,10 @@ void Particle::Vinit_neutralReflect(std::vector<double> &Vt, double Rcos, double
 	if (K_ReflectDirection == 1)
 		do
 		{
-			double ztheta = 6.283185307 * Random();
+			double ztheta = 6.283185307 * Tools::Random();
 			double zcost = cos(ztheta);
 			double zsint = sin(ztheta);
-			double zpsi = Random() * 3.1415927;
+			double zpsi = Tools::Random() * 3.1415927;
 			double zcosp = abs(cos(zpsi));
 			double zsinp = sin(zpsi);
 			double Vx = zsint * zsinp;
@@ -448,10 +448,10 @@ void Particle::Vinit_neutralReflect(std::vector<double> &Vt, double Rcos, double
 		double z, projector[3], normalLine[3] = {-Rsin, Rcos, 0};
 		do
 		{
-			double ztheta = 2 * pi * Random();
+			double ztheta = 2 * pi * Tools::Random();
 			double zcost = cos(ztheta);
 			double zsint = sin(ztheta);
-			double zpsi = Random() * pi;
+			double zpsi = Tools::Random() * pi;
 			double zcosp = abs(cos(zpsi));
 			double zsinp = sin(zpsi);
 			double Vx = zsint * zsinp;
@@ -499,7 +499,7 @@ void Particle::Init(int k, int z)
 		boundary_start_ = 0;
 		X_[0] = Xrecyc[z][0];
 		X_[1] = Xrecyc[z][1];
-		// double rand_temp = Random();
+		// double rand_temp = Tools::Random();
 		// X_[0] = Xrecycling(rand_temp, z, 0);
 		// X_[1] = Xrecycling(rand_temp, z, 1);
 		X_[2] = 0;
@@ -555,7 +555,7 @@ void Particle::Init(int k, int z)
 		if (this == &D)
 		{
 			Tn_ = Tn_D_recyc[z];
-			// Vinit_ionReflect(V_, -theta[z][0], -theta[z][1], z);
+			// Vinit_ionReflect(V_, theta[z][0], theta[z][1], z);
 			emit_particle(P1, P2, P3, 2, InciDir);
 			// std::cout << "first X: " << X_[0] << "\t" << X_[1] << "\t" << X_[2] << endl;
 			// std::cout << "first V: " << V_[0] << "\t" << V_[1] << "\t" << V_[2] << endl;
@@ -568,11 +568,11 @@ void Particle::Init(int k, int z)
 		else if (this == &H2 || this == &D2 || this == &T2)
 		{
 			Tn_ = T_wall;
-			// Vinit_cosine(V_, theta[z][0], theta[z][1]);
+			// Tools::Vinit_cosine(V_, theta[z][0], theta[z][1]);
 			emit_particle(P1, P2, P3, 1, InciDir);
 		}
 		if (K_Maxwell == 1)
-			vel = Maxwell(Tn_, mass_);
+			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
 
@@ -618,8 +618,8 @@ void Particle::Init(int k, int z)
 		{
 			pause();
 			double Rand_temp1, Rand_temp2;
-			Rand_temp1 = 2 * pi * Random();
-			Rand_temp1 = pi * Random();
+			Rand_temp1 = 2 * pi * Tools::Random();
+			Rand_temp1 = pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 			V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -636,17 +636,17 @@ void Particle::Init(int k, int z)
 		if (K_Vi == 2)
 		{
 			if (K_Maxwell == 1)
-				vel = Maxwell(Ti[XY_[0]][XY_[1]], m_A);
+				vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], m_A);
 			else if (K_Maxwell == 2)
 				vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / m_A);
-			Vtheta = 2 * pi * Random();
-			Vphi = pi * Random();
+			Vtheta = 2 * pi * Tools::Random();
+			Vphi = pi * Tools::Random();
 			V_ion[0] = vel * sin(Vphi) * cos(Vtheta);
 			V_ion[1] = vel * sin(Vphi) * sin(Vtheta);
 			V_ion[2] = vel * cos(Vphi);
 		}
-		Vtheta = 2 * pi * Random();
-		Vphi = pi * Random();
+		Vtheta = 2 * pi * Tools::Random();
+		Vphi = pi * Tools::Random();
 		Modules = sqrt(pow(V_temp[0] - V_ion[0], 2) + pow(V_temp[1] - V_ion[1], 2) + pow(V_temp[2] - V_ion[2], 2));
 		// z = 1 for particle B, z = 2 for particle A
 		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
@@ -732,11 +732,11 @@ void Particle::Init(int k, int z)
 			{
 				if (InterscePoint[0][4] == 11)
 				{
-					Vinit_cosine(V_, cosang[(int)InterscePoint[0][3]], sinang[(int)InterscePoint[0][3]]);
+					Tools::Vinit_cosine(V_, cosang[(int)InterscePoint[0][3]], sinang[(int)InterscePoint[0][3]]);
 				}
 				else if (InterscePoint[0][4] == 1)
 				{
-					Vinit_cosine(V_, Grid1.Cos_target((int)InterscePoint[0][3]), Grid1.Sin_target((int)InterscePoint[0][3]));
+					Tools::Vinit_cosine(V_, Grid1.Cos_target((int)InterscePoint[0][3]), Grid1.Sin_target((int)InterscePoint[0][3]));
 				}
 				else
 				{
@@ -810,7 +810,7 @@ void Particle::Init(int k, int z)
 			{
 				if (InterscePoint[0][4] == 11 || InterscePoint[0][4] == 1)
 				{
-					Vinit_cosine(V_, Cos_temp, Sin_temp);
+					Tools::Vinit_cosine(V_, Cos_temp, Sin_temp);
 				}
 				else
 				{
@@ -849,7 +849,7 @@ void Particle::Init(int k, int z)
 		// '\t'; std::cout << '\t' << name_ << '\t' << Charge_ << '\t' << V_[0] <<
 		// '\t' << V_[1] << '\t' << V_[2] << endl;
 		if (K_Maxwell == 1)
-			vel = Maxwell(Tn_, mass_);
+			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
 		// std::cout << name_ + ": " << Tn_ << " " << V_[0] << "," << V_[1] << "," << V_[2] << endl;
@@ -861,8 +861,8 @@ void Particle::Init(int k, int z)
 		Charge_ = 0;
 		fate_[0] = 4;
 		sourcePar_[0] = 12;
-		double Vtheta = 2 * pi * Random();
-		double Vphi = pi * Random();
+		double Vtheta = 2 * pi * Tools::Random();
+		double Vphi = pi * Tools::Random();
 
 		/*VtoVcharge();
 		VchargetoV();*/
@@ -872,7 +872,7 @@ void Particle::Init(int k, int z)
 			int b = Tri_B2_[z][1];
 			Tn_ = Ti[a][b];
 			if (K_Maxwell == 1)
-				vel = Maxwell(Tn_, mass_);
+				vel = Tools::Maxwell(Tn_, mass_);
 			else if (K_Maxwell == 2)
 				vel = sqrt((3.0 * qe * Tn_) / mass_);
 			Tri_Index_ = z;
@@ -965,7 +965,7 @@ void Particle::Init(int k, int z)
 			int b = z % N_radial;
 			Tn_ = Ti[a][b];
 			if (K_Maxwell == 1)
-				vel = Maxwell(Tn_, mass_);
+				vel = Tools::Maxwell(Tn_, mass_);
 			else if (K_Maxwell == 2)
 				vel = sqrt((3.0 * qe * Tn_) / mass_);
 			Weight_ = Weight_Grid_[a][b];
@@ -1044,7 +1044,7 @@ void Particle::Init(int k, int z)
 			NumPar_now *= 4;
 
 		X_[0] = 1.75590002441406;
-		X_[1] = (1.082 - 1.048) * Random() - 1.082;
+		X_[1] = (1.082 - 1.048) * Tools::Random() - 1.082;
 		X_[2] = 0;
 
 		XY_[0] = -1;
@@ -1052,10 +1052,10 @@ void Particle::Init(int k, int z)
 		Zone_ = 6;
 
 		if (K_Maxwell == 1)
-			vel = Maxwell(Tn_, mass_);
+			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
-		Vinit_cosine(V_, 0, 1);
+		Tools::Vinit_cosine(V_, 0, 1);
 		// std::cout << "fashe: " << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 	}
 	else if (k == 6) // Calculate the velocity after the Collision
@@ -1064,9 +1064,9 @@ void Particle::Init(int k, int z)
 		/*if (fate_[0] != 9 && (fate_[0] >= 7 || fate_[0] <= 14))
 			if (sourcePar_[0] == 4)
 			{
-				double V_temp1[3], V_temp2[3] = {Random(), Random(), Random()};
+				double V_temp1[3], V_temp2[3] = {Tools::Random(), Tools::Random(), Tools::Random()};
 				for (int i = 0; i < 3; i++)
-					V_temp1[i] = intersect(V_temp2, V_, i);
+					V_temp1[i] = Tools::intersect(V_temp2, V_, i);
 				V_temp2[0] = sqrt(pow(V_temp1[0], 2) + pow(V_temp1[1], 2) + pow(V_temp1[2], 2));
 				V_temp2[1] = sqrt(pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2));
 				for (int i = 0; i < 3; i++)
@@ -1081,7 +1081,7 @@ void Particle::Init(int k, int z)
 		for (int i = 0; i < 3; i++)
 			V_[i] = V_[i] / vel;
 		if (K_Maxwell == 1)
-			vel = Maxwell(Tn_, mass_);
+			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
 		// std::cout << vel << endl;
@@ -1121,8 +1121,8 @@ void Particle::Init(int k, int z)
 		{
 			pause();
 			double Rand_temp1, Rand_temp2;
-			Rand_temp1 = 2 * pi * Random();
-			Rand_temp1 = pi * Random();
+			Rand_temp1 = 2 * pi * Tools::Random();
+			Rand_temp1 = pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 			V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -1138,10 +1138,10 @@ void Particle::Init(int k, int z)
 		double Vtheta, Vphi;
 		if (K_Vi == 2)
 		{
-			Vtheta = 2 * pi * Random();
-			Vphi = pi * Random();
+			Vtheta = 2 * pi * Tools::Random();
+			Vphi = pi * Tools::Random();
 			if (K_Maxwell == 1)
-				vel = Maxwell(Ti[XY_[0]][XY_[1]], m_A);
+				vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], m_A);
 			else if (K_Maxwell == 2)
 				vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / m_A);
 			V_ion[0] = vel * sin(Vphi) * cos(Vtheta);
@@ -1155,8 +1155,8 @@ void Particle::Init(int k, int z)
 			std::cout << "1V of neu: " << V_temp[0] << ", " << V_temp[1] << ", " << V_temp[2] << " T:"
 					  << 1. / 2. * m_B * (pow(V_temp[0], 2) + pow(V_temp[1], 2) + pow(V_temp[2], 2)) / qe << endl;
 		}
-		Vtheta = 2 * pi * Random();
-		Vphi = pi * Random();
+		Vtheta = 2 * pi * Tools::Random();
+		Vphi = pi * Tools::Random();
 		Modules = sqrt(pow(V_temp[0] - V_ion[0], 2) +
 					   pow(V_temp[1] - V_ion[1], 2) + pow(V_temp[2] - V_ion[2], 2));
 		// z = 1 for particle B, z = 2 for particle A
@@ -1204,7 +1204,7 @@ void Particle::Init(int k, int z)
 		}
 
 		// location of pumping
-		double rand_temp = Random();
+		double rand_temp = Tools::Random();
 		X_[0] = (Grid1.Wall(116, 0) - Grid1.Wall(115, 0)) * rand_temp + Grid1.Wall(115, 0);
 		X_[1] = (Grid1.Wall(116, 1) - Grid1.Wall(115, 1)) * rand_temp + Grid1.Wall(115, 1);
 		X_[2] = 0;
@@ -1213,10 +1213,10 @@ void Particle::Init(int k, int z)
 		Zone_ = 6;
 
 		if (K_Maxwell == 1)
-			vel = Maxwell(Tn_, mass_);
+			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
-		Vinit_cosine(V_, cosang[115], sinang[115]);
+		Tools::Vinit_cosine(V_, cosang[115], sinang[115]);
 		// std::cout << "fashe: " << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 		// std::cout << V_[0] << V_[1] << V_[2] << endl;
 	}
@@ -1227,7 +1227,7 @@ void Particle::Init(int k, int z)
 		double V_ion[3], V_temp[3], m_A, m_B, Modules;
 		if (z == 1)
 		{
-			if (this == &T || this == &T2)
+			if (this == &D || this == &D2)
 			{
 				m_A = Dmass;
 				if (K_Vi == 1)
@@ -1237,7 +1237,7 @@ void Particle::Init(int k, int z)
 					V_ion[2] = V_D_0_now[0];
 				}
 			}
-			if (this == &D || this == &D2)
+			if (this == &T || this == &T2)
 			{
 				m_A = Tmass;
 				if (K_Vi == 1)
@@ -1250,7 +1250,7 @@ void Particle::Init(int k, int z)
 		}
 		else if (z == 2)
 		{
-			if (this == &T || this == &T2)
+			if (this == &D || this == &D2)
 			{
 				m_A = D2mass;
 				if (K_Vi == 1)
@@ -1260,7 +1260,7 @@ void Particle::Init(int k, int z)
 					V_ion[2] = V_D2_0_now[0];
 				}
 			}
-			if (this == &D || this == &D2)
+			if (this == &T || this == &T2)
 			{
 				m_A = T2mass;
 				if (K_Vi == 1)
@@ -1277,10 +1277,11 @@ void Particle::Init(int k, int z)
 				V_temp[i] = V_[i];
 		else
 		{
+			std::cout << "The Cahrge_ is wrong!" << endl;
 			pause();
 			double Rand_temp1, Rand_temp2;
-			Rand_temp1 = 2 * pi * Random();
-			Rand_temp1 = pi * Random();
+			Rand_temp1 = 2 * pi * Tools::Random();
+			Rand_temp1 = pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 			V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -1294,18 +1295,6 @@ void Particle::Init(int k, int z)
 			V_temp[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
 		}
 		double Vtheta, Vphi;
-		if (K_Vi == 2)
-		{
-			Vtheta = 2 * pi * Random();
-			Vphi = pi * Random();
-			if (K_Maxwell == 1)
-				vel = Maxwell(Ti[XY_[0]][XY_[1]], m_A);
-			else if (K_Maxwell == 2)
-				vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / m_A);
-			V_ion[0] = vel * sin(Vphi) * cos(Vtheta);
-			V_ion[1] = vel * sin(Vphi) * sin(Vtheta);
-			V_ion[2] = vel * cos(Vphi);
-		}
 		if (K_test3)
 		{
 			std::cout << "1V of ion: " << V_ion[0] << ", " << V_ion[1] << ", " << V_ion[2] << " T:"
@@ -1313,8 +1302,8 @@ void Particle::Init(int k, int z)
 			std::cout << "1V of neu: " << V_temp[0] << ", " << V_temp[1] << ", " << V_temp[2] << " T:"
 					  << 1. / 2. * m_B * (pow(V_temp[0], 2) + pow(V_temp[1], 2) + pow(V_temp[2], 2)) / qe << endl;
 		}
-		Vtheta = 2 * pi * Random();
-		Vphi = pi * Random();
+		Vtheta = 2 * pi * Tools::Random();
+		Vphi = pi * Tools::Random();
 		Modules = sqrt(pow(V_temp[0] - V_ion[0], 2) + pow(V_temp[1] - V_ion[1], 2) + pow(V_temp[2] - V_ion[2], 2));
 		// z = 1 for particle B, z = 2 for particle A
 		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
@@ -1430,8 +1419,8 @@ void Particle::VtoVcharge()
 void Particle::VchargetoV()
 {
 	double Rand_temp1, Rand_temp2;
-	Rand_temp1 = 2 * pi * Random();
-	Rand_temp1 = pi * Random();
+	Rand_temp1 = 2 * pi * Tools::Random();
+	Rand_temp1 = pi * Tools::Random();
 	double V_temp1[3], V_temp2[3];
 	V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 	V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -1500,7 +1489,7 @@ void Particle::track()
 				XY_new_[0] = -2;
 				XY_new_[1] = -2;*/
 				d_flight_ = 1.;
-				Rand_flight_ = Random();
+				Rand_flight_ = Tools::Random();
 				while (!IfColl_ && Zone_ < 6 && Zone_ > 1)
 				{
 					/*if (boundary_start_ && IfParticleOut(boundary_start_))
@@ -1514,7 +1503,7 @@ void Particle::track()
 					boundary_start_ = 0;
 					XY_new_[0] = -2;
 					XY_new_[1] = -2;*/
-					// dt_ = -log(Random()) * lambda_min_[XY_[0]][XY_[1]][Charge_];
+					// dt_ = -log(Tools::Random()) * lambda_min_[XY_[0]][XY_[1]][Charge_];
 					/*if (boundary_start_)
 					{
 						if (XY_new_[0] == 0)
@@ -1537,7 +1526,7 @@ void Particle::track()
 						}
 						else if (K_flight == 3)
 						{
-							dt_ = -log(Random()) * lambda_min_[Charge_];
+							dt_ = -log(Tools::Random()) * lambda_min_[Charge_];
 						}
 						/*if (dt_ <= 0)
 						{
@@ -1554,7 +1543,7 @@ void Particle::track()
 						}
 						else if (K_flight == 3)
 						{
-							dt_ = -log(Random()) * lambda_min_[Charge_];
+							dt_ = -log(Tools::Random()) * lambda_min_[Charge_];
 						}
 					}
 					if (XY_[0] == -1 || XY_[1] == -1)
@@ -1615,7 +1604,7 @@ void Particle::track()
 			}
 			/*else if (K_flight == 3)
 			{
-				dt_ = -log(Random()) * lambda_min_[Charge_];
+				dt_ = -log(Tools::Random()) * lambda_min_[Charge_];
 				for (int i = 0; i < 3; i++)
 					X_new_[i] = X_[i] + dt_ * V_[i];
 				if (K_GRID)
@@ -1634,7 +1623,7 @@ void Particle::track()
 				// std::cout << PP->X(0) << '\t' << PP->X(1) << '\t' << PP->X_new(0) << '\t' << PP->X_new(1) << endl;
 				/*for (int i = 0; i < Grid1.Core_Boundry_num(); i++)
 				{
-					if (get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Core_Boundry(i, 0), Grid1.Core_Boundry(i, 1), Grid1.Core_Boundry(i + 1, 0), Grid1.Core_Boundry(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+					if (Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Core_Boundry(i, 0), Grid1.Core_Boundry(i, 1), Grid1.Core_Boundry(i + 1, 0), Grid1.Core_Boundry(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
 					{
 						InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - X_[0]), 2) + pow((InterscePoint[num_intersect][2] - X_[1]), 2));
 						InterscePoint[num_intersect][3] = i;
@@ -1700,7 +1689,7 @@ void Particle::track()
 			{
 				if (K_flight == 1)
 				{
-					dt_ = log(Random()) * lambda_[XY_[0]][XY_[1]][Charge_];
+					dt_ = log(Tools::Random()) * lambda_[XY_[0]][XY_[1]][Charge_];
 					for (int i = 0; i < 3; i++)
 						X_new_[i] = X_[i] - V_[i] * dt_ * 100.;
 				}
@@ -1746,7 +1735,7 @@ void Particle::track()
 				track();
 			}
 			if (Zone_ == 6)
-				if (Random() < 0.95 && backGridBoundry)
+				if (Tools::Random() < 0.95 && backGridBoundry)
 				{
 					for (int i = 0; i < 3; i++)
 					{
@@ -1786,7 +1775,7 @@ void Particle::track()
 			{
 				IfColl_ = 0;
 				d_flight_ = 1.;
-				Rand_flight_ = Random();
+				Rand_flight_ = Tools::Random();
 				while (!IfColl_ && Zone_ < 7)
 				{
 					if (K_Tn == 1)
@@ -1798,7 +1787,7 @@ void Particle::track()
 						}
 						else if (K_flight == 3)
 						{
-							dt_ = -log(Random()) * lambda_min_[Charge_];
+							dt_ = -log(Tools::Random()) * lambda_min_[Charge_];
 						}
 					}
 					else if (K_Tn == 2)
@@ -1809,7 +1798,7 @@ void Particle::track()
 						}
 						else if (K_flight == 3)
 						{
-							dt_ = -log(Random()) * lambda_min_[Charge_];
+							dt_ = -log(Tools::Random()) * lambda_min_[Charge_];
 						}
 					}
 					for (int i = 0; i < 3; i++)
@@ -1848,7 +1837,7 @@ void Particle::track()
 
 void Particle::CalLambda()
 {
-	double CS_Vacuum = 0.1;
+	double CS_Vacuum = 0.01;
 	if (Zone_ < 6)
 	{
 		if (K_Vi == 1)
@@ -1858,11 +1847,11 @@ void Particle::CalLambda()
 			{
 				if (K_H)
 				{
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(Ti[XY_[0]][XY_[1]], Hmass);
+						vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], Hmass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / Hmass);
 					V_H_1_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_H_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
@@ -1872,16 +1861,19 @@ void Particle::CalLambda()
 
 				if (K_D)
 				{
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(Ti[XY_[0]][XY_[1]], Dmass);
+						vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], Dmass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / Dmass);
 					V_D_1_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
 					V_D_1_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][1];
 					V_D_1_now[2] = vel * cos(Vphi) + ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][2];
+					/*V_D_1_now[0] = ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
+					V_D_1_now[1] = ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][1];
+					V_D_1_now[2] = ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][2];*/
 
 					// std::cout << V_D_1_now[0] << '\t' << V_D_1_now[1] << '\t' << V_D_1_now[2] << endl;
 					/// statistic the velocity of
@@ -1892,10 +1884,10 @@ void Particle::CalLambda()
 
 				if (K_T)
 				{
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					if (K_Maxwell == 1)
-						vel = Maxwell(Ti[XY_[0]][XY_[1]], Tmass);
+						vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], Tmass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / Tmass);
 					V_T_1_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_T_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
@@ -1907,75 +1899,82 @@ void Particle::CalLambda()
 			{
 				if (K_H)
 				{
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(T_H_0_Tri[Tri_Index_], Hmass);
+						vel = Tools::Maxwell(T_H_0_Tri[Tri_Index_], Hmass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * T_H_0_Tri[Tri_Index_]) / Hmass);
-					V_H_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_H_0_Tri[Tri_Index_];
-					V_H_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_H_0_Tri[Tri_Index_];
-					V_H_0_now[2] = vel * cos(Vphi) + ua_H_0_Tri[Tri_Index_];
+					V_H_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_H_0_Tri[Tri_Index_][0];
+					V_H_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_H_0_Tri[Tri_Index_][1];
+					V_H_0_now[2] = vel * cos(Vphi) + ua_H_0_Tri[Tri_Index_][2];
 
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(T_H2_0_Tri[Tri_Index_], H2mass);
+						vel = Tools::Maxwell(T_H2_0_Tri[Tri_Index_], H2mass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * T_H2_0_Tri[Tri_Index_]) / H2mass);
-					V_H2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_H2_0_Tri[Tri_Index_];
-					V_H2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_H2_0_Tri[Tri_Index_];
-					V_H2_0_now[2] = vel * cos(Vphi) + ua_H2_0_Tri[Tri_Index_];
+					V_H2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_H2_0_Tri[Tri_Index_][0];
+					V_H2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_H2_0_Tri[Tri_Index_][1];
+					V_H2_0_now[2] = vel * cos(Vphi) + ua_H2_0_Tri[Tri_Index_][2];
 				}
 				if (K_D)
 				{
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(T_D_0_Tri[Tri_Index_], Dmass);
+						vel = Tools::Maxwell(T_D_0_Tri[Tri_Index_], Dmass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * T_D_0_Tri[Tri_Index_]) / Dmass);
-					V_D_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_D_0_Tri[Tri_Index_];
-					V_D_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_D_0_Tri[Tri_Index_];
-					V_D_0_now[2] = vel * cos(Vphi) + ua_D_0_Tri[Tri_Index_];
+					V_D_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_D_0_Tri[Tri_Index_][0];
+					V_D_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_D_0_Tri[Tri_Index_][1];
+					V_D_0_now[2] = vel * cos(Vphi) + ua_D_0_Tri[Tri_Index_][2];
 
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(T_D2_0_Tri[Tri_Index_], D2mass);
+						vel = Tools::Maxwell(T_D2_0_Tri[Tri_Index_], D2mass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * T_D2_0_Tri[Tri_Index_]) / D2mass);
-					V_D2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_D2_0_Tri[Tri_Index_];
-					V_D2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_D2_0_Tri[Tri_Index_];
-					V_D2_0_now[2] = vel * cos(Vphi) + ua_D2_0_Tri[Tri_Index_];
+					V_D2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_D2_0_Tri[Tri_Index_][0];
+					V_D2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_D2_0_Tri[Tri_Index_][1];
+					V_D2_0_now[2] = vel * cos(Vphi) + ua_D2_0_Tri[Tri_Index_][2];
+
+					/*V_D_0_now[0] = ua_D_0_Tri[Tri_Index_][0];
+					V_D_0_now[1] = ua_D_0_Tri[Tri_Index_][1];
+					V_D_0_now[2] = ua_D_0_Tri[Tri_Index_][2];
+					V_D2_0_now[0] = ua_D2_0_Tri[Tri_Index_][0];
+					V_D2_0_now[1] = ua_D2_0_Tri[Tri_Index_][1];
+					V_D2_0_now[2] = ua_D2_0_Tri[Tri_Index_][2];*/
 				}
 				if (K_T)
 				{
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(T_T_0_Tri[Tri_Index_], Tmass);
+						vel = Tools::Maxwell(T_T_0_Tri[Tri_Index_], Tmass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * T_T_0_Tri[Tri_Index_]) / Tmass);
-					V_T_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_T_0_Tri[Tri_Index_];
-					V_T_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_T_0_Tri[Tri_Index_];
-					V_T_0_now[2] = vel * cos(Vphi) + ua_T_0_Tri[Tri_Index_];
+					V_T_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_T_0_Tri[Tri_Index_][0];
+					V_T_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_T_0_Tri[Tri_Index_][1];
+					V_T_0_now[2] = vel * cos(Vphi) + ua_T_0_Tri[Tri_Index_][2];
 
-					Vtheta = 2 * pi * Random();
-					Vphi = pi * Random();
+					Vtheta = 2 * pi * Tools::Random();
+					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
-						vel = Maxwell(T_T2_0_Tri[Tri_Index_], T2mass);
+						vel = Tools::Maxwell(T_T2_0_Tri[Tri_Index_], T2mass);
 					else if (K_Maxwell == 2)
 						vel = sqrt((3.0 * qe * T_T2_0_Tri[Tri_Index_]) / T2mass);
-					V_T2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_T2_0_Tri[Tri_Index_];
-					V_T2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_T2_0_Tri[Tri_Index_];
-					V_T2_0_now[2] = vel * cos(Vphi) + ua_T2_0_Tri[Tri_Index_];
+					V_T2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_T2_0_Tri[Tri_Index_][0];
+					V_T2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_T2_0_Tri[Tri_Index_][1];
+					V_T2_0_now[2] = vel * cos(Vphi) + ua_T2_0_Tri[Tri_Index_][2];
 				}
 			}
 		}
@@ -2116,15 +2115,15 @@ void Particle::CalLambda()
 				if (K_Vi == 1)
 				{
 					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
-																		   Ti[XY_[0]][XY_[1]]));
+																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
 					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
-																		   Ti[XY_[0]][XY_[1]]));
+																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
-																				  Ti[XY_[0]][XY_[1]]));
+																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
 						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
-																				  Ti[XY_[0]][XY_[1]]));
+																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
 					}
 				}
 				if (K_Vi == 2)
@@ -2195,11 +2194,19 @@ void Particle::CalLambda()
 			if (this == &H)
 			{
 				CX_[0].Set_V_relative(V_H_1_now[0], V_H_1_now[1], V_H_1_now[2], V_[0], V_[1], V_[2]);
-				R_with_H_[0].Set_V_relative(V_H_0_now[0], V_H_0_now[1], V_H_0_now[2], V_[0], V_[1], V_[2]);
-				R_with_H2_[0].Set_V_relative(V_H2_0_now[0], V_H2_0_now[1], V_H2_0_now[2], V_[0], V_[1], V_[2]);
+				if (K_NNCs)
+				{
+					R_with_H_[0].Set_V_relative(V_H_0_now[0], V_H_0_now[1], V_H_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_H2_0_now[0], V_H2_0_now[1], V_H2_0_now[2], V_[0], V_[1], V_[2]);
 
-				R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
-				R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
+					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+				}
+				else
+				{
+					R_with_H_[0].Setcs_now(0);
+					R_with_H2_[0].Setcs_now(0);
+				}
 				if (K_database == 1)
 				{
 					Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
@@ -2228,11 +2235,19 @@ void Particle::CalLambda()
 				CX_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
 				if (K_DT)
 					CX_DT_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
-				R_with_H_[0].Set_V_relative(V_D_0_now[0], V_D_0_now[1], V_D_0_now[2], V_[0], V_[1], V_[2]);
-				R_with_H2_[0].Set_V_relative(V_D2_0_now[0], V_D2_0_now[1], V_D2_0_now[2], V_[0], V_[1], V_[2]);
+				if (K_NNCs)
+				{
+					R_with_H_[0].Set_V_relative(V_D_0_now[0], V_D_0_now[1], V_D_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_D2_0_now[0], V_D2_0_now[1], V_D2_0_now[2], V_[0], V_[1], V_[2]);
 
-				R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
-				R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
+					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+				}
+				else
+				{
+					R_with_H_[0].Setcs_now(0);
+					R_with_H2_[0].Setcs_now(0);
+				}
 
 				if (K_database == 1)
 				{
@@ -2250,11 +2265,11 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * 0.5 * Dmass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
-																				   Ti[XY_[0]][XY_[1]]));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 4. * Dmass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+																				   Ti[XY_[0]][XY_[1]] / 2));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * DTmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
-																						  Ti[XY_[0]][XY_[1]]));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 4. * DTmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+																						  Ti[XY_[0]][XY_[1]] / 2));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
@@ -2288,11 +2303,19 @@ void Particle::CalLambda()
 				CX_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
 				if (K_DT)
 					CX_DT_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
-				R_with_H_[0].Set_V_relative(V_T_0_now[0], V_T_0_now[1], V_T_0_now[2], V_[0], V_[1], V_[2]);
-				R_with_H2_[0].Set_V_relative(V_T2_0_now[0], V_T2_0_now[1], V_T2_0_now[2], V_[0], V_[1], V_[2]);
+				if (K_NNCs)
+				{
+					R_with_H_[0].Set_V_relative(V_T_0_now[0], V_T_0_now[1], V_T_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_T2_0_now[0], V_T2_0_now[1], V_T2_0_now[2], V_[0], V_[1], V_[2]);
 
-				R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
-				R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
+					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+				}
+				else
+				{
+					R_with_H_[0].Setcs_now(0);
+					R_with_H2_[0].Setcs_now(0);
+				}
 				if (K_database == 1)
 				{
 					Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
@@ -2341,24 +2364,38 @@ void Particle::CalLambda()
 			{
 				CX_[0].Set_V_relative(V_H_1_now[0], V_H_1_now[1], V_H_1_now[2], V_[0], V_[1], V_[2]);
 				Ela_[0].Set_V_relative(V_H_1_now[0], V_H_1_now[1], V_H_1_now[2], V_[0], V_[1], V_[2]);
-				R_with_H_[0].Set_V_relative(V_H_0_now[0], V_H_0_now[1], V_H_0_now[2], V_[0], V_[1], V_[2]);
-				R_with_H2_[0].Set_V_relative(V_H2_0_now[0], V_H2_0_now[1], V_H2_0_now[2], V_[0], V_[1], V_[2]);
+				if (K_NNCs)
+				{
+					R_with_H_[0].Set_V_relative(V_H_0_now[0], V_H_0_now[1], V_H_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_H2_0_now[0], V_H2_0_now[1], V_H2_0_now[2], V_[0], V_[1], V_[2]);
+				}
 
 				Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(Tri_Index_));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
 				CX_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(3. / 2. * Tn_, Ti[XY_[0]][XY_[1]]));
 				Ela_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(3. / 2. * Tn_, Ti[XY_[0]][XY_[1]]));
-				R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
-				R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+				if (K_NNCs)
+				{
+					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
+					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+				}
+				else
+				{
+					R_with_H_[0].Setcs_now(0);
+					R_with_H2_[0].Setcs_now(0);
+				}
 				lambda_now_ = 1. / (Ion_[0].cs_now() + Diss1_[0].cs_now() + Diss2_[0].cs_now() + CX_[0].cs_now() + Ela_[0].cs_now() + R_with_H_[0].cs_now() + R_with_H_[0].cs_now());
 			}
 			else if (this == &D2)
 			{
 				CX_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
 				Ela_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
-				R_with_H_[0].Set_V_relative(V_D_0_now[0], V_D_0_now[1], V_D_0_now[2], V_[0], V_[1], V_[2]);
-				R_with_H2_[0].Set_V_relative(V_D2_0_now[0], V_D2_0_now[1], V_D2_0_now[2], V_[0], V_[1], V_[2]);
+				if (K_NNCs)
+				{
+					R_with_H_[0].Set_V_relative(V_D_0_now[0], V_D_0_now[1], V_D_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_D2_0_now[0], V_D2_0_now[1], V_D2_0_now[2], V_[0], V_[1], V_[2]);
+				}
 				if (K_DT)
 				{
 					CX_DT_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
@@ -2368,18 +2405,31 @@ void Particle::CalLambda()
 				Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(Tri_Index_));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
+				if (K_NNCs)
+				{
+					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
+					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+				}
+				else
+				{
+					R_with_H_[0].Setcs_now(0);
+					R_with_H2_[0].Setcs_now(0);
+				}
 				if (Zone_ < 6)
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
-																			   Ti[XY_[0]][XY_[1]] / coefficient_D));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
-																			   Ti[XY_[0]][XY_[1]] / coefficient_D));
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
-																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
-																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 4. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+																			   Ti[XY_[0]][XY_[1]] / 2.));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 4. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+																			   Ti[XY_[0]][XY_[1]] / 2.));
+						if (K_DT)
+						{
+							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
+							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
+						}
 					}
 					if (K_Vi == 2)
 					{
@@ -2406,17 +2456,29 @@ void Particle::CalLambda()
 			{
 				CX_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
 				Ela_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
-				R_with_H_[0].Set_V_relative(V_T_0_now[0], V_T_0_now[1], V_T_0_now[2], V_[0], V_[1], V_[2]);
-				R_with_H2_[0].Set_V_relative(V_T2_0_now[0], V_T2_0_now[1], V_T2_0_now[2], V_[0], V_[1], V_[2]);
+				if (K_NNCs)
+				{
+					R_with_H_[0].Set_V_relative(V_T_0_now[0], V_T_0_now[1], V_T_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_T2_0_now[0], V_T2_0_now[1], V_T2_0_now[2], V_[0], V_[1], V_[2]);
+				}
 				if (K_DT)
 				{
 					CX_DT_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
 					Ela_DT_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
 				}
-
 				Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(Tri_Index_));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
+				if (K_NNCs)
+				{
+					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
+					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+				}
+				else
+				{
+					R_with_H_[0].Setcs_now(0);
+					R_with_H2_[0].Setcs_now(0);
+				}
 				if (Zone_ < 6)
 				{
 					if (K_Vi == 1)
@@ -2472,9 +2534,9 @@ void Particle::Caltrace()
 	IfColl_ = 1;
 	double secx, secy, distance;
 	// judge if the particle cross through the first boundry of grid
-	if (!FindIt && get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), &secx, &secy))
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), &secx, &secy))
 	{
-		if (!PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), X_new_[0], X_new_[1]))
+		if (!Tools::PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), X_new_[0], X_new_[1]))
 		{
 			FindIt = 1;
 			boundary_start_ = 1;
@@ -2596,9 +2658,9 @@ void Particle::Caltrace()
 	}
 
 	// judge if the particle cross through the second boundry of grid
-	if (!FindIt && get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), &secx, &secy))
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), &secx, &secy))
 	{
-		if (!PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), X_new_[0], X_new_[1]))
+		if (!Tools::PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(1, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), X_new_[0], X_new_[1]))
 		{
 			FindIt = 2;
 			if (K_test1)
@@ -2707,9 +2769,9 @@ void Particle::Caltrace()
 	}
 
 	// judge if the particle cross through the third boundry of grid
-	if (!FindIt && get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), &secx, &secy))
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), &secx, &secy))
 	{
-		if (!PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), X_new_[0], X_new_[1]))
+		if (!Tools::PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(2, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), X_new_[0], X_new_[1]))
 		{
 			FindIt = 3;
 			if (K_test1)
@@ -2808,9 +2870,9 @@ void Particle::Caltrace()
 	}
 
 	// judge if the particle cross through the third boundry of grid
-	if (!FindIt && get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), &secx, &secy))
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), &secx, &secy))
 	{
-		if (!PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), X_new_[0], X_new_[1]))
+		if (!Tools::PointandLine(Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(3, 1), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 0), Grid1.Plasma_Grid(XY_[0], XY_[1]).Grid_Point(0, 1), X_new_[0], X_new_[1]))
 		{
 			FindIt = 4;
 			if (K_test1)
@@ -2988,9 +3050,9 @@ void Particle::Caltrace_Tri()
 	IfColl_ = 1;
 	double secx, secy, distance;
 	// judge if the particle cross through the FIRST boundry of grid
-	if (!FindIt && get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, &secx, &secy))
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, &secx, &secy))
 	{
-		if (!PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, X_new_[0], X_new_[1]))
+		if (!Tools::PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, X_new_[0], X_new_[1]))
 		{
 			FindIt = 1;
 			boundary_start_ = 1;
@@ -3126,9 +3188,9 @@ void Particle::Caltrace_Tri()
 	}
 
 	// judge if the particle cross through the SECOND boundry of grid
-	if (!FindIt && get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, &secx, &secy))
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, &secx, &secy))
 	{
-		if (!PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, X_new_[0], X_new_[1]))
+		if (!Tools::PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, X_new_[0], X_new_[1]))
 		{
 			FindIt = 1;
 			boundary_start_ = 2;
@@ -3268,9 +3330,9 @@ void Particle::Caltrace_Tri()
 	}
 
 	// judge if the particle cross through the THIRD boundry of grid
-	if (!FindIt && get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, &secx, &secy))
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, &secx, &secy))
 	{
-		if (!PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, X_new_[0], X_new_[1]))
+		if (!Tools::PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, X_new_[0], X_new_[1]))
 		{
 			FindIt = 1;
 			boundary_start_ = 3;
@@ -3983,7 +4045,7 @@ void Particle::Coll()
 				R_with_H_factor = R_with_H_[Charge_].cs(Tri_Index_);
 				R_with_H2_factor = R_with_H2_[Charge_].cs(Tri_Index_);
 			}
-			// std::cout << Ion_factor << '\t' << CX_factor << '\t' << CX_DT_factor << endl;
+			// std::cout << Ion_factor << '\t' << CX_factor << '\t' << CX_DT_factor << '\t' << R_with_H_factor << '\t' << R_with_H2_factor << endl;
 		}
 		double rand_temp, Var_temp;
 		if (K_flight == 1)
@@ -3993,12 +4055,12 @@ void Particle::Coll()
 		}
 		else if (K_flight == 2)
 		{
-			rand_temp = Random();
+			rand_temp = Tools::Random();
 			Var_temp = CollProb();
 		}
 		else if (K_flight == 3)
 		{
-			rand_temp = Random();
+			rand_temp = Tools::Random();
 			if (K_Tn == 1)
 			{
 				Var_temp = lambda_min_[0] / lambda_now_;
@@ -4016,7 +4078,7 @@ void Particle::Coll()
 		{
 			// std::cout << rand_temp << '\t' << CollProb() << endl;
 			// std::cout << this->name() << '\t' << Tn_ << '\t';
-			double rand_one = Random();
+			double rand_one = Tools::Random();
 			if (rand_one < Ion_factor / sigma_all)
 			{
 
@@ -4457,7 +4519,7 @@ void Particle::Coll()
 			R_with_H2_factor = R_with_H2_[0].cs(Tri_Index_);
 		}
 		double T_D_0_temp;
-		double Sum_factor[10] = {0.}, rand_one = Random();
+		double Sum_factor[10] = {0.}, rand_one = Tools::Random();
 		int Num_Collision_D2 = 10;
 		Sum_factor[0] = Ion_factor;
 		Sum_factor[1] = Sum_factor[0] + 0.; // MAR_factor;
@@ -4480,12 +4542,12 @@ void Particle::Coll()
 			}
 			else if (K_flight == 2)
 			{
-				rand_temp = Random();
+				rand_temp = Tools::Random();
 				Var_temp = CollProb();
 			}
 			else if (K_flight == 3)
 			{
-				rand_temp = Random();
+				rand_temp = Tools::Random();
 				if (K_Tn == 1)
 				{
 					Var_temp = lambda_min_[0] / lambda_now_;
@@ -4765,7 +4827,7 @@ void Particle::Coll()
 						else if (this == &T2)
 							P = &T;
 
-						if (Random() * beilv < 1)
+						if (Tools::Random() * beilv < 1)
 						{
 							if (this == &H2)
 							{
@@ -5115,11 +5177,11 @@ void Particle::Coll()
 			// std::cout << X_[0] << '\t' << X_[1] << '\t' << name_ << '\t';
 			// std::cout << XY_[0] << '\t' << XY_[1] << '\t' << Zone_ << endl;
 			Sum_n_[XY_[0]][XY_[1]][Charge_] += Weight_ * NumPar_now * dt;
-			double Sum_factor[10] = {0.}, rand_one = Random(), rand_temp;
+			double Sum_factor[10] = {0.}, rand_one = Tools::Random(), rand_temp;
 			if (K_flight == 1 || !K_D2Flight || K_flight == 3)
 				rand_temp = -1;
 			else
-				rand_temp = Random();
+				rand_temp = Tools::Random();
 			int Num_Collision_D2 = 3;
 			Sum_factor[0] = DS_factor[0];
 			Sum_factor[1] = Sum_factor[0] + DS_factor[1];
@@ -5267,13 +5329,13 @@ void Particle::Coll()
 		}
 		if (Charge_ == 0)
 		{
-			double Sum_factor[4] = {0.}, rand_one = Random();
+			double Sum_factor[4] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 4;
 			Sum_factor[0] = Ion_factor;
 			Sum_factor[1] = Sum_factor[0] + CX_factor;
 			Sum_factor[2] = Sum_factor[1] + Diss1_factor;
 			Sum_factor[3] = Sum_factor[2] + Diss2_factor;
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
@@ -5334,13 +5396,13 @@ void Particle::Coll()
 		}
 		else if (Charge_ == 1)
 		{
-			double Sum_factor[4] = {0.}, rand_one = Random();
+			double Sum_factor[4] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 4;
 			Sum_factor[0] = DS_factor[0];
 			Sum_factor[1] = DS_factor[1] + Sum_factor[0];
 			Sum_factor[2] = DS_factor[2] + Sum_factor[1];
 			Sum_factor[3] = DS_factor[3] + Sum_factor[2];
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
@@ -5429,13 +5491,13 @@ void Particle::Coll()
 		}
 		if (Charge_ == 0)
 		{
-			double Sum_factor[4] = {0.}, rand_one = Random();
+			double Sum_factor[4] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 4;
 			Sum_factor[0] = Ion_factor;
 			Sum_factor[1] = Sum_factor[0] + CX_factor;
 			Sum_factor[2] = Sum_factor[1] + Diss1_factor;
 			Sum_factor[3] = Sum_factor[2] + Diss2_factor;
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
@@ -5501,12 +5563,12 @@ void Particle::Coll()
 		}
 		else if (Charge_ == 1)
 		{
-			double Sum_factor[3] = {0.}, rand_one = Random();
+			double Sum_factor[3] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 3;
 			Sum_factor[0] = DS_factor[0];
 			Sum_factor[1] = DS_factor[1] + Sum_factor[0];
 			Sum_factor[2] = DS_factor[2] + Sum_factor[1];
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
@@ -5581,13 +5643,13 @@ void Particle::Coll()
 		}
 		if (Charge_ == 0)
 		{
-			double Sum_factor[4] = {0.}, rand_one = Random();
+			double Sum_factor[4] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 4;
 			Sum_factor[0] = Ion_factor;
 			Sum_factor[1] = Sum_factor[0] + CX_factor;
 			Sum_factor[2] = Sum_factor[1] + Diss1_factor;
 			Sum_factor[3] = Sum_factor[2] + Diss2_factor;
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
@@ -5654,12 +5716,12 @@ void Particle::Coll()
 		}
 		else if (Charge_ == 1)
 		{
-			double Sum_factor[3] = {0.}, rand_one = Random();
+			double Sum_factor[3] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 3;
 			Sum_factor[0] = DS_factor[0];
 			Sum_factor[1] = DS_factor[1] + Sum_factor[0];
 			Sum_factor[2] = DS_factor[2] + Sum_factor[1];
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
@@ -5738,14 +5800,14 @@ void Particle::Coll()
 		}
 		if (Charge_ == 0)
 		{
-			double Sum_factor[5] = {0.}, rand_one = Random();
+			double Sum_factor[5] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 5;
 			Sum_factor[0] = Ion_factor;
 			Sum_factor[1] = Sum_factor[0] + CX_factor;
 			Sum_factor[2] = Sum_factor[1] + Diss1_factor;
 			Sum_factor[3] = Sum_factor[2] + Diss2_factor;
 			Sum_factor[4] = Sum_factor[3] + Diss3_factor;
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 				{
@@ -5818,12 +5880,12 @@ void Particle::Coll()
 		}
 		else if (Charge_ == 1)
 		{
-			double Sum_factor[3] = {0.}, rand_one = Random();
+			double Sum_factor[3] = {0.}, rand_one = Tools::Random();
 			int Num_Collision_D2 = 3;
 			Sum_factor[0] = DS_factor[0];
 			Sum_factor[1] = DS_factor[1] + Sum_factor[0];
 			Sum_factor[2] = DS_factor[2] + Sum_factor[1];
-			if (Random() < CollProb())
+			if (Tools::Random() < CollProb())
 			{
 				if (rand_one < CollProb())
 				{
@@ -5884,12 +5946,12 @@ void Particle::Coll()
 			CX_factor = CX_[Charge_].cs(XY_, Zone_);
 			Rec_factor = Rec_[Charge_ - 1].cs(XY_, Zone_);
 		}
-		double Sum_factor[3] = {0.}, rand_one = Random();
+		double Sum_factor[3] = {0.}, rand_one = Tools::Random();
 		int Num_Collision_D2 = 3;
 		Sum_factor[0] = Ion_factor;
 		Sum_factor[1] = Sum_factor[0] + CX_factor;
 		Sum_factor[2] = Sum_factor[1] + Rec_factor;
-		if (Random() < CollProb())
+		if (Tools::Random() < CollProb())
 		{
 			if (rand_one < Sum_factor[0] / Sum_factor[Num_Collision_D2 - 1])
 			{
@@ -5930,7 +5992,7 @@ int Particle::H2PCollCal()
 	// std::cout << X_[0] << '\t' << X_[1] << '\t' << name_ << '\t';
 	// std::cout << XY_[0] << '\t' << XY_[1] << '\t' << Zone_ << endl;
 	Sum_n_[XY_[0]][XY_[1]][Charge_] += Weight_ * NumPar_now * dt_;
-	double Sum_factor[10] = {0.}, rand_one = Random(), rand_temp;
+	double Sum_factor[10] = {0.}, rand_one = Tools::Random(), rand_temp;
 	double E_new;
 	int Num_Collision_D2 = 3;
 	Sum_factor[0] = DS_factor[0];
@@ -6181,6 +6243,7 @@ void Particle::Stat(int n)
 				{
 					Ion_[k].StatEIRENE(k, n_, &R2_1_5_H10, 13.6);
 				}
+				R_with_H_[0].Stat(k, n_, NULL);
 			}
 			if (k != 0)
 			{
@@ -6219,15 +6282,6 @@ void Particle::Stat(int n)
 						n_[a][b][1] = (D2.Ion_[0].Sn(a, b) + D2.CX_[0].Sn(a, b)) / ne[a][b] / (R2_2_11_H4.cal(ne[a][b], Te[a][b]) + R2_2_12_H4.cal(ne[a][b], Te[a][b]) + R2_2_14_H4.cal(ne[a][b], Te[a][b]));
 						double Var_temp = R2_2_14_H2.cal(ne[a][b], Te[a][b]);
 						DS_[1][2].SetPra(a, b, ne[a][a] * n_[a][b][1] * R2_2_14_H8.cal(ne[a][b], Te[a][b], &Var_temp));
-					}
-				}
-				for (int a = 0; a < num_trimesh_; a++)
-				{
-					if (Grid4.if_in_plasmagrid(a))
-					{
-						Tri_n_[a][1] = (D2.Ion_[0].Sn(a) + D2.CX_[0].Sn(a)) / ne[Tri_B2_[a][0]][Tri_B2_[a][1]] / (R2_2_11_H4.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]) + R2_2_12_H4.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]) + R2_2_14_H4.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]));
-						double Var_temp = R2_2_14_H2.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]]);
-						DS_[1][2].SetPra_Tri(a, ne[Tri_B2_[a][0]][Tri_B2_[a][1]] * Tri_n_[a][1] * R2_2_14_H8.cal(ne[Tri_B2_[a][0]][Tri_B2_[a][1]], Te[Tri_B2_[a][0]][Tri_B2_[a][1]], &Var_temp));
 					}
 				}
 			}
@@ -6387,7 +6441,7 @@ void Particle::Stat_Tri(int n)
 					Tri_V_Grid_[i][m][0] = Tri_Sum_V_[i][m][0] / Tri_Sum_n_[i][0];
 				}
 				Tri_E_[i][0] = Tri_Sum_E_[i][0] / Tri_Sum_n_[i][0];
-				Tri_T_[i][0] = 2. / 3. * (Tri_E_[i][0] - 0.5 * mass_ * (pow(Tri_V_Grid_[i][0][0], 2) + pow(Tri_V_Grid_[i][1][0], 2) + pow(Tri_V_Grid_[i][2][0], 2)) / 1.6e-19);
+				Tri_T_[i][0] = 2. / 3. * (Tri_E_[i][0] - 0.5 * mass_ * (pow(Tri_V_Grid_[i][0][0], 2) + pow(Tri_V_Grid_[i][1][0], 2) + pow(Tri_V_Grid_[i][2][0], 2)) / 1.602e-19);
 			}
 			Tri_n_[i][0] = Tri_Sum_n_[i][0] / Grid4.triVolume(i);
 		}
@@ -6402,7 +6456,7 @@ void Particle::Stat_Tri(int n)
 						Tri_V_Grid_[i][m][k] = Tri_Sum_V_[i][m][k] / Tri_Sum_n_[i][k];
 					}
 					Tri_E_[i][k] = Tri_Sum_E_[i][k] / Tri_Sum_n_[i][k];
-					Tri_T_[i][k] = 2. / 3. * (Tri_E_[i][k] - 0.5 * mass_ * (pow(Tri_V_Grid_[i][0][k], 2) + pow(Tri_V_Grid_[i][1][k], 2) + pow(Tri_V_Grid_[i][2][k], 2)) / 1.6e-19);
+					Tri_T_[i][k] = 2. / 3. * (Tri_E_[i][k] - 0.5 * mass_ * (pow(Tri_V_Grid_[i][0][k], 2) + pow(Tri_V_Grid_[i][1][k], 2) + pow(Tri_V_Grid_[i][2][k], 2)) / 1.602e-19);
 				}
 				Tri_n_[i][k] = Tri_Sum_n_[i][k] / Grid4.triVolume(i);
 			}
@@ -6450,6 +6504,8 @@ void Particle::Stat_Tri(int n)
 			}
 		}
 		Rec_[1].RecStat_Tri(1, Tri_n_, &PRB12_H);
+		R_with_H_[0].Stat_Tri(0, Tri_n_, NULL);
+		R_with_H2_[0].Stat_Tri(0, Tri_n_, NULL);
 	}
 	if (this == &H2 || this == &D2 || this == &T2)
 	{
@@ -6459,6 +6515,8 @@ void Particle::Stat_Tri(int n)
 		MAR_[0].Stat_Tri(0, Tri_n_, NULL);
 		Diss1_[0].Stat_Tri(0, Tri_n_, NULL);
 		Diss2_[0].Stat_Tri(0, Tri_n_, NULL);
+		R_with_H_[0].Stat_Tri(0, Tri_n_, NULL);
+		R_with_H2_[0].Stat_Tri(0, Tri_n_, NULL);
 		for (int i = 0; i < 3; i++)
 		{
 			DS_[1][i].Stat_Tri(1, Tri_n_, NULL);
@@ -7329,6 +7387,10 @@ double Particle::V_Grid(int i, int j, int k, int m)
 {
 	return V_Grid_[i][j][k][m];
 }
+double Particle::V_Grid_Tri(int i, int k, int m)
+{
+	return Tri_V_Grid_[i][k][m];
+}
 double Particle::V_D_1(int i, int j, int k, int m)
 {
 	return V_D_1_[i][j][k][m];
@@ -7361,6 +7423,8 @@ int Particle::Charge() { return Charge_; }
 
 double Particle::Tn() { return Tn_; }
 
+double Particle::Tn_Tri(int i, int k) { return Tri_T_[i][k]; }
+
 int Particle::IfColl()
 {
 	return IfColl_;
@@ -7377,6 +7441,8 @@ void Particle::SetIfFlightOut(int i)
 }
 
 double Particle::n(int i, int j, int k) { return n_[i][j][k]; }
+
+double Particle::n_Tri(int i, int k) { return Tri_n_[i][k]; }
 
 double Particle::T_n(int i, int j, int k)
 {
@@ -7636,7 +7702,7 @@ void Particle::divimp_anomalous_diffusion()
 	}
 
 	d = sqrt(2.0 * Dan * dt);
-	rand_g = Random();
+	rand_g = Tools::Random();
 	if (rand_g > 0.5)
 	{
 		rand_g = 1.0;
@@ -8192,7 +8258,7 @@ void Particle::Dump_Tri(string type, string coll, int Charge)
 {
 	double i_x, i_y, res;
 	for (int i = 0; i < num_CoreBoundry; i++)
-		if (get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1],
+		if (Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1],
 								  CoreBoundry[i][0], CoreBoundry[i][1],
 								  CoreBoundry[i + 1][0], CoreBoundry[i + 1][1],
 								  &i_x, &i_y))
@@ -8231,7 +8297,7 @@ void Particle::Dump_Tri(string type, string coll, int Charge)
 		}
 
 	for (int i = 0; i < num_GridBoundry; i++)
-		if (get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1],
+		if (Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1],
 								  GridBoundry[i][0], GridBoundry[i][1],
 								  GridBoundry[i + 1][0], GridBoundry[i + 1][1],
 								  &i_x, &i_y))
@@ -8270,7 +8336,7 @@ void Particle::Dump_Tri(string type, string coll, int Charge)
 		}
 
 	for (int i = 0; i < num_PFRBoundry; i++)
-		if (get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1],
+		if (Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1],
 								  PFRBoundry[i][0], PFRBoundry[i][1],
 								  PFRBoundry[i + 1][0], PFRBoundry[i + 1][1], &i_x,
 								  &i_y))
@@ -8911,7 +8977,6 @@ void Particle::CalWeight1(int num)
 		{
 			if (Grid4.if_in_plasmagrid(i))
 			{
-
 				if (this == &D)
 				{
 					Tri_NumPar_Grid_[i] = n_D_1[Tri_B2_[i][0]][Tri_B2_[i][1]] * Rec_[1].cs(Tri_B2_[i][0], Tri_B2_[i][1]) * Grid4.triVolume(i) / (double)num;
@@ -9003,8 +9068,8 @@ bool IfinEdge(double a[], double b[], int k, double x, double y)
 			}
 			else if (a[i] < x || a[i + 1] < x)
 			{
-				if (get_line_intersection(x, y, -1, y, a[i], b[i], a[i + 1], b[i + 1],
-										  &secx, &secy))
+				if (Tools::get_line_intersection(x, y, -1, y, a[i], b[i], a[i + 1], b[i + 1],
+												 &secx, &secy))
 					count += 1;
 			}
 		}
@@ -9041,74 +9106,6 @@ int Yfind(int Start[], int End[], double x, double y)
 	else
 		Start[1] = Ymid[1] + 1;
 	return Yfind(Start, End, x, y);
-}
-
-void Vinit_cosine(std::vector<double> &Vt, double Rcos, double Rsin)
-{
-	do
-	{
-		double ztheta = 6.283185307 * Random();
-		double zcost = cos(ztheta);
-		double zsint = sin(ztheta);
-		double zpsi = Random() * 3.1415927;
-		double zcosp = abs(cos(zpsi));
-		double zsinp = sin(zpsi);
-		double Vx = zsint * zsinp;
-		double Vy = zcosp;
-		double Vz = zsinp * zcost;
-		// std::cout << pow(Vx, 2) << ", " << pow(Vy, 2) << ", " << pow(Vz, 2) << "  ";
-
-		Vt[0] = Rcos * Vx - Rsin * Vy;
-		Vt[1] = Rsin * Vx + Rcos * Vy;
-		Vt[2] = Vz;
-		// std::cout << pow(Vt[0], 2) << "," << pow(Vt[1], 2) << ", " << pow(Vt[2], 2) << endl;
-	} while (Vt[2] == 1 || Vt[0] < -3e8);
-}
-
-int get_line_intersection(double p0_x, double p0_y, double p1_x, double p1_y,
-						  double p2_x, double p2_y, double p3_x, double p3_y,
-						  double *i_x, double *i_y)
-{
-	double s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, s_numer, t_numer, denom, t;
-	s10_x = p1_x - p0_x;
-	s10_y = p1_y - p0_y;
-	s32_x = p3_x - p2_x;
-	s32_y = p3_y - p2_y;
-
-	denom = s10_x * s32_y - s32_x * s10_y;
-	if (denom == 0)
-		return 0; // Collinear
-	int denomPositive;
-	if (denom > 0)
-	{
-		denomPositive = 1;
-	}
-	else
-	{
-		denomPositive = 0;
-	}
-
-	s02_x = p0_x - p2_x;
-	s02_y = p0_y - p2_y;
-	s_numer = s10_x * s02_y - s10_y * s02_x;
-	t_numer = s32_x * s02_y - s32_y * s02_x;
-	t = t_numer / denom;
-	if (i_x != NULL)
-		*i_x = p0_x + (t * s10_x);
-	if (i_y != NULL)
-		*i_y = p0_y + (t * s10_y);
-
-	if ((s_numer < 0) == denomPositive)
-		return 0; // No collision
-
-	if ((t_numer < 0) == denomPositive)
-		return 0; // No collision
-
-	if (fabs(s_numer) > fabs(denom) || fabs(t_numer) > fabs(denom))
-		return 0; // No collision
-				  // Collision detected
-
-	return 1;
 }
 
 PartoPar::PartoPar() { ifstore_ = 0; }
@@ -9774,31 +9771,6 @@ int Particle::IfParticleOut(int i)
 		return 1;
 }
 
-int PointandLine(double line_x1, double line_y1, double line_x2, double line_y2, double point_x, double point_y)
-{
-	double x1, x2, y1, y2;
-	x1 = line_x2 - line_x1;
-	y1 = line_y2 - line_y1;
-	x2 = point_x - line_x1;
-	y2 = point_y - line_y1;
-	if (x1 * y2 - x2 * y1 >= 0)
-		return 1;
-	else
-		return 0;
-}
-
-double randomSign()
-{
-	if (Random() < 0.5)
-	{
-		return 1.;
-	}
-	else
-	{
-		return -1.;
-	}
-}
-
 double Xrecycling(double rand_, int a, int b)
 {
 	if (a < 38)
@@ -10253,8 +10225,8 @@ void Particle::emit_particle(const Vector3 &v0, const Vector3 &v1, const Vector3
 	// std::cout << "normal: " << normal.x << "\t" << normal.y << "\t" << normal.z << endl;
 
 	// --- B. 表面随机采样 (重心坐标) ---
-	double r1 = Random();
-	double r2 = Random();
+	double r1 = Tools::Random();
+	double r2 = Tools::Random();
 
 	// 如果在四边形外侧，折叠回三角形内
 	if (r1 + r2 > 1.0)
@@ -10287,8 +10259,8 @@ void Particle::emit_particle(const Vector3 &v0, const Vector3 &v1, const Vector3
 		// 余弦分布 (Cosine Weighted Lambertian)
 
 		// 1. 生成局部球坐标
-		double u1 = Random(); // 随机数1
-		double u2 = Random(); // 随机数2
+		double u1 = Tools::Random(); // 随机数1
+		double u2 = Tools::Random(); // 随机数2
 
 		// 半球采样公式
 		double theta_r = 2.0 * 3.1415926535 * u1; // 方位角 phi
@@ -10332,8 +10304,8 @@ Vector3 calculate_dissociation_velocity(Vector3 v_mol, double E_diss, double m_h
 	double u_mag = std::sqrt((E_diss * eV_to_Joule) / m_h);
 
 	// 2. 蒙特卡洛采样随机方向 (球坐标)
-	double xi1 = Random(); // 随机数 0-1
-	double xi2 = Random(); // 随机数 0-1
+	double xi1 = Tools::Random(); // 随机数 0-1
+	double xi2 = Tools::Random(); // 随机数 0-1
 
 	double phi = 2.0 * M_PI * xi1;
 	double cos_theta = 2.0 * xi2 - 1.0;

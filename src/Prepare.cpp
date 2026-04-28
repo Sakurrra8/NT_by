@@ -7,11 +7,9 @@
 void get_unit_vector_xy();
 void get_center();
 void get_dTi();
-double polygonarea(vector<Point> &polygon, int N);
 void get_sx();
 void get_point_to_y_line(double p1x, double p1y, double p2x, double p2y, double *y0);
 void CX_DT_Fix();
-double cds(double a);
 
 void Prepare()
 {
@@ -57,7 +55,7 @@ void Prepare()
 	}
 	out.close();*/
 	double deltaX, deltaY, deltaL;
-	vector<Point> polygon;
+	std::vector<Point> polygon;
 	polygon.resize(4);
 	srand((unsigned)time(NULL));
 
@@ -136,7 +134,7 @@ void Prepare()
 				polygon[(3 - k)].SetX(Grid[i][j][k]);
 				polygon[(3 - k)].SetY(Grid[i][j][k + 4]);
 			}
-			Area[i][j] = polygonarea(polygon, 4);
+			Area[i][j] = Tools::polygonarea(polygon, 4);
 		}
 
 	/// calculate the epx, epy, erx, ery
@@ -257,13 +255,13 @@ void Prepare()
 
 				if (K_D)
 				{
-					D.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
-					D.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+					D.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j]));
+					D.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j]));
 				}
 				if (K_T)
 				{
-					T.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j]) / sqrt(Tmass / Hmass));
-					T.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j]) / sqrt(Tmass / Hmass));
+					T.Ion_[0].Setcs(i, j, ne[i][j] * R2_1_5_H4.cal(ne[i][j], Te[i][j]));
+					T.Rec_[1].Setcs(i, j, ne[i][j] * R2_1_8_H4.cal(ne[i][j], Te[i][j]));
 				}
 			}
 			if (K_MarColl == 1)
@@ -277,12 +275,12 @@ void Prepare()
 				if (K_D)
 				{
 					D2.MAR_[0].Setcs(i, j, 0.);
-					D2.DS_[1][2].Setcs(i, j, ne[i][j] * R2_2_14_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+					D2.DS_[1][2].Setcs(i, j, ne[i][j] * R2_2_14_H4.cal(ne[i][j], Te[i][j] / 1.));
 				}
 				if (K_T)
 				{
 					T2.MAR_[0].Setcs(i, j, 0.);
-					T2.DS_[1][2].Setcs(i, j, ne[i][j] * R2_2_14_H4.cal(ne[i][j], Te[i][j] / 1));
+					T2.DS_[1][2].Setcs(i, j, ne[i][j] * R2_2_14_H4.cal(ne[i][j], Te[i][j]));
 				}
 			}
 			if (K_MarColl == 2)
@@ -294,12 +292,12 @@ void Prepare()
 				}
 				if (K_D)
 				{
-					D2.MAR_[0].Setcs(i, j, ne[i][j] * R3_2_3r_H4.cal(ne[i][j], Te[i][j] / 1));
+					D2.MAR_[0].Setcs(i, j, ne[i][j] * R3_2_3r_H4.cal(ne[i][j], Te[i][j]));
 					D2.DS_[1][2].Setcs(i, j, 0);
 				}
 				if (K_T)
 				{
-					T2.MAR_[0].Setcs(i, j, ne[i][j] * R3_2_3r_H4.cal(ne[i][j], Te[i][j] / 1));
+					T2.MAR_[0].Setcs(i, j, ne[i][j] * R3_2_3r_H4.cal(ne[i][j], Te[i][j]));
 					T2.DS_[1][2].Setcs(i, j, 0);
 				}
 			}
@@ -314,20 +312,20 @@ void Prepare()
 
 			if (K_D)
 			{
-				D2.Diss1_[0].Setcs(i, j, ne[i][j] * R2_2_5g_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
-				D2.Ion_[0].Setcs(i, j, ne[i][j] * R2_2_9_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
-				D2.Diss2_[0].Setcs(i, j, ne[i][j] * R2_2_10_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
-				D2.DS_[1][0].Setcs(i, j, ne[i][j] * R2_2_11_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
-				D2.DS_[1][1].Setcs(i, j, ne[i][j] * R2_2_12_H4.cal(ne[i][j], Te[i][j]) / sqrt(Dmass / Hmass));
+				D2.Diss1_[0].Setcs(i, j, ne[i][j] * R2_2_5g_H4.cal(ne[i][j], Te[i][j] / 1.));
+				D2.Ion_[0].Setcs(i, j, ne[i][j] * R2_2_9_H4.cal(ne[i][j], Te[i][j] / 1.));
+				D2.Diss2_[0].Setcs(i, j, ne[i][j] * R2_2_10_H4.cal(ne[i][j], Te[i][j] / 1.));
+				D2.DS_[1][0].Setcs(i, j, ne[i][j] * R2_2_11_H4.cal(ne[i][j], Te[i][j] / 1.));
+				D2.DS_[1][1].Setcs(i, j, ne[i][j] * R2_2_12_H4.cal(ne[i][j], Te[i][j] / 1.));
 			}
 
 			if (K_T)
 			{
-				T2.Diss1_[0].Setcs(i, j, ne[i][j] * R2_2_5g_H4.cal(ne[i][j], Te[i][j] / 1));
-				T2.Ion_[0].Setcs(i, j, ne[i][j] * R2_2_9_H4.cal(ne[i][j], Te[i][j] / 1));
-				T2.Diss2_[0].Setcs(i, j, ne[i][j] * R2_2_10_H4.cal(ne[i][j], Te[i][j] / 1));
-				T2.DS_[1][0].Setcs(i, j, ne[i][j] * R2_2_11_H4.cal(ne[i][j], Te[i][j] / 1));
-				T2.DS_[1][1].Setcs(i, j, ne[i][j] * R2_2_12_H4.cal(ne[i][j], Te[i][j] / 1));
+				T2.Diss1_[0].Setcs(i, j, ne[i][j] * R2_2_5g_H4.cal(ne[i][j], Te[i][j]));
+				T2.Ion_[0].Setcs(i, j, ne[i][j] * R2_2_9_H4.cal(ne[i][j], Te[i][j]));
+				T2.Diss2_[0].Setcs(i, j, ne[i][j] * R2_2_10_H4.cal(ne[i][j], Te[i][j]));
+				T2.DS_[1][0].Setcs(i, j, ne[i][j] * R2_2_11_H4.cal(ne[i][j], Te[i][j]));
+				T2.DS_[1][1].Setcs(i, j, ne[i][j] * R2_2_12_H4.cal(ne[i][j], Te[i][j]));
 			}
 
 			if (K_Methane)
@@ -374,32 +372,50 @@ void Prepare()
 	{
 		if (K_H)
 		{
-			H.R_with_H_[0].Setcs(i, n_H_0_Tri[i] * R_H_H.cal(n_H_0_Tri[i], T_H_0_Tri[i]));
-			H.R_with_H2_[0].Setcs(i, n_H2_0_Tri[i] * R_H_H2.cal(n_H2_0_Tri[i], T_H2_0_Tri[i]));
-			H2.R_with_H_[0].Setcs(i, n_H_0_Tri[i] * R_H2_H.cal(n_H_0_Tri[i], T_H_0_Tri[i]));
-			H2.R_with_H2_[0].Setcs(i, n_H_0_Tri[i] * R_H2_H2.cal(n_H2_0_Tri[i], T_H2_0_Tri[i]));
+			if (n_H_0_Tri[i] > 1e8)
+			{
+				H.R_with_H_[0].Setcs(i, n_H_0_Tri[i] * R_H_H.cal(n_H_0_Tri[i], T_H_0_Tri[i]));
+				H2.R_with_H_[0].Setcs(i, n_H_0_Tri[i] * R_H2_H.cal(n_H_0_Tri[i], T_H_0_Tri[i]));
+			}
+			if (n_H2_0_Tri[i] > 1e8)
+			{
+				H.R_with_H2_[0].Setcs(i, n_H2_0_Tri[i] * R_H_H2.cal(n_H2_0_Tri[i], T_H2_0_Tri[i]));
+				H2.R_with_H2_[0].Setcs(i, n_H_0_Tri[i] * R_H2_H2.cal(n_H2_0_Tri[i], T_H2_0_Tri[i]));
+			}
 		}
 		if (K_D)
 		{
-			D.R_with_H_[0].Setcs(i, n_D_0_Tri[i] * R_H_H.cal(n_D_0_Tri[i], T_D_0_Tri[i]));
-			D.R_with_H2_[0].Setcs(i, n_D2_0_Tri[i] * R_H_H2.cal(n_D2_0_Tri[i], T_D2_0_Tri[i]));
-			D2.R_with_H_[0].Setcs(i, n_D_0_Tri[i] * R_H_H.cal(n_D_0_Tri[i], T_D_0_Tri[i]));
-			D2.R_with_H2_[0].Setcs(i, n_D2_0_Tri[i] * R_H_H2.cal(n_D2_0_Tri[i], T_D2_0_Tri[i]));
+			if (n_D_0_Tri[i] > 1e8)
+			{
+				D.R_with_H_[0].Setcs(i, n_D_0_Tri[i] * R_H_H.cal(n_D_0_Tri[i], T_D_0_Tri[i]));
+				D2.R_with_H_[0].Setcs(i, n_D_0_Tri[i] * R_H2_H.cal(n_D_0_Tri[i], T_D_0_Tri[i]));
+			}
+			if (n_D2_0_Tri[i] > 1e8)
+			{
+				D.R_with_H2_[0].Setcs(i, n_D2_0_Tri[i] * R_H_H2.cal(n_D2_0_Tri[i], T_D2_0_Tri[i]));
+				D2.R_with_H2_[0].Setcs(i, n_D2_0_Tri[i] * R_H2_H2.cal(n_D2_0_Tri[i], T_D2_0_Tri[i]));
+			}
 		}
 		if (K_T)
 		{
-			T.R_with_H_[0].Setcs(i, n_T_0_Tri[i] * R_H_H.cal(n_T_0_Tri[i], T_T_0_Tri[i]));
-			T.R_with_H2_[0].Setcs(i, n_T2_0_Tri[i] * R_H_H2.cal(n_T2_0_Tri[i], T_T2_0_Tri[i]));
-			T2.R_with_H_[0].Setcs(i, n_T_0_Tri[i] * R_H_H.cal(n_T_0_Tri[i], T_T_0_Tri[i]));
-			T2.R_with_H2_[0].Setcs(i, n_T2_0_Tri[i] * R_H_H2.cal(n_T2_0_Tri[i], T_T2_0_Tri[i]));
+			if (n_T_0_Tri[i] > 1e8)
+			{
+				T.R_with_H_[0].Setcs(i, n_T_0_Tri[i] * R_H_H.cal(n_T_0_Tri[i], T_T_0_Tri[i]));
+				T2.R_with_H_[0].Setcs(i, n_T_0_Tri[i] * R_H2_H.cal(n_T_0_Tri[i], T_T_0_Tri[i]));
+			}
+			if (n_T2_0_Tri[i] > 1e8)
+			{
+				T.R_with_H2_[0].Setcs(i, n_T2_0_Tri[i] * R_H_H2.cal(n_T2_0_Tri[i], T_T2_0_Tri[i]));
+				T2.R_with_H2_[0].Setcs(i, n_T2_0_Tri[i] * R_H2_H2.cal(n_T2_0_Tri[i], T_T2_0_Tri[i]));
+			}
 		}
 	}
-	ofstream out_temp("doc/cs_R_H_H.txt");
+	/*ofstream out_temp("doc/cs_n-n.txt");
 	for (int i = 0; i < Grid4.num_tris(); i++)
 	{
-		out_temp << i << "\t" << D.R_with_H_[0].cs(i) << endl;
+		out_temp << i << "\t" << D.R_with_H_[0].cs(i) << "\t" << D.R_with_H2_[0].cs(i) << "\t" << D2.R_with_H_[0].cs(i) << "\t" << D2.R_with_H2_[0].cs(i) << endl;
 	}
-	out_temp.close();
+	out_temp.close();*/
 
 	if (K_C || K_Methane)
 	{
@@ -631,7 +647,7 @@ void Prepare()
 	/*double V_temp[3], sum_1 = 0, sum_2 = 0;
 	for (int i = 0; i < 1000; i++)
 	{
-		Vinit_cosine(V_temp, 0, -1);
+		Tools::Vinit_cosine(V_temp, 0, -1);
 		std::cout << V_temp[0] << ", " << V_temp[1] << ", " << V_temp[2] << endl;
 		if (V_temp[1] < 0)
 		{
@@ -954,20 +970,6 @@ void Prepare()
 	std::cout << Par_temp.Zone() << endl;*/
 }
 
-double polygonarea(vector<Point> &polygon, int N)
-{
-	int i, j;
-	double area = 0;
-	for (i = 0; i < N; i++)
-	{
-		j = (i + 1) % N;
-		area += polygon[i].x() * polygon[j].y();
-		area -= polygon[i].y() * polygon[j].x();
-	}
-	area /= 2;
-	return (area < 0 ? -area : area);
-}
-
 /// @brief Calculate the epx,epy,erx,ery from Magnetic Fields
 void get_unit_vector_xy()
 {
@@ -1084,10 +1086,10 @@ void get_center()
 	{
 		for (int j = 0; j <= Nr - 1; j = j + 1)
 		{
-			get_line_intersection(Grid[i][j][0], Grid[i][j][4], Grid[i][j][2],
-								  Grid[i][j][6], Grid[i][j][1], Grid[i][j][5],
-								  Grid[i][j][3], Grid[i][j][7], &crx[i][j],
-								  &cry[i][j]);
+			Tools::get_line_intersection(Grid[i][j][0], Grid[i][j][4], Grid[i][j][2],
+										 Grid[i][j][6], Grid[i][j][1], Grid[i][j][5],
+										 Grid[i][j][3], Grid[i][j][7], &crx[i][j],
+										 &cry[i][j]);
 		}
 	}
 	/*ofstream f1, f2;
@@ -1656,9 +1658,9 @@ void CX_DT_Fix()
 		sum2 = 0;
 		for (double i = 0.1; i < 100; i *= 1.1)
 		{
-			k1[(int)(i * 10)] = cds(log10(CCD96_H.cal(i, 1e20) * Ratio_D_Coll) / log10(CCD96_D.cal(i, 1e20)));
+			k1[(int)(i * 10)] = Tools::cds(log10(CCD96_H.cal(i, 1e20) * Ratio_D_Coll) / log10(CCD96_D.cal(i, 1e20)));
 			ave1 += k1[(int)(i * 10)];
-			k2[(int)(i * 10)] = cds(log10(CCD96_H.cal(i, 1e20) * Ratio_T_Coll) / log10(CCD96_T.cal(i, 1e20)));
+			k2[(int)(i * 10)] = Tools::cds(log10(CCD96_H.cal(i, 1e20) * Ratio_T_Coll) / log10(CCD96_T.cal(i, 1e20)));
 			ave2 += k2[(int)(i * 10)];
 			Count += 1;
 			// std::cout << i << '\t' << CCD96_H.cal(i, 1e20) << '\t' << CCD96_D.cal(i, 1e20) << '\t'
@@ -1702,11 +1704,4 @@ void CX_DT_Fix()
 	Ratio_T_Coll = pow(Tmass / Hmass, -1. / K2);
 	Ratio_DT_Coll = pow(2 * Dmass * Tmass / (Dmass + Tmass) / Hmass, -1. / ((K1 + K2) / 2));
 	// std::cout << K1 << '\t' << K2 << '\t' << Ratio_DT_Coll << endl;
-}
-
-double cds(double a)
-{
-	if (a < 1)
-		return 1. / a;
-	return a;
 }

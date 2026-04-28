@@ -74,6 +74,11 @@ class SOLPS:
             self.n_e = np.transpose(self.n_e[:, 3].reshape(38, 98))
             self.T_e = np.loadtxt(fname=self.path + "2D_data/te_2D.dat", skiprows=1)
             self.T_e = np.transpose(self.T_e[:, 3].reshape(38, 98))
+        
+        self.n_D_0_Tri = np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'pdena')) * 1e6
+        self.n_D2_0_Tri = np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'pdenm')) * 1e6
+        self.T_D_0_Tri = 2./3 * np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'edena') / self.n_D_0_Tri) * 1e6
+        self.T_D2_0_Tri = 2./3 * np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'edenm') / self.n_D2_0_Tri) * 1e6
 
         
         self.Te_1D_Inner = np.transpose(self.T_e[1, 1:37].reshape(1,36))
@@ -106,6 +111,36 @@ class SOLPS:
                     self.Te_matrix_5[i, j] = 1
                 else:
                     self.Te_matrix_6[i, j] = 1
+    
+    def read_eirene_field(self, filename, field_name):
+        """
+        从 fort.46 文件中提取指定字段的数据
+        """
+        data = []
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+            
+        # 获取总单元数
+        n_cells = int(lines[0].split()[0])
+        
+        # 寻找字段起始行
+        start_line = -1
+        for i, line in enumerate(lines):
+            if f"*eirene data field {field_name}" in line:
+                start_line = i + 1
+                break
+                
+        if start_line == -1:
+            print(f"未找到字段: {field_name}")
+            return None
+
+        # 读取数据直到达到 n_cells 数量
+        current_line = start_line
+        while len(data) < n_cells:
+            vals = lines[current_line].split()
+            data.extend([float(v) for v in vals])
+            current_line += 1
+        return data[:n_cells]
 
 class Neutral:
     def __init__(self, path, IfT):
@@ -127,6 +162,21 @@ class Neutral:
             self.n_D2_0_Tri = np.loadtxt(fname=self.path + "data/n_D2_0_Tri")
             self.T_D_0_Tri = np.loadtxt(fname=self.path + "data/T_D_0_Tri")
             self.T_D2_0_Tri = np.loadtxt(fname=self.path + "data/T_D2_0_Tri")
+            self.E_D_0_Tri = np.loadtxt(fname=self.path + "data/E_D_0_Tri")
+            self.E_D2_0_Tri = np.loadtxt(fname=self.path + "data/E_D2_0_Tri")
+            if(self.K_nn):
+                self.Sn_D_with_H = np.loadtxt(fname=self.path + "data/Sn_R_with_H_D_0_Tri")
+                self.Sn_D_with_H2 = np.loadtxt(fname=self.path + "data/Sn_R_with_H2_D_0_Tri")
+                self.Sn_D2_with_H = np.loadtxt(fname=self.path + "data/Sn_R_with_H_D2_0_Tri")
+                self.Sn_D2_with_H2 = np.loadtxt(fname=self.path + "data/Sn_R_with_H2_D2_0_Tri")
+                self.Smu_D_with_H = np.loadtxt(fname=self.path + "data/Smu_R_with_H_D_0_Tri")
+                self.Smu_D_with_H2 = np.loadtxt(fname=self.path + "data/Smu_R_with_H2_D_0_Tri")
+                self.Smu_D2_with_H = np.loadtxt(fname=self.path + "data/Smu_R_with_H_D2_0_Tri")
+                self.Smu_D2_with_H2 = np.loadtxt(fname=self.path + "data/Smu_R_with_H2_D2_0_Tri")
+                self.SE_D_with_H = np.loadtxt(fname=self.path + "data/SE_R_with_H_D_0_Tri")
+                self.SE_D_with_H2 = np.loadtxt(fname=self.path + "data/SE_R_with_H2_D_0_Tri")
+                self.SE_D2_with_H = np.loadtxt(fname=self.path + "data/SE_R_with_H_D2_0_Tri")
+                self.SE_D2_with_H2 = np.loadtxt(fname=self.path + "data/SE_R_with_H2_D2_0_Tri")
         
         if(self.k_array):
             self.n_D_0_array = Tn_array(39, self.path + "data/n_D_0_")
@@ -339,8 +389,9 @@ class Neutral:
 
     def set_K_Rec(self):
         self.K_Rec    
-    def set_K_Tri(self, K_Tri_):
+    def set_K_Tri(self, K_Tri_, K_nn_):
         self.K_Tri=K_Tri_
+        self.K_nn=K_nn_
 def axset(ax_, p1, wall, ax_title, xlim, ylim, clim):
     ax_.add_collection(p1)
     ax_.autoscale_view()

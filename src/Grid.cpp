@@ -79,7 +79,7 @@ int grid::Ifingrid(double x, double y)
             }
             else if (Grid_Point_[i][0] < x || Grid_Point_[m][0] < x)
             {
-                if (get_line_intersection(x, y, -1, y, Grid_Point_[i][0], Grid_Point_[i][1], Grid_Point_[m][0], Grid_Point_[m][1], &secx, &secy))
+                if (Tools::get_line_intersection(x, y, -1, y, Grid_Point_[i][0], Grid_Point_[i][1], Grid_Point_[m][0], Grid_Point_[m][1], &secx, &secy))
                     count += 1;
             }
         }
@@ -387,7 +387,7 @@ int GRID::IfinWall(double x, double y)
             }
             else if (Wall_[i][0] < x || Wall_[i + 1][0] < x)
             {
-                if (get_line_intersection(x, y, -1, y, Wall_[i][0], Wall_[i][1], Wall_[i + 1][0], Wall_[i + 1][1], &secx, &secy))
+                if (Tools::get_line_intersection(x, y, -1, y, Wall_[i][0], Wall_[i][1], Wall_[i + 1][0], Wall_[i + 1][1], &secx, &secy))
                     count += 1;
             }
         }
@@ -412,7 +412,7 @@ int GRID::IfinPlasmaGrid(double x, double y)
             }
             else if (PLasma_Grid_Boundry_[i][0] < x || PLasma_Grid_Boundry_[i + 1][0] < x)
             {
-                if (get_line_intersection(x, y, -1, y, PLasma_Grid_Boundry_[i][0], PLasma_Grid_Boundry_[i][1], PLasma_Grid_Boundry_[i + 1][0], PLasma_Grid_Boundry_[i + 1][1], &secx, &secy))
+                if (Tools::get_line_intersection(x, y, -1, y, PLasma_Grid_Boundry_[i][0], PLasma_Grid_Boundry_[i][1], PLasma_Grid_Boundry_[i + 1][0], PLasma_Grid_Boundry_[i + 1][1], &secx, &secy))
                     count += 1;
             }
         }
@@ -437,7 +437,7 @@ int GRID::IfinCore(double x, double y)
             }
             else if (Core_Boundry_[i][0] < x || Core_Boundry_[i + 1][0] < x)
             {
-                if (get_line_intersection(x, y, -1, y, Core_Boundry_[i][0], Core_Boundry_[i][1], Core_Boundry_[i + 1][0], Core_Boundry_[i + 1][1], &secx, &secy))
+                if (Tools::get_line_intersection(x, y, -1, y, Core_Boundry_[i][0], Core_Boundry_[i][1], Core_Boundry_[i + 1][0], Core_Boundry_[i + 1][1], &secx, &secy))
                     count += 1;
             }
         }
@@ -762,7 +762,7 @@ double GRID::Cos_target(int i)
 {
     return Cos_target_[i];
 }
-/*int get_line_intersection(double p0_x, double p0_y, double p1_x, double p1_y,
+/*int Tools::get_line_intersection(double p0_x, double p0_y, double p1_x, double p1_y,
                           double p2_x, double p2_y, double p3_x, double p3_y,
                           double *i_x, double *i_y)
 {
@@ -2287,7 +2287,7 @@ namespace eirene
                 P_temp[j].SetX(nodes_[tris_[i].v[j]].r);
                 P_temp[j].SetY(nodes_[tris_[i].v[j]].z);
             }
-            ori = orientation(P_temp[0], P_temp[1], P_temp[2]);
+            ori = Tools::orientation(P_temp[0], P_temp[1], P_temp[2]);
             if (ori != 1)
                 std::cout << "The direction of " + to_string(i) + " triangle is counterclockwise\n";
             out_temp << i << "\t" << ori << endl;
@@ -2354,7 +2354,7 @@ namespace eirene
                 }
                 else if (x_[i] < x || x_[i + 1] < x)
                 {
-                    if (get_line_intersection(x, y, -1, y, x_[i], y_[i], x_[i + 1], y_[i + 1], &secx, &secy))
+                    if (Tools::get_line_intersection(x, y, -1, y, x_[i], y_[i], x_[i + 1], y_[i + 1], &secx, &secy))
                         count += 1;
                 }
             }

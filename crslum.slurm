@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -M wice
 #SBATCH -N 1
 #SBATCH -J NT_test
 #SBATCH -n 1
@@ -6,7 +7,6 @@
 #SBATCH --output=log/NeuTran-%j.out
 #SBATCH --error=log/NeuTran-%j.err
 #SBATCH -t 3-00:00:00
-#SBATCH -M genius
 #SBATCH -A lp_opt_plasma_edge_conf     # 计费/项目账号（你的 VSC project）
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=694076215@qq.com

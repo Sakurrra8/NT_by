@@ -50,6 +50,11 @@ void Initialize(int Input, char *settingfile[])
         a.assign(T, double(0.0));
     };
 
+    auto make1D_V = [&](std::vector<std::vector<double>> &a)
+    {
+        a.assign(T, std::vector<double>(3, 0.0));
+    };
+
     make2D(ne);
     make2D(n_H_1);
     make2D(n_D_1);
@@ -70,8 +75,8 @@ void Initialize(int Input, char *settingfile[])
     make1D(T_H2_0_Tri);
     make1D(T_H_0_Tri);
     make1D(n_H2_0_Tri);
-    make1D(ua_H_0_Tri);
-    make1D(ua_H2_0_Tri);
+    make1D_V(ua_H_0_Tri);
+    make1D_V(ua_H2_0_Tri);
     make2D(n_H_0);
     make2D(T_H2_0);
     make2D(T_H_0);
@@ -83,8 +88,8 @@ void Initialize(int Input, char *settingfile[])
     make1D(T_D2_0_Tri);
     make1D(T_D_0_Tri);
     make1D(n_D2_0_Tri);
-    make1D(ua_D_0_Tri);
-    make1D(ua_D2_0_Tri);
+    make1D_V(ua_D_0_Tri);
+    make1D_V(ua_D2_0_Tri);
     make2D(n_D_0);
     make2D(T_D2_0);
     make2D(T_D_0);
@@ -96,8 +101,8 @@ void Initialize(int Input, char *settingfile[])
     make1D(T_T2_0_Tri);
     make1D(T_T_0_Tri);
     make1D(n_T2_0_Tri);
-    make1D(ua_T_0_Tri);
-    make1D(ua_T2_0_Tri);
+    make1D_V(ua_T_0_Tri);
+    make1D_V(ua_T2_0_Tri);
     make2D(n_T_0);
     make2D(T_T2_0);
     make2D(T_T_0);
