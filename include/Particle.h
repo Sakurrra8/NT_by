@@ -291,6 +291,7 @@ private:
 	std::vector<double> V_; // velocity
 	double V_Charge_[8];	// velocity when Particle Charge != 0
 	double X_new_[3];		// position at next time step
+	double X_old_[3];		// position at last time step
 	double dt_;				// the dt calculated from lambda_min
 	double dt_trace_;		// the dt calculated from trace
 	int Zone_;				// Particle Zone in Tokamak
@@ -324,6 +325,10 @@ private:
 	double NumPar_Grid_[98][38]; // for Particle from Grid Collision
 	double Weight_Grid_[98][38]; // for Particle from Grid Collision
 	double NumPar_sum_Grid_;	 // for Particle from Grid Collision
+
+	std::vector<double> Recycled_counts_;
+	std::vector<double> Recombin_counts_;
+	std::vector<double> T_Init_;
 
 	/// @brief Statistical parameters
 	double *n_[98][38];
@@ -440,11 +445,13 @@ public:
 	double DS_cs_[98][38][4], DS_Cor_cs_[4];*/
 
 	void Particlefrom(Particle *A, double K = 1, int Charge = -100);
+	int sampleTargetPlate(const std::vector<double> &Counts);
+	void RecycledCal(std::vector<double> &NumPar_wall);
+	void RecycledCal(std::vector<double> &NumPar_wall, std::vector<double> &T_Init);
+	void RecombinCal(std::vector<double> &NumPar_wall, std::vector<double> &T_Init);
 	void CalWeight1(int num);
-	void CalWeight2(double NumPar[76], int num);
+	void CalWeight2(std::vector<double> &NumPar, int num);
 	void Init(int k, int z = 0);
-	void Vinit_neutralReflect(std::vector<double> &Vt, double Rcos, double Rsin);
-	void Vinit_ionReflect(std::vector<double> &Vt, double Rcos, double Rsin, int z);
 	void VtoVcharge();
 	void VchargetoV();
 	void Vchargefix(); // when the charged particle flight to next grid, V_charge[0,1,2] should be fixed
@@ -554,24 +561,7 @@ public:
 
 	double CalAngle(int num_wall);
 	double CalAngle(double Sin, double Cos);
-
-	void emit_particle(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, int mode, Vector3 incidentDir = Vector3(0, 0, 0));
-	/*void Out_n(string path);
-	void Out_Sn_ion(string path);
-	void Out_Sn_rec(string path);
-	void Out_Sn_CX(string path);
-	void Out_SE_ion(string path);
-	void Out_SE_rec(string path);
-	void Out_SE_CX(string path);
-	void Out_Smu_ion(string path);
-	void Out_Smu_rec(string path);
-	void Out_Smu_CX(string path);
-	void Out_Pra_ion(string path);
-	void Out_Pra_rec(string path);
-	void Out_Pra_CX(string path);
-	void Out_Sn_MAR(string path);
-	void Out_Sn_Diss(string path);
-	void Out_Sn_Diss2(string path);*/
+	void NeutralFluxStatistics(int k, int oritation);
 };
 
 class PartoPar

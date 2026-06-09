@@ -66,8 +66,15 @@ namespace Tools
 
     double Random()
     {
-        std::uniform_real_distribution<double> dist(0, 1);
+        std::uniform_real_distribution<double> dist(1e-5, 1 - 1e-5);
         return dist(GetEngine());
+
+        /*int N = 99999999;
+        std::random_device rd;
+        std::default_random_engine eng(rd());
+        std::uniform_int_distribution<int> distr(1, N);
+        // srand((unsigned)time(NULL));
+        return (double)distr(eng) / (double)(N + 1);*/
     }
 
     double Maxwell(double E, double Mass)
@@ -123,24 +130,33 @@ namespace Tools
 
     void Vinit_cosine(std::vector<double> &Vt, double Rcos, double Rsin)
     {
-        do
+        // 确保 Vt 有足够的空间 (防御性编程)
+        if (Vt.size() < 3)
         {
-            double ztheta = 6.283185307 * Tools::Random();
-            double zcost = cos(ztheta);
-            double zsint = sin(ztheta);
-            double zpsi = Tools::Random() * 3.1415927;
-            double zcosp = abs(cos(zpsi));
-            double zsinp = sin(zpsi);
-            double Vx = zsint * zsinp;
-            double Vy = zcosp;
-            double Vz = zsinp * zcost;
-            // std::cout << pow(Vx, 2) << ", " << pow(Vy, 2) << ", " << pow(Vz, 2) << "  ";
+            Vt.resize(3);
+        }
 
-            Vt[0] = Rcos * Vx - Rsin * Vy;
-            Vt[1] = Rsin * Vx + Rcos * Vy;
-            Vt[2] = Vz;
-            // std::cout << pow(Vt[0], 2) << "," << pow(Vt[1], 2) << ", " << pow(Vt[2], 2) << endl;
-        } while (Vt[2] == 1 || Vt[0] < -3e8);
+        // 1. 生成 [0, 1) 的均匀随机数
+        double U1 = Tools::Random();
+        double U2 = Tools::Random();
+
+        // 2. 余弦分布逆变换采样 (假设法线方向为 Y 轴)
+        double phi = 6.283185307179586 * U1; // 方位角 2*pi*U1
+
+        // Y轴方向 (法向)
+        double Vy = std::sqrt(U2);
+
+        // 水平面的投影半径 (sin_theta)
+        double sin_theta = std::sqrt(1.0 - U2);
+
+        // X轴和Z轴方向
+        double Vx = sin_theta * std::cos(phi);
+        double Vz = sin_theta * std::sin(phi);
+
+        // 3. 坐标旋转 (X-Y平面)
+        Vt[0] = Rcos * Vx - Rsin * Vy;
+        Vt[1] = Rsin * Vx + Rcos * Vy;
+        Vt[2] = Vz;
     }
 
     int get_line_intersection(double p0_x, double p0_y, double p1_x, double p1_y,
@@ -209,4 +225,158 @@ namespace Tools
             return 1. / a;
         return a;
     }
+
+    /**
+     * @brief 计算粒子撞击二维对称壁面后的反射速度向量 (原地修改)
+     * * @param Vt    [输入/输出] 粒子的速度向量 (要求 std::vector 大小至少为3)。
+     * - 漫反射时：原有速度被舍弃，直接覆盖为新的随机反弹方向。
+     * - 镜面反射时：作为入射速度被读取，随后覆盖为出射速度。
+     * @param Rcos  壁面倾斜角的余弦值 (cos(alpha))
+     * @param Rsin  壁面倾斜角的正弦值 (sin(alpha))
+     * @param type  反射类型：
+     * - 0: 余弦漫反射 (Cosine Diffuse)
+     * - 1: 镜面反射 (Specular)
+     */
+    void calculateReflectionVelocity(std::vector<double> &Vt, double Rcos, double Rsin, int type)
+    {
+        // 防御性编程：确保 Vt 至少有 3 个元素，防止内存越界
+        if (Vt.size() < 3)
+        {
+            Vt.resize(3, 0.0);
+        }
+
+        if (type == 0)
+        {
+            // --- 0: 余弦漫反射 ---
+            // 注意：多线程环境 (如 OpenMP) 下，thread_local 必不可少
+            thread_local std::mt19937 rng(std::random_device{}());
+            std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+            double U1 = dist(rng);
+            double U2 = dist(rng);
+
+            // 1. 局部坐标系采样 (假设 Y 轴为正法向)
+            double phi = 2.0 * M_PI * U1;
+            double Vy = std::sqrt(U2);
+            double sin_theta = std::sqrt(1.0 - U2);
+
+            double Vx = sin_theta * std::cos(phi);
+            double Vz = sin_theta * std::sin(phi);
+
+            // 2. 绕 Z 轴进行 2D 旋转，对齐到真实的壁面法线，并直接写入 Vt
+            Vt[0] = Rcos * Vx - Rsin * Vy;
+            Vt[1] = Rsin * Vx + Rcos * Vy;
+            Vt[2] = Vz;
+
+            // 注: 局部采样本身已是单位向量，旋转不改变模长，因此无需再次归一化
+        }
+        else if (type == 1)
+        {
+            // --- 1: 镜面反射 ---
+            // 1. 通过直接传入的 Rcos 和 Rsin，隐式推导壁面法向量 n = (-sin(a), cos(a), 0)
+            double nx = -Rsin;
+            double ny = Rcos;
+            double nz = 0.0;
+
+            // 2. 计算点乘 (Vt · n) (即计算入射速度在法向上的投影)
+            double dot_prod = Vt[0] * nx + Vt[1] * ny + Vt[2] * nz;
+
+            // 3. 物理有效性检查：仅当粒子朝着壁面运动 (点乘 <= 0) 时才发生反弹
+            if (dot_prod <= 0.0)
+            {
+                // 镜面反射矢量公式： v_out = v_in - 2 * (v_in · n) * n
+                Vt[0] -= 2.0 * dot_prod * nx;
+                Vt[1] -= 2.0 * dot_prod * ny;
+                Vt[2] -= 2.0 * dot_prod * nz;
+            }
+
+            // 4. 数值漂移修正：重新归一化以保证速度依然是严格的单位向量
+            double len = std::sqrt(Vt[0] * Vt[0] + Vt[1] * Vt[1] + Vt[2] * Vt[2]);
+            if (len > 1e-9)
+            {
+                Vt[0] /= len;
+                Vt[1] /= len;
+                Vt[2] /= len;
+            }
+        }
+    }
+    /**
+     * @brief 判断直线与线段是否相交，并计算交点坐标
+     * * @param lx1 直线上第一点的 x 坐标
+     * @param ly1 直线上第一点的 y 坐标
+     * @param lx2 直线上第二点的 x 坐标
+     * @param ly2 直线上第二点的 y 坐标
+     * @param sx1 线段第一个端点的 x 坐标
+     * @param sy1 线段第一个端点的 y 坐标
+     * @param sx2 线段第二个端点的 x 坐标
+     * @param sy2 线段第二个端点的 y 坐标
+     * @param ix  [输出] 交点的 x 坐标 (仅在返回 1 时有效)
+     * @param iy  [输出] 交点的 y 坐标 (仅在返回 1 时有效)
+     * @return int 1 表示相交，0 表示不相交
+     */
+    int getLineSegmentIntersection(double lx1, double ly1, double lx2, double ly2,
+                                   double sx1, double sy1, double sx2, double sy2,
+                                   double &ix, double &iy)
+    {
+        // 防御性编程：如果定义直线的两点重合，无法构成直线
+        if (lx1 == lx2 && ly1 == ly2)
+        {
+            return 0;
+        }
+
+        // 1. 计算叉积 cp3 = (P2 - P1) x (S1 - P1)
+        double cp3 = (lx2 - lx1) * (sy1 - ly1) - (ly2 - ly1) * (sx1 - lx1);
+
+        // 2. 计算叉积 cp4 = (P2 - P1) x (S2 - P1)
+        double cp4 = (lx2 - lx1) * (sy2 - ly1) - (ly2 - ly1) * (sx2 - lx1);
+
+        // 3. 判断两个叉积是否异号（或其中一个为 0），确定是否相交
+        if ((cp3 >= 0 && cp4 <= 0) || (cp3 <= 0 && cp4 >= 0))
+        {
+
+            double denominator = cp3 - cp4;
+
+            // 特殊情况：如果分母接近 0，说明 cp3 == cp4 == 0，即线段完全共线于直线
+            if (std::abs(denominator) < 1e-9)
+            {
+                // 共线时有无数个交点，这里默认返回线段的起点
+                ix = sx1;
+                iy = sy1;
+            }
+            else
+            {
+                // 核心算法：利用叉积的比例进行参数化插值 (t 在 0 到 1 之间)
+                double t = cp3 / denominator;
+                ix = sx1 + t * (sx2 - sx1);
+                iy = sy1 + t * (sy2 - sy1);
+            }
+
+            return 1; // 确定相交并成功写入交点
+        }
+
+        return 0; // 不相交
+    }
+}
+
+void get_point_to_y_line(double p1x, double p1y, double p2x, double p2y, double *y0)
+{
+    if (p1y == p2y)
+    {
+        *y0 = p1y;
+        return;
+    }
+
+    if (p1x == p2x)
+    {
+        *y0 = 1e32;
+        printf("In function : get_point_to_y_line, p1x == p2x, it is not good \n");
+        return;
+    }
+
+    double a, b, c;
+    a = p2y - p1y;
+    b = p1x - p2x;
+    c = p2x * p1y - p1x * p2y;
+
+    *y0 = -1.0 * c / b;
 }

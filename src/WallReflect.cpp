@@ -13,22 +13,22 @@ void WallReflect()
         if (K_Wallelement == 1)
         {
             if (P == &H)
-                coeff_reflect = H_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
+                coeff_reflect = H_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &D)
-                coeff_reflect = D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
+                coeff_reflect = D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &T)
-                coeff_reflect = T_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
+                coeff_reflect = T_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &H2 || P == &D2 || P == &T2)
                 coeff_reflect = coeff_recyc;
         }
         else if (K_Wallelement == 2)
         {
             if (P == &H)
-                coeff_reflect = H_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
+                coeff_reflect = H_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &D)
-                coeff_reflect = D_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
+                coeff_reflect = D_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &T)
-                coeff_reflect = T_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
+                coeff_reflect = T_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &H2 || P == &D2 || P == &T2)
                 coeff_reflect = coeff_recyc;
         }
@@ -134,7 +134,7 @@ void WallReflect()
                 return;
             }
             P->setfate(0, 15, InterscePoint[0][4]);
-            P->Init(3, 1);
+            P->Init(3, 0);
             // P->track();
             if (P->Weight() == 0)
                 return;

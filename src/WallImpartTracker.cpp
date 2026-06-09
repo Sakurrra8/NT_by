@@ -348,6 +348,79 @@ bool WallImpactTracker::loadYieldTable(const std::string &path)
     return true;
 }
 
+void WallImpactTracker::writeH5(const std::string &filename, const std::string &groupname) const
+{
+    using namespace H5;
+
+    H5File file(filename, H5F_ACC_TRUNC);
+
+    Group g = file.createGroup(groupname);
+
+    DataSpace scalar_space(H5S_SCALAR);
+    g.createAttribute("inited", PredType::NATIVE_HBOOL, scalar_space).write(PredType::NATIVE_HBOOL, &inited_);
+    g.createAttribute("NWALL", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &NWALL_);
+    g.createAttribute("NBIN_E", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &NBIN_E_);
+    g.createAttribute("NBIN_MU", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &NBIN_MU_);
+    g.createAttribute("E_min", PredType::NATIVE_DOUBLE, scalar_space).write(PredType::NATIVE_DOUBLE, &E_MIN_);
+    g.createAttribute("E_max", PredType::NATIVE_DOUBLE, scalar_space).write(PredType::NATIVE_DOUBLE, &E_MAX_);
+    g.createAttribute("mu_min", PredType::NATIVE_DOUBLE, scalar_space).write(PredType::NATIVE_DOUBLE, &MU_MIN_);
+    g.createAttribute("mu_max", PredType::NATIVE_DOUBLE, scalar_space).write(PredType::NATIVE_DOUBLE, &MU_MAX_);
+
+    if (!inited_)
+        return;
+
+    std::vector<double> bufE(NWALL_ * NBIN_E_, 0.0);
+    std::vector<double> bufA(NWALL_ * NBIN_MU_, 0.0);
+    std::vector<double> bufSE(NWALL_ * NBIN_E_, 0.0);
+    std::vector<double> bufSA(NWALL_ * NBIN_MU_, 0.0);
+
+    for (int w = 0; w < NWALL_; ++w)
+    {
+        for (int i = 0; i < NBIN_E_; ++i)
+        {
+            bufE[w * NBIN_E_ + i] = energyHist_[w][i];
+            bufSE[w * NBIN_E_ + i] = sputterEnergyHist_[w][i];
+        }
+        for (int j = 0; j < NBIN_MU_; ++j)
+        {
+            bufA[w * NBIN_MU_ + j] = angleHist_[w][j];
+            bufSA[w * NBIN_MU_ + j] = sputterAngleHist_[w][j];
+        }
+    }
+
+    hsize_t de[2] = {static_cast<hsize_t>(NWALL_), static_cast<hsize_t>(NBIN_E_)};
+    hsize_t da[2] = {static_cast<hsize_t>(NWALL_), static_cast<hsize_t>(NBIN_MU_)};
+    DataSpace spE(2, de), spA(2, da);
+
+    auto write2D = [&](const char *name, const std::vector<double> &buf, const DataSpace &sp)
+    {
+        DataSet ds = g.createDataSet(name, PredType::NATIVE_DOUBLE, sp);
+        ds.write(buf.data(), PredType::NATIVE_DOUBLE);
+    };
+    write2D("energyHist", bufE, spE);
+    write2D("angleHist", bufA, spA);
+    write2D("sputterEnergyHist", bufSE, spE);
+    write2D("sputterAngleHist", bufSA, spA);
+
+    hsize_t d1[1] = {static_cast<hsize_t>(NWALL_)};
+    DataSpace sp1(1, d1);
+    DataSet dsFlux = g.createDataSet("totalFlux", PredType::NATIVE_DOUBLE, sp1);
+    dsFlux.write(totalFlux_.data(), PredType::NATIVE_DOUBLE);
+    DataSet dsStot = g.createDataSet("totalSputter", PredType::NATIVE_DOUBLE, sp1);
+    dsStot.write(totalSputter_.data(), PredType::NATIVE_DOUBLE);
+
+    if (!Y_E_.empty() && !Y_A_.empty())
+    {
+        hsize_t e2[1] = {static_cast<hsize_t>(Y_E_.size())};
+        hsize_t a2[1] = {static_cast<hsize_t>(Y_A_.size())};
+        DataSpace spYE(1, e2), spYA(1, a2);
+        DataSet dsYE = g.createDataSet("yield_E_grid", PredType::NATIVE_DOUBLE, spYE);
+        DataSet dsYA = g.createDataSet("yield_A_grid", PredType::NATIVE_DOUBLE, spYA);
+        dsYE.write(Y_E_.data(), PredType::NATIVE_DOUBLE);
+        dsYA.write(Y_A_.data(), PredType::NATIVE_DOUBLE);
+    }
+}
+
 double WallImpactTracker::Y_E(int i)
 {
     return Y_E_[i];

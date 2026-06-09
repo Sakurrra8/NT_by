@@ -1,6 +1,6 @@
 PRGM		=edit
 FC	        =ifort
-CC			=g++ -fopenmp
+CC			=g++ -fopenmp -static-libstdc++ -static-libgcc
 MPICC		=mpicc
 FFLAGS		=-fast
 CFLAGS 		=

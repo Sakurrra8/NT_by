@@ -57,6 +57,7 @@ void Output()
         }
         Out_temp.close();
     }
+    D_W_sputtered.writeH5(Outputpath + "D_W_stats.h5", "/D_W");
 
     Out_temp.open(Outputpath + "Bx");
     for (int i = 0; i < N_poloidal; i++)

@@ -57,7 +57,9 @@ private:
     vector<vector<vector<int>>> Correlation_Grid_Index_;
     vector<vector<grid>> Plasma_Grid_;
 
+    int Wall_num_;
     vector<vector<double>> Wall_;
+
     vector<vector<double>> PLasma_Grid_Boundry_;
     int Target1_Index_[2];
     int Target2_Index_[2];
@@ -65,13 +67,14 @@ private:
 
     vector<int> Rectangular_num_;
     vector<int> Plasma_num_;
-    int Wall_num_;
     int PLasma_Grid_Boundry_num_;
     int Core_Boundry_num_;
     vector<vector<vector<double>>> griddata_;
 
     vector<double> Sin_target_;
     vector<double> Cos_target_;
+    vector<double> Sin_Wall_;
+    vector<double> Cos_Wall_;
 
 public:
     GRID(int num_x, int num_y);
@@ -100,6 +103,8 @@ public:
     void CalAngleTarget();
     double Sin_target(int i);
     double Cos_target(int i);
+    double Sin_Wall(int i);
+    double Cos_Wall(int i);
 };
 
 class Grid_extern
@@ -242,6 +247,10 @@ namespace eirene
         vector<double> Sin_wall_;
         vector<double> Cos_wall_;
 
+        vector<double> dx_;
+        vector<double> dy_;
+        vector<double> Length_sq_;
+
     public:
         WALL();
         WALL(string Casepath);
@@ -254,6 +263,10 @@ namespace eirene
         void CalAngleWall();
         double Sin_Wall(int i);
         double Cos_Wall(int i);
+        double dx(int i);
+        double dy(int i);
+        double Length_sq(int i);
+        int findNearestWallFast(double x_mesh, double y_mesh);
     };
 
     class TriMesh
@@ -269,6 +282,7 @@ namespace eirene
         std::vector<double> triVolume_;                              // 每三角体积
         std::vector<double> triRc_, triZc_;                          // 每三角质心
         std::vector<std::vector<double>> Sin_trimesh_, Cos_trimesh_; // 边界的三角函数值
+        void get_sx();
 
         int N_poloidal_; // number of poloidal index in plasma mesh
         int N_radial_;   // number of radial index in plasma mesh
@@ -300,6 +314,8 @@ namespace eirene
         int targetIndex(int i, int j); // indx of target
         double Sin_Target(int i);
         double Cos_Target(int i);
+        double Mid_Target(int i, int j);
+        double Vol_Target(int i);
         int num_Nodes();
         int num_tris();
         double Sin_trimesh(int i, int j);
@@ -313,8 +329,10 @@ namespace eirene
         int Num_Target_;
         std::vector<std::vector<int>> TargetIndex_; // indx of target
         std::vector<std::vector<double>> Target_;   // indx of target
+        std::vector<std::vector<double>> Mid_Target_;
         std::vector<double> Sin_Target_;
         std::vector<double> Cos_Target_;
+        std::vector<double> Vol_Target_;
         std::vector<std::vector<int>> b2_index_; // index of b2 grid
         /// lines information: 1st parameter represent if the line is special;
         // 2nd: 0-nothing; 1-outer parget; 2-inner target; 3-other wall; 4-plasma boundrary; 5-core region. 6-PFR wall

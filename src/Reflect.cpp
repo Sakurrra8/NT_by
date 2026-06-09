@@ -215,14 +215,15 @@ double Reflect::n_RefCoeff(int K_Reflect, double Energy_0, double angle)
 		}
 		if (b == -1)
 		{
-			if (angle > Rn_na_[num_na_ - 1] && angle <= 90)
+			if (angle > Rn_na_[num_na_ - 1] && angle <= 90.1)
 			{
 				b = num_na_ - 2;
 				angle = Rn_na_[num_na_ - 1];
 			}
 			else
 			{
-				cerr << "BinartSearch of angle in n_Reflect has some problem." << endl;
+				std::cerr << "angle and Rn_na_[num_na_ - 1]: " << angle << "\t" << Rn_na_[num_na_ - 1] << endl;
+				std::cerr << "BinartSearch of angle in n_Reflect has some problem." << endl;
 			}
 			if (angle < Rn_na_[0])
 			{
@@ -287,13 +288,14 @@ double Reflect::E_RefCoeff(int K_Reflect, double Energy_0, double angle)
 		}
 		if (b == -1)
 		{
-			if (angle > Rn_na_[num_na_ - 1] && angle <= 90)
+			if (angle > Rn_na_[num_na_ - 1] && angle <= 90.1)
 			{
 				b = num_na_ - 2;
 				angle = Rn_na_[num_na_ - 1];
 			}
 			else
 			{
+				std::cerr << "angle and Rn_na_[num_na_ - 1]: " << angle << "\t" << Rn_na_[num_na_ - 1] << endl;
 				cerr << "BinartSearch of angle in E_Reflect has some problem." << endl;
 			}
 			if (angle < RE_na_[0])

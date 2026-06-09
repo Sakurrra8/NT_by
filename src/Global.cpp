@@ -78,7 +78,7 @@ int MeshMode; // Option 1: Orthogonal grid; 2: Full grid; 3: Triangular grid
 double Dn[38];
 
 /// @brief Plasma and device parameter
-double InterscePoint[10][5] = {0}; // 0: distance of particle and interscePoint; 1,2: x,y index; 3: number of boundary; 4:types of intersection boundaries
+double InterscePoint[10][6] = {0}; // 0: distance of particle and interscePoint; 1,2: x,y index; 3: number of boundary; 4:types of intersection boundaries
 double NumPar_now = 0;
 double T_N = 0.1;    // Temperature of injected impurities
 double T_wall = 0.1; // Temperture of Target(eV)
@@ -88,8 +88,8 @@ double Te_vacuum = 0.3, ne_vacuum = 1e13;
 // 核心区域参数
 double Te_core = 1200, ne_core = 9e19, Tn_core = 1200;
 
-double cosang[410], sinang[410];
-double cosCore[60], sinCore[60];
+// double cosang[410], sinang[410];
+// double cosCore[60], sinCore[60];
 double coefficient_D = 2., coefficient_T = 3.;
 
 /// @brief Variable about wall
@@ -154,14 +154,10 @@ std::vector<std::vector<double>> epx, epy, erx, ery;
 std::vector<std::vector<double>> crx, cry;
 std::vector<std::vector<double>> dTip, dTir, dTix, dTiy, dTiz;
 
-// 粒子数与反应汇总
-std::vector<std::vector<double>> NumPar_D2_1_Diss;
-std::vector<std::vector<double>> Sum_n_Rec_, Sum_mu_Rec_, Sum_E_Rec_, Pra_Rec_;
-
 /// @brief Target Value
-double NumPar_H_recyc[80], NumPar_H2_recyc[80], Tn_H_recyc[80];
-double NumPar_D_recyc[80], NumPar_D2_recyc[80], Tn_D_recyc[80];
-double NumPar_T_recyc[80], NumPar_T2_recyc[80], Tn_T_recyc[80];
+std::vector<double> NumPar_H_recyc, Tn_H_recyc, NumPar_H2_recyc;
+std::vector<double> NumPar_D_recyc, Tn_D_recyc, NumPar_D2_recyc;
+std::vector<double> NumPar_T_recyc, Tn_T_recyc, NumPar_T2_recyc;
 double NumPar_wall_H[80], NumPar_wall_D[80], NumPar_wall_T[80];
 double Xrecyc[80][2], theta[80][2], Ei_Dion[80];
 

@@ -105,25 +105,65 @@ Particle::Particle(string particle_name, double mass, int MaxCharge, int Index)
 	Pump_.push_back(0);
 	Pump_.push_back(0);
 
-	FT_.FluxTraInit(10, 200, 0.0, 1500, 98, 38, true, true); // 初始化 nRegion, nBin, eMin, eMax
+	FT_.FluxTraInit(11, 200, 0.0, 1500, 98, 38, true, true); // 初始化 nRegion, nBin, eMin, eMax
 }
 
 Particle::~Particle()
 {
 	for (int i = 0; i < 98; i++)
+	{
 		for (int j = 0; j < 38; j++)
 		{
-			free(n_[i][j]);
-			free(T_[i][j]);
-			free(Sum_n_[i][j]);
-			free(lambda_[i][j]);
+			// --- 1. 释放二维层面的指针并立即置空 ---
+			if (n_ && n_[i] && n_[i][j] != nullptr)
+			{
+				free(n_[i][j]);
+				n_[i][j] = nullptr;
+			}
+
+			if (T_ && T_[i] && T_[i][j] != nullptr)
+			{
+				free(T_[i][j]);
+				T_[i][j] = nullptr;
+			}
+
+			if (Sum_n_ && Sum_n_[i] && Sum_n_[i][j] != nullptr)
+			{
+				free(Sum_n_[i][j]);
+				Sum_n_[i][j] = nullptr;
+			}
+
+			if (lambda_ && lambda_[i] && lambda_[i][j] != nullptr)
+			{
+				free(lambda_[i][j]);
+				lambda_[i][j] = nullptr;
+			}
+
+			// --- 2. 释放三维层面的指针并立即置空 ---
 			for (int k = 0; k < 3; k++)
 			{
-				free(V_Grid_[i][j][k]);
-				free(Sum_V_[i][j][k]);
+				// 层级安全检查：确保上层 V_Grid_[i][j] 存在，才去检查并释放 [k]
+				if (V_Grid_ && V_Grid_[i] && V_Grid_[i][j] && V_Grid_[i][j][k] != nullptr)
+				{
+					free(V_Grid_[i][j][k]);
+					V_Grid_[i][j][k] = nullptr;
+				}
+
+				if (Sum_V_ && Sum_V_[i] && Sum_V_[i][j] && Sum_V_[i][j][k] != nullptr)
+				{
+					free(Sum_V_[i][j][k]);
+					Sum_V_[i][j][k] = nullptr;
+				}
 			}
 		}
-	free(lambda_min_);
+	}
+
+	// --- 3. 释放独立指针并置空 ---
+	if (lambda_min_ != nullptr)
+	{
+		free(lambda_min_);
+		lambda_min_ = nullptr;
+	}
 }
 
 /// @brief Particle *this get Particle *A's All
@@ -161,6 +201,50 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 		Charge_ = A->Charge();
 	else
 		Charge_ = Charge;
+}
+
+/**
+ * @brief 根据靶板的再循环粒子数，随机抽取下一个发射粒子的靶板编号
+ * @param Counts 每块靶板上的再循环粒子数
+ * @return int 抽中的靶板索引 (0, 1, 2, ...)
+ */
+int Particle::sampleTargetPlate(const std::vector<double> &Counts)
+{
+	// 线程安全的随机数生成器
+	thread_local std::mt19937 rng(std::random_device{}());
+
+	// std::discrete_distribution 会自动根据传入的数值大小(权重)分配几率
+	// 它的内部逻辑就是: P(i) = count[i] / sum(counts)
+	std::discrete_distribution<int> dist(Counts.begin(), Counts.end());
+
+	return dist(rng);
+}
+
+void Particle::RecycledCal(std::vector<double> &Recycled_counts)
+{
+	for (int i = 0; i < Grid4.Num_Target(); i++)
+	{
+		Recycled_counts_.push_back(Recycled_counts[i]);
+		T_Init_.push_back(T_wall);
+	}
+}
+
+void Particle::RecycledCal(std::vector<double> &Recycled_counts, std::vector<double> &T_Init)
+{
+	for (int i = 0; i < Grid4.Num_Target(); i++)
+	{
+		Recycled_counts_.push_back(Recycled_counts[i]);
+		T_Init_.push_back(T_Init[i]);
+	}
+}
+
+void Particle::RecombinCal(std::vector<double> &Recombin_counts, std::vector<double> &T_Init)
+{
+	for (int i = 0; i < N_poloidal * N_radial; i++)
+	{
+		Recombin_counts_.push_back(Recombin_counts[i]);
+		T_Init_.push_back(T_Init[i]);
+	}
 }
 
 void Particle::ParInit(vector<int> &K_collision, std::vector<std::vector<int>> Tri_B2)
@@ -313,178 +397,6 @@ void Particle::ParInit(vector<int> &K_collision, std::vector<std::vector<int>> T
 	RectoPlasmaBoundary_.begin()->WallEroInit(Grid1.PLasma_Grid_Boundry_num(), N_poloidal, N_radial);
 	DisstoPlasmaBoundary_.begin()->WallEroInit(Grid1.PLasma_Grid_Boundry_num(), N_poloidal, N_radial);
 }
-void Particle::Vinit_ionReflect(std::vector<double> &Vt, double Rcos, double Rsin, int z)
-{
-	double ionIncidentTheta = pi / 3;
-	if (K_ReflectDirection == 1)
-		do
-		{
-			double ztheta = 6.283185307 * Tools::Random();
-			double zcost = cos(ztheta);
-			double zsint = sin(ztheta);
-			double zpsi = Tools::Random() * 3.1415927;
-			double zcosp = abs(cos(zpsi));
-			double zsinp = sin(zpsi);
-			double Vx = zsint * zsinp;
-			double Vy = zcosp;
-			double Vz = zsinp * zcost;
-
-			Vt[0] = Rcos * Vx - Rsin * Vy;
-			Vt[1] = Rsin * Vx + Rcos * Vy;
-			Vt[2] = Vz;
-		} while (Vt[2] == 1 || Vt[0] < -3e8);
-	else if (K_ReflectDirection == 2)
-	{
-		double normalLine[3] = {-Rsin, Rcos, 0};
-		double V_incident[3], projector[3], B_target[3];
-		if (z < N_radial) // inner target
-		{
-			B_target[0] = B[1][(int)z][0] / sqrt(pow(B[1][(int)z][0], 2) + pow(B[1][(int)z][1], 2));
-			B_target[1] = B[1][(int)z][0] / sqrt(pow(B[1][(int)z][0], 2) + pow(B[1][(int)z][1], 2));
-		}
-		else // outer target
-		{
-			B_target[0] = B[96][(int)z - N_radial][0] / sqrt(pow(B[96][(int)z - N_radial][0], 2) + pow(B[96][(int)z - N_radial][1], 2));
-			B_target[1] = B[96][(int)z - N_radial][0] / sqrt(pow(B[96][(int)z - N_radial][0], 2) + pow(B[96][(int)z - N_radial][1], 2));
-		}
-
-		z = (B_target[0] * normalLine[0] + B_target[1] * normalLine[1]) * (B_target[1] * normalLine[0] - B_target[0] * normalLine[1]); // Determine which quadrant B is in the target plate
-		if (z < 0)
-		{
-			double R = Tools::Random() * pi / 2.;
-			V_incident[0] = -(normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[1] = -(normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[2] = sin(R);
-		}
-		else
-		{
-			double R = Tools::Random() * pi / 2.;
-			V_incident[0] = (normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[1] = (normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[2] = sin(R);
-		}
-
-		do
-		{
-			double ztheta = 2 * pi * Tools::Random();
-			double zcost = cos(ztheta);
-			double zsint = sin(ztheta);
-			double zpsi = Tools::Random() * pi;
-			double zcosp = abs(cos(zpsi));
-			double zsinp = sin(zpsi);
-			double Vx = zsint * zsinp;
-			double Vy = zcosp;
-			double Vz = zsinp * zcost;
-
-			Vt[0] = Rcos * Vx - Rsin * Vy;
-			Vt[1] = Rsin * Vx + Rcos * Vy;
-			Vt[2] = Vz;
-
-			z = (V_[0] * Rcos + V_[1] * Rsin) * (Rcos * Vt[0] + Rcos * Vt[1]);
-		} while (Vt[2] == 1 || Vt[0] < -3e8 || z < 0);
-	}
-	else if (K_ReflectDirection == 3)
-	{
-		double normalLine[3] = {-Rsin, Rcos, 0};
-		double V_incident[3], projector[3], B_target[3];
-		if (z < N_radial) // inner target
-		{
-			B_target[0] = B[1][(int)z][0] / sqrt(pow(B[1][(int)z][0], 2) + pow(B[1][(int)z][1], 2));
-			B_target[1] = B[1][(int)z][1] / sqrt(pow(B[1][(int)z][0], 2) + pow(B[1][(int)z][1], 2));
-		}
-		else // outer target
-		{
-			B_target[0] = B[96][(int)z - N_radial][0] / sqrt(pow(B[96][(int)z - N_radial][0], 2) + pow(B[96][(int)z - N_radial][1], 2));
-			B_target[1] = B[96][(int)z - N_radial][1] / sqrt(pow(B[96][(int)z - N_radial][0], 2) + pow(B[96][(int)z - N_radial][1], 2));
-		}
-
-		double z_temp = (B_target[0] * normalLine[0] + B_target[1] * normalLine[1]) * (B_target[1] * normalLine[0] - B_target[0] * normalLine[1]); // Determine which quadrant B is in the target plate
-		if (z_temp < 0)
-		{
-			double R = Tools::Random() * pi / 2.;
-			V_incident[0] = -(normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[1] = -(normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[2] = -sin(R);
-		}
-		else
-		{
-			double R = Tools::Random() * pi / 2.;
-			V_incident[0] = (normalLine[0] * cos(ionIncidentTheta) - normalLine[1] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[1] = (normalLine[1] * cos(ionIncidentTheta) + normalLine[0] * sin(ionIncidentTheta)) * cos(R);
-			V_incident[2] = -sin(R);
-		}
-
-		projector[0] = (V_incident[0] * Rcos + V_incident[1] * Rsin) * Rcos;
-		projector[1] = (V_incident[0] * Rcos + V_incident[1] * Rsin) * Rsin;
-		for (int i = 0; i < 2; i++)
-		{
-			Vt[i] = 2 * projector[i] - V_incident[i];
-		}
-		Vt[2] = V_incident[2];
-	}
-}
-
-void Particle::Vinit_neutralReflect(std::vector<double> &Vt, double Rcos, double Rsin)
-{
-	if (K_ReflectDirection == 1)
-		do
-		{
-			double ztheta = 6.283185307 * Tools::Random();
-			double zcost = cos(ztheta);
-			double zsint = sin(ztheta);
-			double zpsi = Tools::Random() * 3.1415927;
-			double zcosp = abs(cos(zpsi));
-			double zsinp = sin(zpsi);
-			double Vx = zsint * zsinp;
-			double Vy = zcosp;
-			double Vz = zsinp * zcost;
-
-			Vt[0] = Rcos * Vx - Rsin * Vy;
-			Vt[1] = Rsin * Vx + Rcos * Vy;
-			Vt[2] = Vz;
-		} while (Vt[2] == 1 || Vt[0] < -3e8);
-	if (K_ReflectDirection == 2)
-	{
-		double z, projector[3], normalLine[3] = {-Rsin, Rcos, 0};
-		do
-		{
-			double ztheta = 2 * pi * Tools::Random();
-			double zcost = cos(ztheta);
-			double zsint = sin(ztheta);
-			double zpsi = Tools::Random() * pi;
-			double zcosp = abs(cos(zpsi));
-			double zsinp = sin(zpsi);
-			double Vx = zsint * zsinp;
-			double Vy = zcosp;
-			double Vz = zsinp * zcost;
-
-			Vt[0] = Rcos * Vx - Rsin * Vy;
-			Vt[1] = Rsin * Vx + Rcos * Vy;
-			Vt[2] = Vz;
-
-			z = (V_[0] * Rcos + V_[1] * Rsin) * (Rcos * Vt[0] + Rcos * Vt[1]);
-		} while (Vt[2] == 1 || Vt[0] < -3e8 || z < 0);
-	}
-	else if (K_ReflectDirection == 3)
-	{
-		double V_incident[3], projector[3];
-		double normalLine[3] = {-Rsin, Rcos, 0};
-		for (int i = 0; i < 3; i++)
-		{
-			V_incident[i] = V_[i] / sqrt(V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]);
-		}
-		// std::cout << name_ + " X: " << X_[0] << ", " << X_[1] << ", " << X_[2] << endl;
-		// std::cout << name_ + " before reflect: " << V_incident[0] << ", " << V_incident[1] << ", " << V_incident[2] << endl;
-		projector[0] = (V_incident[0] * Rcos + V_incident[1] * Rsin) * Rcos;
-		projector[1] = (V_incident[0] * Rcos + V_incident[1] * Rsin) * Rsin;
-		for (int i = 0; i < 2; i++)
-		{
-			Vt[i] = 2 * projector[i] - V_incident[i];
-		}
-		Vt[2] = V_incident[2];
-		// std::cout << name_ + " after reflect: " << Vt[0] << ", " << Vt[1] << ", " << Vt[2] << endl;
-	}
-}
 
 void Particle::Init(int k, int z)
 {
@@ -497,14 +409,13 @@ void Particle::Init(int k, int z)
 		Charge_ = 0;
 		ChargeTag_ = 0;
 		boundary_start_ = 0;
-		X_[0] = Xrecyc[z][0];
-		X_[1] = Xrecyc[z][1];
+		X_[0] = Grid4.Mid_Target(z, 0);
+		X_[1] = Grid4.Mid_Target(z, 1);
 		// double rand_temp = Tools::Random();
 		// X_[0] = Xrecycling(rand_temp, z, 0);
 		// X_[1] = Xrecycling(rand_temp, z, 1);
 		X_[2] = 0;
 
-		Vector3 InciDir, P1, P2, P3;
 		double Bt_temp, B2_temp;
 		if (z < 38)
 		{
@@ -513,10 +424,6 @@ void Particle::Init(int k, int z)
 			Tri_Index_ = Grid4.targetIndex(z, 0);
 			B2_temp = sqrt(B[1][z][0] * B[1][z][0] + B[1][z][1] * B[1][z][1]);
 			Bt_temp = B[1][z][2];
-			InciDir = {-0.354 * B2_temp, -0.612 * B2_temp, Bt_temp};
-			P1 = {Grid[1][z][3], Grid[1][z][7], 0};
-			P2 = {Grid[1][z][0], Grid[1][z][4], 0};
-			P3 = {Grid[1][z][3], Grid[1][z][7], -1};
 		}
 		else
 		{
@@ -525,10 +432,6 @@ void Particle::Init(int k, int z)
 			Tri_Index_ = Grid4.targetIndex(z, 0);
 			B2_temp = sqrt(B[96][XY_[1]][0] * B[96][XY_[1]][0] + B[96][XY_[1]][1] * B[96][XY_[1]][1]);
 			Bt_temp = B[96][XY_[1]][2];
-			InciDir = {0.612 * B2_temp, 0.354 * B2_temp, Bt_temp};
-			P1 = {Grid[96][z - 38][1], Grid[96][z - 38][5], 0};
-			P2 = {Grid[96][z - 38][2], Grid[96][z - 38][6], 0};
-			P3 = {Grid[96][z - 38][1], Grid[96][z - 38][5], -1};
 		}
 		if (XY_[1] >= 19 && XY_[1] <= 36)
 			Zone_ = 3;
@@ -539,37 +442,16 @@ void Particle::Init(int k, int z)
 		else
 			Zone_ = 5;
 		GridIndex_ = XY_[0] * 38 + XY_[1];
-		// std::cout << "Tri_Index: " << Tri_Index_ << endl;
-		/*if (z < 38 && X_[0] < 1.361)
-			X_[0] = 1.3611;*/
-		/*Vector3 P1 = {Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, 0};
-		Vector3 P2 = {Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, 0};
-		Vector3 P3 = {Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, 0};*/
 
-		if (this == &H)
+		if (this == &H || this == &D || this == &T)
 		{
-			Tn_ = Tn_H_recyc[z];
-			// Vinit_ionReflect(V_, theta[z][0], theta[z][1], z);
-			emit_particle(P1, P2, P3, 2, InciDir);
-		}
-		if (this == &D)
-		{
-			Tn_ = Tn_D_recyc[z];
-			// Vinit_ionReflect(V_, theta[z][0], theta[z][1], z);
-			emit_particle(P1, P2, P3, 2, InciDir);
-			// std::cout << "first X: " << X_[0] << "\t" << X_[1] << "\t" << X_[2] << endl;
-			// std::cout << "first V: " << V_[0] << "\t" << V_[1] << "\t" << V_[2] << endl;
-		}
-		if (this == &T)
-		{
-			Tn_ = Tn_T_recyc[z];
-			Vinit_ionReflect(V_, theta[z][0], theta[z][1], z);
+			Tn_ = T_Init_[z];
+			Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 1);
 		}
 		else if (this == &H2 || this == &D2 || this == &T2)
 		{
 			Tn_ = T_wall;
-			// Tools::Vinit_cosine(V_, theta[z][0], theta[z][1]);
-			emit_particle(P1, P2, P3, 1, InciDir);
+			Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 0);
 		}
 		if (K_Maxwell == 1)
 			vel = Tools::Maxwell(Tn_, mass_);
@@ -714,13 +596,13 @@ void Particle::Init(int k, int z)
 
 			if (z == 0) // reflect of neutral particle
 			{
-				if (InterscePoint[0][4] == 11)
+				if (InterscePoint[0][4] == 11) // wall
 				{
-					Vinit_neutralReflect(V_, cosang[(int)InterscePoint[0][3]], sinang[(int)InterscePoint[0][3]]);
+					Tools::calculateReflectionVelocity(V_, Grid4.Wall_.Cos_Wall((int)InterscePoint[0][3]), Grid4.Wall_.Sin_Wall((int)InterscePoint[0][3]), 1);
 				}
-				else if (InterscePoint[0][4] == 1)
+				else if (InterscePoint[0][4] == 1) // target
 				{
-					Vinit_neutralReflect(V_, Grid1.Cos_target((int)InterscePoint[0][3]), Grid1.Sin_target((int)InterscePoint[0][3]));
+					Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target((int)InterscePoint[0][3]), Grid4.Sin_Target((int)InterscePoint[0][3]), 1);
 				}
 				else
 				{
@@ -730,39 +612,35 @@ void Particle::Init(int k, int z)
 			}
 			if (z == 1) // thermalrelease of neutral particle
 			{
-				if (InterscePoint[0][4] == 11)
+				if (InterscePoint[0][4] == 11) // wall
 				{
-					Tools::Vinit_cosine(V_, cosang[(int)InterscePoint[0][3]], sinang[(int)InterscePoint[0][3]]);
+					Tools::calculateReflectionVelocity(V_, Grid4.Wall_.Cos_Wall((int)InterscePoint[0][3]), Grid4.Wall_.Sin_Wall((int)InterscePoint[0][3]), 0);
 				}
-				else if (InterscePoint[0][4] == 1)
+				else if (InterscePoint[0][4] == 1) // target
 				{
-					Tools::Vinit_cosine(V_, Grid1.Cos_target((int)InterscePoint[0][3]), Grid1.Sin_target((int)InterscePoint[0][3]));
+					Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target((int)InterscePoint[0][3]), Grid4.Sin_Target((int)InterscePoint[0][3]), 0);
 				}
 				else
 				{
 					std::cout << "where is the reflect point???" << endl;
 					pause();
 				}
+
 				//  std::cout << Charge_ << '\t' << ChargeTag_ << endl;
 				ChargeTag_ = 0;
-				// std::cout << V_[0] << "\t" << V_[1] << "\t" << V_[2] << endl;
+				std::cout << V_[0] << "\t" << V_[1] << "\t" << V_[2] << endl;
 			}
 			if (z == 2 || Charge_ > 0)
 			{
-				// std::cout << theta[(int)InterscePoint[0][3]][0] << '\t' << theta[(int)InterscePoint[0][3]][1] << endl;
-				Vinit_ionReflect(V_, theta[(int)InterscePoint[0][3]][0], theta[(int)InterscePoint[0][3]][1], InterscePoint[0][3]);
-				// std::cout << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
+				Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target((int)InterscePoint[0][3]), Grid4.Sin_Target((int)InterscePoint[0][3]), 0);
 				ChargeTag_ = 0;
 			}
 		}
 		else if (MeshMode == 3)
 		{
-			double Cos_temp = -Grid4.Cos_trimesh(Tri_Index_, (int)InterscePoint[0][3]);
-			double Sin_temp = -Grid4.Sin_trimesh(Tri_Index_, (int)InterscePoint[0][3]);
-			/*std::cout << "index: " << Tri_Index_ << endl;
-			std::cout << "Inter[0][3]: " << (int)InterscePoint[0][3] << endl;
-			std::cout << "jisuan: " << Grid4.Cos_trimesh(262, 2) << endl;
-			std::cout << "sanjiao: " << Cos_temp << "\t" << Sin_temp << endl;*/
+			double Cos_temp = Grid4.Cos_trimesh(Tri_Index_, (int)InterscePoint[0][5]);
+			double Sin_temp = Grid4.Sin_trimesh(Tri_Index_, (int)InterscePoint[0][5]);
+			// std::cout << "test Cos: " << Tri_Index_ << "\t" << (int)InterscePoint[0][5] << endl;
 			if (K_Wallelement == 1)
 			{
 				if (this == &D)
@@ -798,7 +676,7 @@ void Particle::Init(int k, int z)
 			{
 				if (InterscePoint[0][4] == 11 || InterscePoint[0][4] == 1)
 				{
-					Vinit_neutralReflect(V_, Cos_temp, Sin_temp);
+					Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 1);
 				}
 				else
 				{
@@ -810,7 +688,7 @@ void Particle::Init(int k, int z)
 			{
 				if (InterscePoint[0][4] == 11 || InterscePoint[0][4] == 1)
 				{
-					Tools::Vinit_cosine(V_, Cos_temp, Sin_temp);
+					Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 0);
 				}
 				else
 				{
@@ -823,10 +701,7 @@ void Particle::Init(int k, int z)
 			}
 			if (z == 2 || Charge_ > 0)
 			{
-				std::cout << "error way 1" << endl;
-				std::cout << theta[(int)InterscePoint[0][3]][0] << '\t' << theta[(int)InterscePoint[0][3]][1] << endl;
-				Vinit_ionReflect(V_, theta[(int)InterscePoint[0][3]][0], theta[(int)InterscePoint[0][3]][1], InterscePoint[0][3]);
-				std::cout << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
+				Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 1);
 				ChargeTag_ = 0;
 				exit(0);
 			}
@@ -838,6 +713,7 @@ void Particle::Init(int k, int z)
 		InterscePoint[0][2] = -100;
 		InterscePoint[0][3] = -1;
 		InterscePoint[0][4] = -1;
+		InterscePoint[0][5] = -1;
 
 		/*std::cout << "After reflect:" << endl;
 		std::cout << name() << ',' << Charge() << ',' << fatename(fate(0)) << ',' << sourcename(0) << endl;
@@ -1055,7 +931,7 @@ void Particle::Init(int k, int z)
 			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
-		Tools::Vinit_cosine(V_, 0, 1);
+		Tools::calculateReflectionVelocity(V_, 0, 1, 0);
 		// std::cout << "fashe: " << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 	}
 	else if (k == 6) // Calculate the velocity after the Collision
@@ -1188,6 +1064,7 @@ void Particle::Init(int k, int z)
 	}
 	else if (k == 8)
 	{
+		double Cos_temp = 0, Sin_temp = 1;
 		Charge_ = 0;
 		ChargeTag_ = 0;
 		fate_[0] = 3;
@@ -1216,7 +1093,8 @@ void Particle::Init(int k, int z)
 			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
-		Tools::Vinit_cosine(V_, cosang[115], sinang[115]);
+
+		Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 1);
 		// std::cout << "fashe: " << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 		// std::cout << V_[0] << V_[1] << V_[2] << endl;
 	}
@@ -3104,27 +2982,56 @@ void Particle::Caltrace_Tri()
 					if (Grid4.lines_info(Tri_Index_, 0) == 0) // next
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[0];
+						NeutralFluxStatistics(5, 1);
 					}
 					else if (Grid4.lines_info(Tri_Index_, 0) == -1 || Grid4.lines_info(Tri_Index_, 0) == -2) // Wall
 					{
 						IfFlightOut_ = 7;
 						boundary_start_ = 0;
+						NeutralFluxStatistics(2, 1);
 
-						InterscePoint[0][0] = 0;
+						int num_intersect = 0;
+						for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
+						{
+							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
+							{
+								InterscePoint[num_intersect][0] = sqrt(((InterscePoint[num_intersect][1] - X_old_[0]) * (InterscePoint[num_intersect][1] - X_old_[0])) + ((InterscePoint[num_intersect][2] - X_old_[1]) * (InterscePoint[num_intersect][2] - X_old_[1])));
+								InterscePoint[num_intersect++][3] = i;
+							}
+						}
+						if (num_intersect > 1)
+						{
+							for (int i = 1; i < num_intersect - 1; i++)
+							{
+								if (InterscePoint[i][0] < InterscePoint[0][0])
+									for (int j = 0; j < 4; j++)
+										InterscePoint[0][j] = InterscePoint[i][j];
+							}
+						}
+						if (num_intersect < 1)
+						{
+							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
+							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
+							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
+							// pause();
+						}
+
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						InterscePoint[0][3] = 0;
 						InterscePoint[0][4] = 11;
+						InterscePoint[0][5] = 0;
 						Zone_ = 7;
 					}
 					else if (Grid4.lines_info(Tri_Index_, 0) == 1) // Core Boundary
 					{
+						NeutralFluxStatistics(4, 1);
 						IfFlightOut_ = 1;
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
 						InterscePoint[0][3] = XY_[0] - 24;
 						InterscePoint[0][4] = 18;
+						InterscePoint[0][5] = 0;
 
 						boundary_start_ = 0;
 						Tri_Index_ = -1;
@@ -3137,10 +3044,12 @@ void Particle::Caltrace_Tri()
 						if (Zone_ < 6)
 						{
 							Zone_ = 6;
+							NeutralFluxStatistics(1, 1);
 						}
 						else if (Zone_ >= 6)
 						{
 							Zone_ = 5;
+							NeutralFluxStatistics(1, 1);
 						}
 					}
 					else if (Grid4.lines_info(Tri_Index_, 0) == 3 || Grid4.lines_info(Tri_Index_, 0) == 4) // Inner Target or Outer Target
@@ -3148,16 +3057,19 @@ void Particle::Caltrace_Tri()
 						IfFlightOut_ = 7;
 						boundary_start_ = 0;
 						IfColl_ = 0;
+						NeutralFluxStatistics(3, 1);
 
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						InterscePoint[0][3] = 0;
-						/*if (Grid4.lines_info(Tri_Index_, 0) == 3)
+						if (Grid4.lines_info(Tri_Index_, 0) == 3)
 							InterscePoint[0][3] = XY_[1];
 						else if (Grid4.lines_info(Tri_Index_, 0) == 4)
-							InterscePoint[0][3] = XY_[1] + N_radial;*/
+							InterscePoint[0][3] = XY_[1] + N_radial;
+						else
+							std::cerr << "not targer_1" << endl;
 						InterscePoint[0][4] = 1;
+						InterscePoint[0][5] = 0;
 						Zone_ = 7;
 						return;
 					}
@@ -3242,27 +3154,54 @@ void Particle::Caltrace_Tri()
 					if (Grid4.lines_info(Tri_Index_, 1) == 0) // next
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[3];
+						NeutralFluxStatistics(5, 1);
 					}
 					else if (Grid4.lines_info(Tri_Index_, 1) == -1 || Grid4.lines_info(Tri_Index_, 1) == -2) // Wall
 					{
 						IfFlightOut_ = 7;
 						boundary_start_ = 0;
+						NeutralFluxStatistics(2, 1);
 
-						InterscePoint[0][0] = 0;
+						int num_intersect = 0;
+						for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
+						{
+							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
+							{
+								InterscePoint[num_intersect][0] = sqrt(((InterscePoint[num_intersect][1] - X_old_[0]) * (InterscePoint[num_intersect][1] - X_old_[0])) + ((InterscePoint[num_intersect][2] - X_old_[1]) * (InterscePoint[num_intersect][2] - X_old_[1])));
+								InterscePoint[num_intersect++][3] = i;
+							}
+						}
+						if (num_intersect > 1)
+						{
+							for (int i = 1; i < num_intersect - 1; i++)
+							{
+								if (InterscePoint[i][0] < InterscePoint[0][0])
+									for (int j = 0; j < 4; j++)
+										InterscePoint[0][j] = InterscePoint[i][j];
+							}
+						}
+						if (num_intersect < 1)
+						{
+							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
+							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
+							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
+						}
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						InterscePoint[0][3] = 1;
 						InterscePoint[0][4] = 11;
+						InterscePoint[0][5] = 1;
 						Zone_ = 7;
 					}
 					else if (Grid4.lines_info(Tri_Index_, 1) == 1) // Core Boundary
 					{
+						NeutralFluxStatistics(4, 1);
 						IfFlightOut_ = 1;
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
 						InterscePoint[0][3] = XY_[0] - 24;
 						InterscePoint[0][4] = 18;
+						InterscePoint[0][5] = 1;
 
 						boundary_start_ = 0;
 						XY_[0] = -1;
@@ -3277,12 +3216,12 @@ void Particle::Caltrace_Tri()
 						if (Zone_ < 6)
 						{
 							Zone_ = 6;
-							XY_[0] = -1;
-							XY_[1] = -1;
+							NeutralFluxStatistics(1, 1);
 						}
 						else if (Zone_ >= 6)
 						{
 							Zone_ = 5;
+							NeutralFluxStatistics(1, 2);
 						}
 					}
 					else if (Grid4.lines_info(Tri_Index_, 1) == 3 || Grid4.lines_info(Tri_Index_, 1) == 4) // Inner Target or Outer Target
@@ -3290,16 +3229,19 @@ void Particle::Caltrace_Tri()
 						IfFlightOut_ = 7;
 						boundary_start_ = 0;
 						IfColl_ = 0;
+						NeutralFluxStatistics(3, 1);
 
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						/*if (Grid4.lines_info(Tri_Index_, 1) == 3)
+						if (Grid4.lines_info(Tri_Index_, 1) == 3)
 							InterscePoint[0][3] = XY_[1];
 						else if (Grid4.lines_info(Tri_Index_, 1) == 4)
-							InterscePoint[0][3] = XY_[1] + N_radial;*/
-						InterscePoint[0][3] = 1;
+							InterscePoint[0][3] = XY_[1] + N_radial;
+						else
+							std::cerr << "not targer_2" << endl;
 						InterscePoint[0][4] = 1;
+						InterscePoint[0][5] = 1;
 						Zone_ = 7;
 						return;
 					}
@@ -3384,27 +3326,54 @@ void Particle::Caltrace_Tri()
 					if (Grid4.lines_info(Tri_Index_, 2) == 0) // next
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[6];
+						NeutralFluxStatistics(5, 1);
 					}
 					else if (Grid4.lines_info(Tri_Index_, 2) == -1 || Grid4.lines_info(Tri_Index_, 2) == -2) // Wall
 					{
+						NeutralFluxStatistics(2, 1);
 						IfFlightOut_ = 7;
 						boundary_start_ = 0;
 
-						InterscePoint[0][0] = 0;
+						int num_intersect = 0;
+						for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
+						{
+							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
+							{
+								InterscePoint[num_intersect][0] = sqrt(((InterscePoint[num_intersect][1] - X_old_[0]) * (InterscePoint[num_intersect][1] - X_old_[0])) + ((InterscePoint[num_intersect][2] - X_old_[1]) * (InterscePoint[num_intersect][2] - X_old_[1])));
+								InterscePoint[num_intersect++][3] = i;
+							}
+						}
+						if (num_intersect > 1)
+						{
+							for (int i = 1; i < num_intersect - 1; i++)
+							{
+								if (InterscePoint[i][0] < InterscePoint[0][0])
+									for (int j = 0; j < 4; j++)
+										InterscePoint[0][j] = InterscePoint[i][j];
+							}
+						}
+						if (num_intersect < 1)
+						{
+							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
+							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
+							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
+						}
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						InterscePoint[0][3] = 2;
 						InterscePoint[0][4] = 11;
+						InterscePoint[0][5] = 2;
 						Zone_ = 7;
 					}
 					else if (Grid4.lines_info(Tri_Index_, 2) == 1) // Core Boundary
 					{
+						NeutralFluxStatistics(4, 1);
 						IfFlightOut_ = 1;
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
 						InterscePoint[0][3] = XY_[0] - 24;
 						InterscePoint[0][4] = 18;
+						InterscePoint[0][5] = 2;
 
 						boundary_start_ = 0;
 						XY_[0] = -1;
@@ -3419,12 +3388,12 @@ void Particle::Caltrace_Tri()
 						if (Zone_ < 6)
 						{
 							Zone_ = 6;
-							XY_[0] = -1;
-							XY_[1] = -1;
+							NeutralFluxStatistics(1, 1);
 						}
 						else if (Zone_ >= 6)
 						{
 							Zone_ = 5;
+							NeutralFluxStatistics(1, 2);
 						}
 					}
 					else if (Grid4.lines_info(Tri_Index_, 2) == 3 || Grid4.lines_info(Tri_Index_, 2) == 4) // Inner Target or Outer Target
@@ -3432,16 +3401,19 @@ void Particle::Caltrace_Tri()
 						IfFlightOut_ = 7;
 						boundary_start_ = 0;
 						IfColl_ = 0;
+						NeutralFluxStatistics(3, 1);
 
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						/*if (Grid4.lines_info(Tri_Index_, 2) == 3)
+						if (Grid4.lines_info(Tri_Index_, 2) == 3)
 							InterscePoint[0][3] = XY_[1];
 						else if (Grid4.lines_info(Tri_Index_, 2) == 4)
-							InterscePoint[0][3] = XY_[1] + N_radial;*/
-						InterscePoint[0][3] = 2;
+							InterscePoint[0][3] = XY_[1] + N_radial;
+						else
+							std::cerr << "not targer_3" << endl;
 						InterscePoint[0][4] = 1;
+						InterscePoint[0][5] = 2;
 						Zone_ = 7;
 						return;
 					}
@@ -3524,6 +3496,9 @@ void Particle::Caltrace_Tri()
 
 void Particle::NumParStat()
 {
+	X_old_[0] = X_[0];
+	X_old_[1] = X_[1];
+	X_old_[2] = X_[2];
 	X_[0] = X_new_[0];
 	X_[1] = X_new_[1];
 	X_[2] = X_new_[2];
@@ -4966,8 +4941,8 @@ void Particle::Coll()
 						Ela_[0].n_Add(XY_, Weight_ * NumPar_now);
 						Ela_[0].Mu_Add(XY_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
 						Ela_[0].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * Weight_ * NumPar_now);
-						Ela_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
 
+						Ela_[0].n_Add(Tri_Index_, Weight_ * NumPar_now);
 						Ela_[0].Mu_Add(Tri_Index_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
 						Ela_[0].E_Add(Tri_Index_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * Weight_ * NumPar_now);
 
@@ -7348,9 +7323,9 @@ double Particle::CalAngle(int num_wall)
 	if (MeshMode == 1)
 	{
 		if (InterscePoint[0][4] == 11)
-			return 180 / pi * acos(abs(V_[0] * sinang[num_wall] - V_[1] * cosang[num_wall]) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2))));
+			return 180 / pi * acos(abs(V_[0] * Grid4.Wall_.Sin_Wall(num_wall) - V_[1] * Grid4.Wall_.Cos_Wall(num_wall) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)))));
 		else if (InterscePoint[0][4] == 1)
-			return 180 / pi * acos(abs(V_[0] * Grid1.Sin_target(num_wall) - V_[1] * Grid1.Cos_target(num_wall)) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2))));
+			return 180 / pi * acos(abs(V_[0] * Grid1.Sin_target(num_wall) - V_[1] * Grid1.Cos_target(num_wall) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)))));
 		else
 			throw std::logic_error("angle calculation of reflect have some problem in Calangle()");
 	}
@@ -8998,7 +8973,7 @@ void Particle::CalWeight1(int num)
 	}
 }
 
-void Particle::CalWeight2(double NumPar[76], int num)
+void Particle::CalWeight2(std::vector<double> &NumPar, int num)
 {
 	NumPar_sum_Target_ = 0;
 	for (int i = 0; i < 2 * N_radial; i++)
@@ -9789,96 +9764,6 @@ double Xrecycling(double rand_, int a, int b)
 	}
 }
 
-string fatename(int i)
-{
-	string Fate;
-	if (i == -1)
-		Fate = "All";
-	else if (i == 1)
-		Fate = "CX";
-	else if (i == 2)
-		Fate = "recycling";
-	else if (i == 3)
-		Fate = "puff";
-	else if (i == 4)
-		Fate = "rec";
-	else if (i == 5)
-		Fate = "ion";
-	else if (i == 6)
-		Fate = "mar";
-	else if (i == 7)
-		Fate = "Diss";
-	else if (i == 8)
-		Fate = "Diss2";
-	else if (i == 9)
-		Fate = "elastic";
-	else if (i == 10)
-		Fate = "DS0";
-	else if (i == 11)
-		Fate = "DS1";
-	else if (i == 12)
-		Fate = "DS2";
-	else if (i == 13)
-		Fate = "DS3";
-	else if (i == 14)
-		Fate = "Diss1";
-	else if (i == 15)
-		Fate = "reflect";
-	else if (i == 16)
-		Fate = "thermalrelease";
-	return Fate;
-}
-
-string sourcename(int i)
-{
-	string Source;
-	if (i == 0)
-		Source = "no";
-	else if (i == 1)
-		Source = "target";
-	else if (i == 2)
-		Source = "puffport";
-	else if (i == 3)
-		Source = "D";
-	else if (i == 4)
-		Source = "D2";
-	else if (i == 5)
-		Source = "CD4";
-	else if (i == 6)
-		Source = "CD3";
-	else if (i == 7)
-		Source = "CD2";
-	else if (i == 8)
-		Source = "CD1";
-	else if (i == 9)
-		Source = "C";
-	else if (i == 10)
-		Source = "Ar";
-	else if (i == 11)
-		Source = "wall";
-	else if (i == 12)
-		Source = "SOL";
-	else if (i == 13)
-		Source = "H";
-	else if (i == 14)
-		Source = "H2";
-	else if (i == 15)
-		Source = "T";
-	else if (i == 16)
-		Source = "T2";
-	else if (i == 17)
-		Source = "e";
-	else if (i == 18)
-		Source = "Core";
-	else if (i == 19)
-		Source = "PlasmaBoundry";
-	else if (i == 20)
-		Source = "target_1";
-	else
-		Source = "not set";
-	return Source;
-}
-
 /*void LXCatRead(double *Te_DATA, double *Cross_DATA, int Num_Array)
 {
 	ifstream input_temp;
@@ -10210,90 +10095,6 @@ double ParCollCar::V_2_relative()
 	return V_2_relative_;
 }
 
-// --- 3. 发射函数 ---
-/**
- * @param v0, v1, v2 三角形的三个顶点 (逆时针顺序)
- * @param mode 1 for cos distribution, 2 for mirror reflection
- * @param incidentDir 入射方向 (仅 Specular 模式需要，建议归一化)
- */
-void Particle::emit_particle(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, int mode, Vector3 incidentDir)
-{
-	// --- A. 计算几何属性 ---
-	Vector3 edge1 = v1 - v0;
-	Vector3 edge2 = v2 - v0;
-	Vector3 normal = edge1.cross(edge2).normalize();
-	// std::cout << "normal: " << normal.x << "\t" << normal.y << "\t" << normal.z << endl;
-
-	// --- B. 表面随机采样 (重心坐标) ---
-	double r1 = Tools::Random();
-	double r2 = Tools::Random();
-
-	// 如果在四边形外侧，折叠回三角形内
-	if (r1 + r2 > 1.0)
-	{
-		r1 = 1.0 - r1;
-		r2 = 1.0 - r2;
-	}
-	// 计算位置 P = v0 + r1*edge1 + r2*edge2
-	Vector3 pos = v0 + (edge1 * r1) + (edge2 * r2);
-
-	// [关键] 沿法线偏移，防止粒子陷入表面 (Shadow Acne)
-	double epsilon = 1e-5;
-	pos = pos + (normal * epsilon);
-
-	// --- C. 计算发射方向 ---
-	Vector3 dir;
-
-	if (mode == 2)
-	{
-		// 镜面反射: R = I - 2(N·I)N
-		// 确保入射光是归一化的
-		incidentDir = incidentDir.normalize();
-		double dotNI = normal.dot(incidentDir);
-
-		// 公式计算
-		dir = incidentDir - (normal * (2.0 * dotNI));
-	}
-	else
-	{
-		// 余弦分布 (Cosine Weighted Lambertian)
-
-		// 1. 生成局部球坐标
-		double u1 = Tools::Random(); // 随机数1
-		double u2 = Tools::Random(); // 随机数2
-
-		// 半球采样公式
-		double theta_r = 2.0 * 3.1415926535 * u1; // 方位角 phi
-		double cos_phi = std::sqrt(1.0 - u2);	  // 极角 (z分量)
-		double sin_phi = std::sqrt(u2);			  // 水平分量半径
-
-		// 局部坐标向量 (假设法线是 Z 轴)
-		double x_local = std::cos(theta_r) * sin_phi;
-		double y_local = std::sin(theta_r) * sin_phi;
-		double z_local = cos_phi;
-
-		// 2. 构建局部坐标系 (TBN 矩阵)
-		// 我们需要构建两个垂直于 Normal 的向量 (Tangent, Bitangent)
-		Vector3 helper = (std::abs(normal.x) > 0.9) ? Vector3(0, 1, 0) : Vector3(1, 0, 0);
-
-		Vector3 tangent = normal.cross(helper).normalize();
-		Vector3 bitangent = normal.cross(tangent); // 已经垂直且归一化
-
-		// 3. 转换到世界坐标: dir = T*x + B*y + N*z
-		dir = (tangent * x_local) + (bitangent * y_local) + (normal * z_local);
-	}
-
-	// --- D. 数据回填到粒子结构体 (Vector3 -> double[]) ---
-	dir = dir.normalize(); // 确保最终方向归一化
-
-	// X_[0] = pos.x;
-	// X_[1] = pos.y;
-	// X_[2] = 0;
-	V_[0] = dir.x;
-	V_[1] = dir.y;
-	V_[2] = dir.z;
-}
-
 Vector3 calculate_dissociation_velocity(Vector3 v_mol, double E_diss, double m_h)
 {
 	// 物理常数
@@ -10346,4 +10147,205 @@ Vector3 calculate_dissociation_velocity(Vector3 v_mol, double E_diss, double m_h
 
 	// 5. 返回实验室系速度
 	return v_mol + u_vec;
+}
+
+/// @brief Set and calculate the relative velocity
+/// @param k 1 for boundrary of plasma; 2 for wall; 3 for target; 4 for Core; 5 for track betwween two other regions
+/// @param oritation 1 for out; 2 for in
+void Particle::NeutralFluxStatistics(int k, int oritation)
+{
+	if (k == 1)
+	{
+		if (oritation == 1)
+		{
+			if (XY_[0] < 12)
+				FT_.accumulate(0, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 24)
+				FT_.accumulate(1, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 32)
+				FT_.accumulate(2, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 48)
+				FT_.accumulate(3, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 64)
+				FT_.accumulate(4, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 72)
+				FT_.accumulate(5, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 84)
+				FT_.accumulate(6, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else
+				FT_.accumulate(7, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		}
+		if (oritation == 2)
+		{
+			if (XY_[0] < 12)
+				FT_.accumulate(9, 0, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 24)
+				FT_.accumulate(9, 1, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 32)
+				FT_.accumulate(9, 2, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 48)
+				FT_.accumulate(9, 3, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 64)
+				FT_.accumulate(9, 4, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 72)
+				FT_.accumulate(9, 5, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] < 84)
+				FT_.accumulate(9, 6, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else
+				FT_.accumulate(9, 7, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		}
+	}
+	else if (k == 2)
+	{
+		if (oritation == 1)
+			FT_.accumulate(9, 10, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		if (oritation == 2)
+			FT_.accumulate(10, 9, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+	}
+	else if (k == 3)
+	{
+		if (oritation == 1)
+		{
+			if (XY_[0] == 1)
+				FT_.accumulate(0, 10, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] == 96)
+				FT_.accumulate(7, 10, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		}
+		if (oritation == 2)
+		{
+			if (XY_[0] == 1)
+				FT_.accumulate(10, 1, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			else if (XY_[0] == 96)
+				FT_.accumulate(10, 7, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		}
+	}
+	else if (k == 4)
+	{
+		if (XY_[0] < 12)
+			FT_.accumulate(0, 8, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		else if (XY_[0] < 25)
+			FT_.accumulate(1, 8, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		if (XY_[0] > 84)
+			FT_.accumulate(7, 8, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		else if (XY_[0] > 75)
+			FT_.accumulate(6, 8, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+	}
+	else if (k == 5)
+	{
+		if (XY_[0] == 72 && Tri_B2_[Tri_Index_][0] == 25)
+		{
+			FT_.accumulate(5, 2, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		}
+		else if (XY_[0] == 24 && Tri_B2_[Tri_Index_][0] == 73)
+		{
+			FT_.accumulate(1, 6, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		}
+		else
+		{
+			if (XY_[0] == 12 && Tri_B2_[Tri_Index_][0] == 13)
+				FT_.accumulate(0, 1, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			if (XY_[0] == 24 && Tri_B2_[Tri_Index_][0] == 25)
+				FT_.accumulate(1, 2, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			if (XY_[0] == 32 && Tri_B2_[Tri_Index_][0] == 33)
+				FT_.accumulate(2, 3, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			if (XY_[0] == 48 && Tri_B2_[Tri_Index_][0] == 49)
+				FT_.accumulate(3, 4, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			if (XY_[0] == 64 && Tri_B2_[Tri_Index_][0] == 65)
+				FT_.accumulate(4, 5, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			if (XY_[0] == 72 && Tri_B2_[Tri_Index_][0] == 73)
+				FT_.accumulate(5, 6, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+			if (XY_[0] == 84 && Tri_B2_[Tri_Index_][0] == 85)
+				FT_.accumulate(6, 7, Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now);
+		}
+	}
+}
+
+string fatename(int i)
+{
+	string Fate;
+	if (i == -1)
+		Fate = "All";
+	else if (i == 1)
+		Fate = "CX";
+	else if (i == 2)
+		Fate = "recycling";
+	else if (i == 3)
+		Fate = "puff";
+	else if (i == 4)
+		Fate = "rec";
+	else if (i == 5)
+		Fate = "ion";
+	else if (i == 6)
+		Fate = "mar";
+	else if (i == 7)
+		Fate = "Diss";
+	else if (i == 8)
+		Fate = "Diss2";
+	else if (i == 9)
+		Fate = "elastic";
+	else if (i == 10)
+		Fate = "DS0";
+	else if (i == 11)
+		Fate = "DS1";
+	else if (i == 12)
+		Fate = "DS2";
+	else if (i == 13)
+		Fate = "DS3";
+	else if (i == 14)
+		Fate = "Diss1";
+	else if (i == 15)
+		Fate = "reflect";
+	else if (i == 16)
+		Fate = "thermalrelease";
+	return Fate;
+}
+
+string sourcename(int i)
+{
+	string Source;
+	if (i == 0)
+		Source = "no";
+	else if (i == 1)
+		Source = "target";
+	else if (i == 2)
+		Source = "puffport";
+	else if (i == 3)
+		Source = "D";
+	else if (i == 4)
+		Source = "D2";
+	else if (i == 5)
+		Source = "CD4";
+	else if (i == 6)
+		Source = "CD3";
+	else if (i == 7)
+		Source = "CD2";
+	else if (i == 8)
+		Source = "CD1";
+	else if (i == 9)
+		Source = "C";
+	else if (i == 10)
+		Source = "Ar";
+	else if (i == 11)
+		Source = "wall";
+	else if (i == 12)
+		Source = "SOL";
+	else if (i == 13)
+		Source = "H";
+	else if (i == 14)
+		Source = "H2";
+	else if (i == 15)
+		Source = "T";
+	else if (i == 16)
+		Source = "T2";
+	else if (i == 17)
+		Source = "e";
+	else if (i == 18)
+		Source = "Core";
+	else if (i == 19)
+		Source = "PlasmaBoundry";
+	else if (i == 20)
+		Source = "target_1";
+	else
+		Source = "not set";
+	return Source;
 }

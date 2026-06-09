@@ -31,6 +31,7 @@ public:
     bool loadYieldTable(const std::string &path);
     void accumulate(int wall_id, double E, double mu, double weight);
     void accumulate(double E, double mu, double weight) { accumulate(0, E, mu, weight); }
+    void writeH5(const std::string &filename, const std::string &groupname) const;
     double Y_E(int i);
     double Y_A(int i);
     double Y_table(int i, int j);

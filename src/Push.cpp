@@ -220,6 +220,7 @@ void Push(Particle *PP)
                                 }
                                 else
                                 {
+                                    std::cout << "no, not here!" << endl;
                                 }
                             }
                         }
@@ -525,9 +526,9 @@ void Push_Tri(Particle *PP)
             PP = P;
         }
         else if (PP->Zone() > 6)
-        { /*
+        {
+            int num_intersect = 0; /*
              /// about target reflect
-             int num_intersect = 0;
              for (int i = 0; i < 38; i++)
              {
                  if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
@@ -542,59 +543,60 @@ void Push_Tri(Particle *PP)
                  }
              }
 
-             /// about wall reflect
-             if (num_intersect == 0)
-             {
-                 for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
-                 {
-                     if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
-                     {
-                         InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
-                         InterscePoint[num_intersect++][3] = i;
-                     }
-                 }
-             }
-             if (num_intersect > 1)
-             {
-                 for (int i = 1; i < num_intersect - 1; i++)
-                 {
-                     if (InterscePoint[i][0] < InterscePoint[0][0])
-                         for (int j = 0; j < 4; j++)
-                             InterscePoint[0][j] = InterscePoint[i][j];
-                 }
-             }
-             if (num_intersect > 0)
-             {
-                 if (PP == &H2 || PP == &D2 || PP == &T2)
-                     PP->Init(3, 2);
-                 PP->setfate(0, 2, 20);
-                 P = PP;
-                 P->track();
-                 PP = P;
-                 if (PP->Weight() == 0)
-                     return;
-             }
-             else
-             {
-                 if (StepLog)
-                 {
-                     std::cout << "Particle " + PP->name() + " Charged run out of Grid" << endl;
-                     std::cout << PP->NowZone() << endl;
-                     std::cout << PP->name() << ' ' << PP->X(0) << ' ' << PP->X(1) << ' ' << PP->X(2) << endl;
-                     std::cout << PP->name() << ' ' << PP->X_new(0) << ' ' << PP->X_new(1) << ' ' << PP->X_new(2) << endl;
-                     std::cout << PP->name() << ' ' << PP->V(0) << ' ' << PP->V(1) << ' ' << PP->V(2) << endl;
-                     std::cout << "V_P" << ' ' << PP->Vreal(0) << ' ' << PP->Vreal(1) << ' ' << PP->Vreal(2) << ' ' << PP->Vreal(3) << endl;
-                     std::cout << "V_R" << ' ' << PP->Vreal(4) << ' ' << PP->Vreal(5) << ' ' << PP->Vreal(6) << ' ' << PP->Vreal(7) << endl;
-                     std::cout << B[PP->XY(0)][PP->XY(1)][0] << " " << B[PP->XY(0)][PP->XY(1)][1] << " " << B[PP->XY(0)][PP->XY(1)][2] << endl;
-                     std::cout << Num_Reflect_Core << '\t' << PP->Charge() << endl;
-                 }
-                 pause();
-                 PP->SetWeight(0.);
-                 return;
-             }*/
+            /// about wall reflect
+            if (InterscePoint[0][4] == 11)
+            {
+                if (num_intersect == 0)
+                {
+                    for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
+                    {
+                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                        {
+                            InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                            InterscePoint[num_intersect++][3] = i;
+                        }
+                    }
+                }
+                if (num_intersect > 1)
+                {
+                    for (int i = 1; i < num_intersect - 1; i++)
+                    {
+                        if (InterscePoint[i][0] < InterscePoint[0][0])
+                            for (int j = 0; j < 4; j++)
+                                InterscePoint[0][j] = InterscePoint[i][j];
+                    }
+                }
+                if (num_intersect > 0)
+                {
+                    if (PP == &H2 || PP == &D2 || PP == &T2)
+                        PP->Init(3, 2);
+                    PP->setfate(0, 2, 20);
+                    P = PP;
+                    P->track();
+                    PP = P;
+                    if (PP->Weight() == 0)
+                        return;
+                }
+                else
+                {
+                    if (StepLog)
+                    {
+                        std::cout << "Particle " + PP->name() + " Charged run out of Grid" << endl;
+                        std::cout << PP->NowZone() << endl;
+                        std::cout << PP->name() << ' ' << PP->X(0) << ' ' << PP->X(1) << ' ' << PP->X(2) << endl;
+                        std::cout << PP->name() << ' ' << PP->X_new(0) << ' ' << PP->X_new(1) << ' ' << PP->X_new(2) << endl;
+                        std::cout << PP->name() << ' ' << PP->V(0) << ' ' << PP->V(1) << ' ' << PP->V(2) << endl;
+                        std::cout << "V_P" << ' ' << PP->Vreal(0) << ' ' << PP->Vreal(1) << ' ' << PP->Vreal(2) << ' ' << PP->Vreal(3) << endl;
+                        std::cout << "V_R" << ' ' << PP->Vreal(4) << ' ' << PP->Vreal(5) << ' ' << PP->Vreal(6) << ' ' << PP->Vreal(7) << endl;
+                        std::cout << B[PP->XY(0)][PP->XY(1)][0] << " " << B[PP->XY(0)][PP->XY(1)][1] << " " << B[PP->XY(0)][PP->XY(1)][2] << endl;
+                        std::cout << Num_Reflect_Core << '\t' << PP->Charge() << endl;
+                    }
+                    pause();
+                    PP->SetWeight(0.);
+                    return;
+                }
+            }*/
 
-            PP->SetX(0, InterscePoint[0][1]);
-            PP->SetX(1, InterscePoint[0][2]);
             P = PP;
             WallReflect();
             if (P->Weight() == 0)

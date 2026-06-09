@@ -35,19 +35,8 @@ void Read()
     Path_Grid = Casepath + "shapedata/com_ny4";
     GridRead(Path_Grid, 7);
 
-    /*ofstream Out_temp("doc/grid_duibi.txt");
-    for (int i = 0; i < N_poloidal; i++)
-        for (int j = 0; j < N_radial; j++)
-        {
-            Out_temp << i << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(0, 0) << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(1, 0) << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(2, 0) << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(3, 0) << endl;
-            Out_temp << i << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(0, 1) << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(1, 1) << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(2, 1) << "\t" << Grid1.Plasma_Grid(i, j).Grid_Point(3, 1) << endl;
-            Out_temp << "\t" << Grid[i][j][0] << "\t" << Grid[i][j][1] << "\t" << Grid[i][j][2] << "\t" << Grid[i][j][3] << endl;
-            Out_temp << "\t" << Grid[i][j][4] << "\t" << Grid[i][j][5] << "\t" << Grid[i][j][6] << "\t" << Grid[i][j][7] << endl;
-        }
-    Out_temp.close();*/
-
     /// read the triangle mesh
-    Grid4.load_eirene_mesh(Casepath + "solps_output/fort.33", Casepath + "solps_output/fort.34", Casepath + "solps_output/fort.35", Casepath + "shapedata/wall_segment_1.txt"); // [可选] 第三个参数传 "fort.35"
+    Grid4.load_eirene_mesh(Casepath + "solps_output/fort.33", Casepath + "solps_output/fort.34", Casepath + "solps_output/fort.35", Casepath + "shapedata/wall_segment.txt");
 
     /// process the triangle information
     Grid4.mesh_find(N_poloidal, N_radial);
@@ -75,9 +64,6 @@ void Read()
     }*/
 
     /// Tokamak wall position reading(Clockwise)
-
-    S_target.resize(N_radial * 2);
-    S_wall.resize(Grid1.Wall_num());
 
     /// test Grid.Find()
     /*double x_temp[3];
@@ -307,12 +293,12 @@ void Read()
                 break;
         }
     }*/
-    ofstream Out_temp("doc/B2Index_fixed.txt");
+    /*ofstream Out_temp("doc/B2Index_fixed.txt");
     for (int i = 0; i < Grid4.num_tris(); i++)
     {
         Out_temp << i << "\t" << Grid4.b2_index(i, 0) << "\t" << Grid4.b2_index(i, 1) << endl;
     }
-    Out_temp.close();
+    Out_temp.close();*/
 }
 
 void GridRead(string Path, int n)

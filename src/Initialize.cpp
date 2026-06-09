@@ -122,6 +122,16 @@ void Initialize(int Input, char *settingfile[])
     make2D(vdEp);
     make2D(vdEr);
 
+    NumPar_H_recyc.resize(N_radial * 2);
+    NumPar_H2_recyc.resize(N_radial * 2);
+    Tn_H_recyc.resize(N_radial * 2);
+    NumPar_D_recyc.resize(N_radial * 2);
+    NumPar_D2_recyc.resize(N_radial * 2);
+    Tn_D_recyc.resize(N_radial * 2);
+    NumPar_T_recyc.resize(N_radial * 2);
+    NumPar_T2_recyc.resize(N_radial * 2);
+    Tn_T_recyc.resize(N_radial * 2);
+
     std::getline(In, line);
     In >> Inputstring >> K_log;
     std::cout << K_log << endl;

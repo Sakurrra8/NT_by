@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <iomanip>
 #include <math.h>
+#include <array>
 #include "float.h"
 #include "Reflect.h"
 #include "EIRENE.h"
@@ -124,23 +125,19 @@ extern std::vector<std::vector<double>> epx, epy, erx, ery;
 extern std::vector<std::vector<double>> crx, cry;
 extern std::vector<std::vector<double>> dTip, dTir, dTix, dTiy, dTiz;
 
-// 粒子数与反应汇总
-extern std::vector<std::vector<double>> NumPar_D2_1_Diss;
-extern std::vector<std::vector<double>> Sum_n_Rec_, Sum_mu_Rec_, Sum_E_Rec_, Pra_Rec_;
-
 extern std::vector<double> V_1, V_2;
 
 // extern double step_now;
-extern double cosang[410], sinang[410];
+// extern double cosang[410], sinang[410];
 extern int num_CoreBoundry, num_GridBoundry, num_PFRBoundry;
-extern double CoreBoundry[55][2], GridBoundry[100][2], PFRBoundry[55][2], cosCore[60], sinCore[60];
-extern double NumPar_H_recyc[80], NumPar_H2_recyc[80], Tn_H_recyc[80];
-extern double NumPar_D_recyc[80], NumPar_D2_recyc[80], Tn_D_recyc[80];
-extern double NumPar_T_recyc[80], NumPar_T2_recyc[80], Tn_T_recyc[80];
-extern double Ei_Dion[80], InterscePoint[10][5], coeff_recyc_target, coeff_ercyc_wall;
-extern vector<double> S_target, S_wall;
+extern double CoreBoundry[55][2], GridBoundry[100][2], PFRBoundry[55][2]; //, cosCore[60], sinCore[60];
+extern std::vector<double> NumPar_H_recyc, Tn_H_recyc, NumPar_H2_recyc;
+extern std::vector<double> NumPar_D_recyc, Tn_D_recyc, NumPar_D2_recyc;
+extern std::vector<double> NumPar_T_recyc, Tn_T_recyc, NumPar_T2_recyc;
+extern double Ei_Dion[80], InterscePoint[10][6], coeff_recyc_target, coeff_ercyc_wall;
+// extern vector<double> S_target, S_wall;
 extern double NumPar_wall_H[80], NumPar_wall_D[80], NumPar_wall_T[80];
-extern double Xrecyc[80][2], theta[80][2];
+//  extern double Xrecyc[80][2]; //, theta[80][2];
 extern string name_Xlog, name_Vlog, Outputpath, Inputpath, Casepath;
 
 extern std::ofstream Xlog;

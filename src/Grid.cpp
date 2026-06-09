@@ -190,7 +190,7 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
     }
 
     /// Tokamak wall position reading(Clockwise)
-    string Path_Wall = Casepath_ + "shapedata/wall_segment_1.txt";
+    string Path_Wall = Casepath_ + "shapedata/wall_segment.txt";
     std::ifstream fp;
     fp.open(Path_Wall, std::ios::in); // ios::in means read
     if (!fp.is_open())
@@ -201,6 +201,8 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
     Wall_num_ -= 1;
     // std::cout << Wall_num_ << endl;
     double a, b;
+    Sin_Wall_.resize(Wall_num_);
+    Cos_Wall_.resize(Wall_num_);
     for (int i = 0; i < Wall_num_; i++)
     {
         Wall_.push_back(vector<double>());
@@ -213,13 +215,19 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
     Wall_[Wall_num_].push_back(Wall_[0][0]);
     Wall_[Wall_num_].push_back(Wall_[0][1]);
     fp.close();
-    // std::cout << Wall_.size() - 1 << endl;
-    /*out.open("doc/Wall_.txt");
+    for (int i = 0; i < Wall_num_; i++)
+    {
+        double Var_temp = sqrt((Wall_[i + 1][0] - Wall_[i][0]) * (Wall_[i + 1][0] - Wall_[i][0]) + (Wall_[i + 1][1] - Wall_[i][1]) * (Wall_[i + 1][1] - Wall_[i][1]));
+        Cos_Wall_[i] = (Wall_[i + 1][0] - Wall_[i][0]) / Var_temp;
+        Sin_Wall_[i] = (Wall_[i + 1][1] - Wall_[i][1]) / Var_temp;
+    }
+    std::cout << Wall_.size() - 1 << endl;
+    ofstream out("doc/Wall_.txt");
     for (int i = 0; i < Wall_.size(); i++)
     {
         out << Wall_[i][0] << '\t' << Wall_[i][1] << endl;
     }
-    out.close();*/
+    out.close();
 
     RectangularGridGeneration();
 
@@ -747,12 +755,12 @@ void GRID::CalAngleTarget()
         Cos_target_[i + N_radial_] = -deltaX / deltaL;
         Sin_target_[i + N_radial_] = -deltaY / deltaL;
     }
-    ofstream out_temp3("doc/angle_target2.txt");
+    /*ofstream out_temp3("doc/angle_target2.txt");
     for (int i = 0; i < N_radial_ * 2; i++)
     {
         out_temp3 << i << "\t" << Cos_target_[i] << "\t" << Sin_target_[i] << endl;
     }
-    out_temp3.close();
+    out_temp3.close();*/
 }
 double GRID::Sin_target(int i)
 {
@@ -761,6 +769,14 @@ double GRID::Sin_target(int i)
 double GRID::Cos_target(int i)
 {
     return Cos_target_[i];
+}
+double GRID::Sin_Wall(int i)
+{
+    return Sin_Wall_[i];
+}
+double GRID::Cos_Wall(int i)
+{
+    return Cos_Wall_[i];
 }
 /*int Tools::get_line_intersection(double p0_x, double p0_y, double p1_x, double p1_y,
                           double p2_x, double p2_y, double p3_x, double p3_y,
@@ -1780,7 +1796,7 @@ namespace eirene
                 tris_[i].neigh[9] = num_temp[0];
             tris_[i].neigh[10] = num_temp[1]; // radial index
         }
-        std::ofstream out_temp("doc/fort.35");
+        /*std::ofstream out_temp("doc/fort.35");
         for (int i = 0; i < tris_.size(); i++)
         {
             for (int m = 0; m < 11; m++)
@@ -1789,7 +1805,7 @@ namespace eirene
             }
             out_temp << endl;
         }
-        out_temp.close();
+        out_temp.close();*/
     }
 
     void TriMesh::compute_centroids_areas()
@@ -1982,12 +1998,16 @@ namespace eirene
         TargetIndex_.resize(Num_Target_);
         Cos_Target_.resize(Num_Target_);
         Sin_Target_.resize(Num_Target_);
-        Target_.resize(Num_Target_ + 1);
+        Vol_Target_.resize(Num_Target_);
+
+        Target_.resize(Num_Target_);
+        Mid_Target_.resize(Num_Target_);
 
         for (int i = 0; i < TargetIndex_.size(); i++)
         {
             TargetIndex_[i].push_back(-1);
-            Target_[i].resize(2);
+            Mid_Target_[i].resize(2);
+            Target_[i].resize(4);
         }
         Target_[Num_Target_].resize(2);
         for (int i = 0; i < num_tris_; i++)
@@ -2038,33 +2058,56 @@ namespace eirene
             {
                 Target_[i][0] = nodes_[tris_[TargetIndex_[i][0]].v[TargetIndex_[i][1]]].r;
                 Target_[i][1] = nodes_[tris_[TargetIndex_[i][0]].v[TargetIndex_[i][1]]].z;
-            }
-        }
-        if (TargetIndex_[Num_Target_ - 1][0] != -1)
-        {
-            if (TargetIndex_[Num_Target_][1] < 2)
-            {
-                Target_[Num_Target_][0] = nodes_[tris_[TargetIndex_[Num_Target_][0]].v[TargetIndex_[Num_Target_][1] + 1]].r;
-                Target_[Num_Target_][1] = nodes_[tris_[TargetIndex_[Num_Target_][0]].v[TargetIndex_[Num_Target_][1] + 1]].z;
-            }
-            else if (TargetIndex_[Num_Target_][1] == 2)
-            {
-                Target_[Num_Target_][0] = nodes_[tris_[TargetIndex_[Num_Target_][0]].v[0]].r;
-                Target_[Num_Target_][1] = nodes_[tris_[TargetIndex_[Num_Target_][0]].v[0]].z;
+                if (TargetIndex_[i][1] == 0 || TargetIndex_[i][1] == 1)
+                {
+                    Target_[i][2] = nodes_[tris_[TargetIndex_[i][0]].v[TargetIndex_[i][1] + 1]].r;
+                    Target_[i][3] = nodes_[tris_[TargetIndex_[i][0]].v[TargetIndex_[i][1] + 1]].z;
+                }
+                else if (TargetIndex_[i][1] == 2)
+                {
+                    Target_[i][2] = nodes_[tris_[TargetIndex_[i][0]].v[TargetIndex_[i][1] - 2]].r;
+                    Target_[i][3] = nodes_[tris_[TargetIndex_[i][0]].v[TargetIndex_[i][1] - 2]].z;
+                }
+                else
+                {
+                    std::cerr << "Error in targer_find()!" << endl;
+                }
             }
         }
         double deltaX, deltaY, deltaL;
-        for (int i = 0; i < N_radial_ * 2; i++)
+        for (int i = 0; i < Num_Target_; i++)
         {
-            deltaX = Target_[i + 1][0] - Target_[i][0];
-            deltaY = Target_[i + 1][1] - Target_[i][1];
-            deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
-            if (deltaL != 0)
+            Mid_Target_[i][0] = 0.5 * (Target_[i][0] + Target_[i][2]);
+            Mid_Target_[i][1] = 0.5 * (Target_[i][1] + Target_[i][3]);
+
+            double deltaX = Target_[i][2] - Target_[i][0];
+            double deltaY = Target_[i][3] - Target_[i][1];
+            double deltaL = std::sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (deltaL > 0) // 防御性检查，防止除以 0
             {
-                Cos_Target_[i] = -deltaX / deltaL;
-                Sin_Target_[i] = -deltaY / deltaL;
+                Cos_Target_[i] = deltaX / deltaL;
+                Sin_Target_[i] = deltaY / deltaL;
+            }
+            else
+            {
+                // 异常网格处理：如果两个点完全重合，给一个默认的切向
+                Cos_Target_[i] = 0.0;
+                Sin_Target_[i] = 0.0;
             }
         }
+        /*ofstream out_temp3("doc/Grid4_target_cos.txt");
+        for (int i = 0; i < N_radial_ * 2; i++)
+        {
+            if (TargetIndex_[i][0] != -1)
+                out_temp3 << i << "\t" << Cos_trimesh_[TargetIndex_[i][0]][TargetIndex_[i][1]] << "\t" << Cos_Target_[i] << "\t" << Sin_trimesh_[TargetIndex_[i][0]][TargetIndex_[i][1]] << "\t" << Sin_Target_[i] << endl;
+        }
+        out_temp3.close();*/
+        /*ofstream out_temp3("doc/Grid4_target_1.txt");
+        for (int i = 0; i < N_radial_ * 2; i++)
+        {
+            out_temp3 << i << "\t" << Target_[i][0] << "\t" << Target_[i][1] << "\t" << Target_[i][2] << "\t" << Target_[i][3] << "\t" << Cos_Target_[i] << "\t" << Sin_Target_[i] << endl;
+        }
+        out_temp3.close();*/
         /*ofstream out_temp3("doc/angle_target1.txt");
         for (int i = 0; i < N_radial_ * 2; i++)
         {
@@ -2125,8 +2168,8 @@ namespace eirene
     void TriMesh::mesh_find(int N_poloidal, int N_radial)
     {
         b2_find();
-        target_find(N_poloidal, N_radial);
         lines_find();
+        target_find(N_poloidal, N_radial);
     }
 
     int TriMesh::b2_index(int i, int j)
@@ -2204,20 +2247,20 @@ namespace eirene
             deltaX = nodes_[tris_[i].v[1]].r - nodes_[tris_[i].v[0]].r;
             deltaY = nodes_[tris_[i].v[1]].z - nodes_[tris_[i].v[0]].z;
             deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
-            Cos_trimesh_[i].push_back(-deltaX / deltaL);
-            Sin_trimesh_[i].push_back(-deltaY / deltaL);
+            Cos_trimesh_[i].push_back(deltaX / deltaL);
+            Sin_trimesh_[i].push_back(deltaY / deltaL);
 
             deltaX = nodes_[tris_[i].v[2]].r - nodes_[tris_[i].v[1]].r;
             deltaY = nodes_[tris_[i].v[2]].z - nodes_[tris_[i].v[1]].z;
             deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
-            Cos_trimesh_[i].push_back(-deltaX / deltaL);
-            Sin_trimesh_[i].push_back(-deltaY / deltaL);
+            Cos_trimesh_[i].push_back(deltaX / deltaL);
+            Sin_trimesh_[i].push_back(deltaY / deltaL);
 
             deltaX = nodes_[tris_[i].v[0]].r - nodes_[tris_[i].v[2]].r;
             deltaY = nodes_[tris_[i].v[0]].z - nodes_[tris_[i].v[2]].z;
             deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
-            Cos_trimesh_[i].push_back(-deltaX / deltaL);
-            Sin_trimesh_[i].push_back(-deltaY / deltaL);
+            Cos_trimesh_[i].push_back(deltaX / deltaL);
+            Sin_trimesh_[i].push_back(deltaY / deltaL);
         }
         /*ofstream out_temp("doc/lines_info.txt");
         for (int i = 0; i < num_tris_; i++)
@@ -2334,12 +2377,19 @@ namespace eirene
         for (int i = 0; i < Wall_num_; i++)
         {
             fp >> x_[i] >> y_[i];
-            // std::cout << Wall_[i][0] << Wall_[i][1] << endl;
         }
+        fp.close();
         x_.push_back(x_[0]);
         y_.push_back(y_[0]);
-        fp.close();
+        for (int i = 0; i < Wall_num_; i++)
+        {
+            dx_.push_back(x_[i + 1] - x_[i]);
+            dy_.push_back(y_[i + 1] - y_[i]);
+            Length_sq_.push_back(dx_[i] * dx_[i] + dy_[i] * dy_[i]);
+        }
+        CalAngleWall();
     }
+
     int WALL::IfinWall(double x, double y)
     {
         int count = 0;
@@ -2391,37 +2441,146 @@ namespace eirene
 
     void WALL::CalAngleWall()
     {
-        double deltaX, deltaY, deltaL;
+        double deltaL;
         for (int i = 0; i < Wall_num(); i++)
         {
-            // std::cout << i << '\t' << Wall[i][0] << '\t' << Wall[i][1] << endl;
-            deltaX = x_[i + 1] - x_[i];
-            deltaY = y_[i + 1] - y_[i];
-            deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
-            Cos_wall_[i] = -deltaX / deltaL;
-            Sin_wall_[i] = -deltaY / deltaL;
+            deltaL = sqrt(Length_sq(i));
+            Cos_wall_.push_back(-dx(i) / deltaL);
+            Sin_wall_.push_back(-dy(i) / deltaL);
         }
     }
+
+    void TriMesh::get_sx()
+    {
+        double pi = 3.1415926535897;
+        double x1, x2, y1, y2, h1, h2, l1, l2, s1, s2;
+        double y0;
+
+        // in
+        for (int i = 0; i <= Num_Target_ - 1; i = i + 1)
+        {
+            x1 = Target_[i][0];
+            x2 = Target_[i][2];
+            y1 = Target_[i][1];
+            y2 = Target_[i][3];
+
+            if (x1 == x2)
+            {
+                Vol_Target_[i] = 2.0 * pi * x1 * fabs(y2 - y1);
+                continue;
+            }
+
+            if (y1 == y2)
+            {
+                Vol_Target_[i] = 2.0 * pi * fabs(x1 * x1 - x2 * x2);
+                continue;
+            }
+
+            get_point_to_y_line(x1, y1, x2, y2, &y0);
+            h1 = fabs(y1 - y0);
+            h2 = fabs(y2 - y0);
+            l1 = sqrt(h1 * h1 + x1 * x1);
+            l2 = sqrt(h2 * h2 + x2 * x2);
+
+            s1 = pi * l1 * x1;
+            s2 = pi * l2 * x2;
+
+            Vol_Target_[i] = fabs(s1 - s2);
+        }
+        /*ofstream out("doc/Vol_target.txt");
+        for (int i = 0; i < Num_Target_; i++)
+            out << i << "\t" << Vol_Target_[i] << endl;
+        out.close();*/
+    }
+
     double TriMesh::triVolume(int i)
     {
         return triVolume_[i];
     }
     double WALL::Sin_Wall(int i)
     {
-        return Sin_wall_[i];
+        if (i != -1)
+            return Sin_wall_[i];
+        else
+            throw std::logic_error("wrong Sin_Wall!\n");
     }
     double WALL::Cos_Wall(int i)
     {
-        return Cos_wall_[i];
+        if (i != -1)
+            return Cos_wall_[i];
+        else
+            throw std::logic_error("wrong Cos_Wall!\n");
     }
+    double WALL::dx(int i) { return dx_[i]; }
+    double WALL::dy(int i) { return dy_[i]; }
+    double WALL::Length_sq(int i) { return Length_sq_[i]; }
+
+    /**
+     * @brief  终极质量守恒兜底：寻找距离网格碰撞点最近的真实器壁线段，并计算精确投影坐标
+     * * @param x_mesh      网格上的粒子碰撞点 X 坐标
+     * @param y_mesh        网格上的粒子碰撞点 Y 坐标
+     * @param num_walls     真实器壁线段的总数 (wall_x1 数组的长度)
+     * @param wall          器壁线段
+     * @param nearest_idx   [输出] 距离最近的真实器壁线段的索引 (0 ~ num_walls-1)
+     * @param ix            [输出] 粒子最终投射到该真实器壁上的精确 X 坐标
+     * @param iy            [输出] 粒子最终投射到该真实器壁上的精确 Y 坐标
+     */
+    int WALL::findNearestWallFast(double x_mesh, double y_mesh)
+    {
+        double min_dist_sq = 1e30;
+        int nearest_idx = -1;
+
+        int num_walls = Wall_num();
+
+        // 整个循环里没有任何减法算长度，全是乘加运算 (FMA)，CPU 执行极快
+        for (int i = 0; i < num_walls; ++i)
+        {
+            double len_sq = Length_sq(i);
+            if (len_sq < 1e-12)
+                continue;
+
+            // 利用预存的 dx, dy 算 t
+            double t = ((x_mesh - P(i, 0)) * dx(i) + (y_mesh - P(i, 1)) * dy(i)) / len_sq;
+
+            if (t < 0.0)
+                t = 0.0;
+            if (t > 1.0)
+                t = 1.0;
+
+            // 算最近点
+            double cx = P(i, 0) + t * dx(i);
+            double cy = P(i, 1) + t * dy(i);
+
+            double dist_sq = (x_mesh - cx) * (x_mesh - cx) + (y_mesh - cy) * (y_mesh - cy);
+
+            if (dist_sq < min_dist_sq)
+            {
+                min_dist_sq = dist_sq;
+                nearest_idx = i;
+            }
+        }
+        if (nearest_idx != -1)
+            return nearest_idx;
+        else
+            throw std::logic_error("Wrong answer in findNearestWallFast()");
+    }
+
     double TriMesh::Sin_Target(int i)
     {
-        return Sin_Target_[i];
+        if (i != -1)
+            return Sin_Target_[i];
+        else
+            throw std::logic_error("wrong Sin_Target!\n");
     }
     double TriMesh::Cos_Target(int i)
     {
-        return Cos_Target_[i];
+        if (i != -1)
+            return Cos_Target_[i];
+        else
+            throw std::logic_error("wrong Cos_Target!\n");
     }
+    double TriMesh::Mid_Target(int i, int j) { return Mid_Target_[i][j]; }
+    double TriMesh::Vol_Target(int i) { return Vol_Target_[i]; }
     double TriMesh::Sin_trimesh(int i, int j)
     {
         return Sin_trimesh_[i][j];

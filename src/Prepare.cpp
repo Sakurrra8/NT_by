@@ -7,8 +7,6 @@
 void get_unit_vector_xy();
 void get_center();
 void get_dTi();
-void get_sx();
-void get_point_to_y_line(double p1x, double p1y, double p2x, double p2y, double *y0);
 void CX_DT_Fix();
 
 void Prepare()
@@ -107,7 +105,7 @@ void Prepare()
 
 	/// Calculate the cos and sin of Wall
 	// std::cout << numWall << endl;
-	for (int i = 0; i < Grid1.Wall_num(); i++)
+	/*for (int i = 0; i < Grid1.Wall_num(); i++)
 	{
 		// std::cout << i << '\t' << Wall[i][0] << '\t' << Wall[i][1] << endl;
 		deltaX = Grid1.Wall(i + 1, 0) - Grid1.Wall(i, 0);
@@ -123,7 +121,7 @@ void Prepare()
 		deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
 		cosCore[i - 25] = deltaX / deltaL;
 		sinCore[i - 25] = deltaY / deltaL;
-	}
+	}*/
 	Grid1.CalAngleTarget();
 	/// calculate the area of Grid
 	for (int i = 0; i < 98; i++)
@@ -736,23 +734,6 @@ void Prepare()
 	/// prepare for particle recycle
 	for (int i = 0; i < 38; i++)
 	{
-		double alpha = 0.2;
-		Xrecyc[i][0] = (1 - alpha) * ((Grid[1][i][3] + Grid[1][i][0]) / 2.) + alpha * ((Grid[1][i][1] + Grid[1][i][2]) / 2.);
-		Xrecyc[i][1] = (1 - alpha) * ((Grid[1][i][7] + Grid[1][i][4]) / 2.) + alpha * ((Grid[1][i][6] + Grid[1][i][5]) / 2.);
-		Xrecyc[i + 38][0] = (1 - alpha) * ((Grid[96][i][1] + Grid[96][i][2]) / 2.) + alpha * ((Grid[96][i][0] + Grid[96][i][3]) / 2.);
-		Xrecyc[i + 38][1] = (1 - alpha) * ((Grid[96][i][5] + Grid[96][i][6]) / 2.) + alpha * ((Grid[96][i][4] + Grid[96][i][7]) / 2.);
-
-		deltaX = Grid[1][i][3] - Grid[1][i][0];
-		deltaY = Grid[1][i][7] - Grid[1][i][4];
-		deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
-		theta[i][0] = -deltaX / deltaL;
-		theta[i][1] = -deltaY / deltaL;
-
-		deltaX = Grid[96][i][1] - Grid[96][i][2];
-		deltaY = Grid[96][i][5] - Grid[96][i][6];
-		deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
-		theta[i + 38][0] = -deltaX / deltaL;
-		theta[i + 38][1] = -deltaY / deltaL;
 		if (K_Ei == 2)
 		{
 			Ei_Dion[i] = 2. * Ti[1][i] + 3. * 1.0 * Te[1][i];
@@ -788,8 +769,7 @@ void Prepare()
 				{
 					NumPar_H_recyc[i] = NumPar_wall_H[i] * H_W.n_RefCoeff(K_Reflect, Ei_Dion[i]);
 					Tn_H_recyc[i] = H_W.E_RefCoeff(K_Reflect, Ei_Dion[i]) / H_W.n_RefCoeff(K_Reflect, Ei_Dion[i]) * Ei_Dion[i] / 1.5;
-					NumPar_H2_recyc[i] = (coeff_recyc_target - H_W.n_RefCoeff(K_Reflect, Ei_Dion[i])) *
-										 NumPar_wall_H[i] / 2.;
+					NumPar_H2_recyc[i] = (coeff_recyc_target - H_W.n_RefCoeff(K_Reflect, Ei_Dion[i])) * NumPar_wall_H[i] / 2.;
 				}
 				else
 				{
@@ -821,6 +801,9 @@ void Prepare()
 		H.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
 		H.CalWeight2(NumPar_H_recyc, numPar_flight_Target); // numPar_flight_Target is Sum of test
 		H2.CalWeight2(NumPar_H2_recyc, numPar_flight_Target);
+
+		H.RecycledCal(NumPar_H_recyc, Tn_H_recyc);
+		H2.RecycledCal(NumPar_H_recyc);
 	}
 	// D recycling
 	if (K_D)
@@ -868,12 +851,9 @@ void Prepare()
 		D.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
 		D.CalWeight2(NumPar_D_recyc, numPar_flight_Target); // numPar_flight_Target is Sum of test
 		D2.CalWeight2(NumPar_D2_recyc, numPar_flight_Target);
-		/*ofstream Out_temp;
-		Out_temp.open("pythonbat/EAST/93046/data/recycling.txt");
-		for (int i = 0; i < 76; i++)
-		{
-			Out_temp << NumPar_D_recyc[i] << " " << Tn_D_recyc[i] << " " << NumPar_D2_recyc[i] << endl;
-		}*/
+
+		D.RecycledCal(NumPar_D_recyc, Tn_D_recyc);
+		D2.RecycledCal(NumPar_D_recyc);
 	}
 	// T recycling
 	if (K_T)
@@ -920,6 +900,8 @@ void Prepare()
 		T.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
 		T.CalWeight2(NumPar_T_recyc, numPar_flight_Target); // numPar_flight_Target is Sum of test
 		T2.CalWeight2(NumPar_T2_recyc, numPar_flight_Target);
+		T.RecycledCal(NumPar_T_recyc, Tn_T_recyc);
+		T2.RecycledCal(NumPar_T_recyc);
 	}
 
 	for (int i = 0; i <= num_CoreBoundry / 2; i++)
@@ -947,7 +929,7 @@ void Prepare()
 	}
 
 	/// get the area of the target and wall
-	get_sx();
+	Grid4.get_sx();
 
 	/*out.open("doc/plasmaboundary.txt");
 	for (int i = 0; i < Grid1.PLasma_Grid_Boundry_num(); i++)
@@ -1507,138 +1489,6 @@ void get_dTi()
 	}
 	f3.close();
 	f4.close();*/
-}
-
-void get_sx()
-{
-	int Nr;
-	Nr = N_radial;
-
-	double x1, x2, y1, y2, h1, h2, l1, l2, s1, s2;
-	double y0;
-
-	// in
-	for (int i = 0; i <= Nr - 1; i = i + 1)
-	{
-		x1 = Grid[1][i][0];
-		x2 = Grid[1][i][3];
-		y1 = Grid[1][i][3];
-		y2 = Grid[1][i][7];
-
-		if (x1 == x2)
-		{
-			S_target[i] = 2.0 * pi * x1 * fabs(y2 - y1);
-			continue;
-		}
-
-		if (y1 == y2)
-		{
-			S_target[i] = 2.0 * pi * fabs(x1 * x1 - x2 * x2);
-			continue;
-		}
-
-		get_point_to_y_line(x1, y1, x2, y2, &y0);
-		h1 = fabs(y1 - y0);
-		h2 = fabs(y2 - y0);
-		l1 = sqrt(h1 * h1 + x1 * x1);
-		l2 = sqrt(h2 * h2 + x2 * x2);
-
-		s1 = pi * l1 * x1;
-		s2 = pi * l2 * x2;
-
-		S_target[i] = fabs(s1 - s2);
-	}
-
-	// out
-	for (int i = 0; i < Nr; i = i + 1)
-	{
-		x1 = Grid[96][i][1];
-		x2 = Grid[96][i][2];
-		y1 = Grid[96][i][5];
-		y2 = Grid[96][i][6];
-
-		if (x1 == x2)
-		{
-			S_target[i + N_radial] = 2.0 * pi * x1 * fabs(y2 - y1);
-			continue;
-		}
-
-		if (y1 == y2)
-		{
-			S_target[i + N_radial] = 2.0 * pi * fabs(x1 * x1 - x2 * x2);
-			continue;
-		}
-
-		get_point_to_y_line(x1, y1, x2, y2, &y0);
-		h1 = fabs(y1 - y0);
-		h2 = fabs(y2 - y0);
-		l1 = sqrt(h1 * h1 + x1 * x1);
-		l2 = sqrt(h2 * h2 + x2 * x2);
-
-		s1 = pi * l1 * x1;
-		s2 = pi * l2 * x2;
-
-		S_target[i + N_radial] = fabs(s1 - s2);
-	}
-
-	/// wall
-	// out.open("S_wall.txt");
-	for (int i = 0; i < Grid1.Wall_num(); i++)
-	{
-		x1 = Grid1.Wall(i, 0);
-		x2 = Grid1.Wall(i + 1, 0);
-		y1 = Grid1.Wall(i, 1);
-		y2 = Grid1.Wall(i + 1, 1);
-
-		if (x1 == x2)
-		{
-			S_wall[i] = 2.0 * pi * x1 * fabs(y2 - y1);
-			// out << S_wall[i] << endl;
-			continue;
-		}
-
-		if (y1 == y2)
-		{
-			S_wall[i] = 2.0 * pi * fabs(x1 * x1 - x2 * x2);
-			// out << S_wall[i] << endl;
-			continue;
-		}
-
-		get_point_to_y_line(x1, y1, x2, y2, &y0);
-		h1 = fabs(y1 - y0);
-		h2 = fabs(y2 - y0);
-		l1 = sqrt(h1 * h1 + x1 * x1);
-		l2 = sqrt(h2 * h2 + x2 * x2);
-
-		s1 = pi * l1 * x1;
-		s2 = pi * l2 * x2;
-
-		S_wall[i] = fabs(s1 - s2);
-		// out << S_wall[i] << endl;
-	}
-}
-
-void get_point_to_y_line(double p1x, double p1y, double p2x, double p2y, double *y0)
-{
-	if (p1y == p2y)
-	{
-		*y0 = p1y;
-		return;
-	}
-
-	if (p1x == p2x)
-	{
-		*y0 = 1e32;
-		printf("In function : get_point_to_y_line, p1x == p2x, it is not good \n");
-		return;
-	}
-
-	double a, b, c;
-	a = p2y - p1y;
-	b = p1x - p2x;
-	c = p2x * p1y - p1x * p2y;
-
-	*y0 = -1.0 * c / b;
 }
 
 void CX_DT_Fix()
