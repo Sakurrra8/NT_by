@@ -356,6 +356,78 @@ namespace Tools
 
         return 0; // 不相交
     }
+    /**
+     * @brief 计算磁场方向与器壁法线之间的夹角（返回 0~90 度）
+     * * @param bx         磁场 X 分量
+     * @param by         磁场 Y 分量
+     * @param bz         磁场 Z 分量
+     * @param cos_wall   器壁倾斜角的 cos 值
+     * @param sin_wall   器壁倾斜角的 sin 值
+     * @return double    返回夹角（角度制：Degree）
+     */
+    double CalBFieldToWallNormalAngle(double bx, double by, double bz, double cos_wall, double sin_wall)
+    {
+        // 1. 计算三维磁场向量的模长 |B|
+        double b_mod_sq = bx * bx + by * by + bz * bz;
+
+        // 安全校验：防止强磁场为 0 区域导致除零崩溃
+        if (b_mod_sq <= 1e-12)
+        {
+            return 0.0;
+        }
+        double b_mod = std::sqrt(b_mod_sq);
+
+        // 2. 计算点积 (Dot Product)
+        // 根据你第一道题的物理模型：器壁方向为 (cos, sin, 0)，则法线方向为 (sin, -cos, 0)
+        // 磁场 B(bx, by, bz) 与法线 n(sin, -cos, 0) 的点积为： bx * sin - by * cos
+        double dot_product_abs = std::abs(bx * sin_wall - by * cos_wall);
+
+        /* 💡 备用情况提醒：
+           如果你传入的 (cos_wall, sin_wall, 0) 本身就已经直接是【法线向量】了，
+           请将上面的代码改成下面这一行：
+           double dot_product_abs = std::abs(bx * cos_wall + by * sin_wall);
+        */
+
+        // 3. 计算 cos(theta) 值，器壁法线的模长默认已归一化（cos^2 + sin^2 = 1）
+        double cos_theta = dot_product_abs / b_mod;
+
+        // 4. 防御性截断：防止浮点数精度误差（如变成 1.00000001）导致 acos 吐出 NaN
+        cos_theta = std::clamp(cos_theta, 0.0, 1.0);
+
+        // 5. 将弧度转换为角度（适合 TRIM 数据库查表）
+        const double PI = 3.14159265358979323846;
+        return (180.0 / PI) * std::acos(cos_theta);
+    }
+    /**
+     * @brief 校验并修正入射离子速度，防止其远离靶板
+     * @param V          离子速度数组，长度为 3 (V[0]=Vx, V[1]=Vy, V[2]=Vz) -> 将在函数内直接修改
+     * @param bx, by, bz 磁场三维分量
+     * @param cos_wall   器壁倾斜角 cos 值
+     * @param sin_wall   器壁倾斜角 sin 值
+     */
+    void AdjustIncidentVelocity(std::vector<double> &V, double bx, double by, double bz, double cos_wall, double sin_wall)
+    {
+        // 1. 定义器壁的法向量 n = (sin_wall, -cos_wall, 0)
+        // 注意：该法向需要与你网格定义的“里外”一致。这里沿用你之前的点积公式格式：
+        double nx = sin_wall;
+        double ny = -cos_wall;
+
+        // 2. 计算速度 V 和磁场 B 在器壁法线方向的投影（点积）
+        double Vn = V[0] * nx + V[1] * ny;
+        double Bn = bx * nx + by * ny;
+
+        // 3. 核心物理逻辑判断：
+        // 如果 Vn * Bn < 0，说明磁场引导的方向是指向靶板的，但粒子的法向速度却背离了靶板（两者反向了）
+        if (Vn * Bn < 0.0)
+        {
+            // 4. 修正速度：将法向速度分量直接反转（相当于让它朝靶板方向推进）
+            // 物理公式：V_new = V - 2 * Vn * n
+            V[0] = V[0] - 2.0 * Vn * nx;
+            V[1] = V[1] - 2.0 * Vn * ny;
+
+            // Z 轴速度平行于二维靶板表面，通常不需要反转
+        }
+    }
 }
 
 void get_point_to_y_line(double p1x, double p1y, double p2x, double p2y, double *y0)

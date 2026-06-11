@@ -1995,6 +1995,7 @@ namespace eirene
         N_poloidal_ = N_poloidal;
         N_radial_ = N_radial;
         Num_Target_ = N_radial * 2;
+
         TargetIndex_.resize(Num_Target_);
         Cos_Target_.resize(Num_Target_);
         Sin_Target_.resize(Num_Target_);
@@ -2006,10 +2007,10 @@ namespace eirene
         for (int i = 0; i < TargetIndex_.size(); i++)
         {
             TargetIndex_[i].push_back(-1);
+            TargetIndex_[i].push_back(-1);
             Mid_Target_[i].resize(2);
             Target_[i].resize(4);
         }
-        Target_[Num_Target_].resize(2);
         for (int i = 0; i < num_tris_; i++)
         {
             if (tris_[i].neigh[2] != 0)

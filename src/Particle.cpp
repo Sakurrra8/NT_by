@@ -110,7 +110,7 @@ Particle::Particle(string particle_name, double mass, int MaxCharge, int Index)
 
 Particle::~Particle()
 {
-	for (int i = 0; i < 98; i++)
+	/*for (int i = 0; i < 98; i++)
 	{
 		for (int j = 0; j < 38; j++)
 		{
@@ -163,7 +163,7 @@ Particle::~Particle()
 	{
 		free(lambda_min_);
 		lambda_min_ = nullptr;
-	}
+	}*/
 }
 
 /// @brief Particle *this get Particle *A's All
@@ -411,28 +411,21 @@ void Particle::Init(int k, int z)
 		boundary_start_ = 0;
 		X_[0] = Grid4.Mid_Target(z, 0);
 		X_[1] = Grid4.Mid_Target(z, 1);
-		// double rand_temp = Tools::Random();
-		// X_[0] = Xrecycling(rand_temp, z, 0);
-		// X_[1] = Xrecycling(rand_temp, z, 1);
 		X_[2] = 0;
 
-		double Bt_temp, B2_temp;
 		if (z < 38)
 		{
 			XY_[0] = 1;
 			XY_[1] = z;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
-			B2_temp = sqrt(B[1][z][0] * B[1][z][0] + B[1][z][1] * B[1][z][1]);
-			Bt_temp = B[1][z][2];
 		}
 		else
 		{
 			XY_[0] = 96;
 			XY_[1] = z - 38;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
-			B2_temp = sqrt(B[96][XY_[1]][0] * B[96][XY_[1]][0] + B[96][XY_[1]][1] * B[96][XY_[1]][1]);
-			Bt_temp = B[96][XY_[1]][2];
 		}
+		Tools::AdjustIncidentVelocity(V_, B[XY_[0]][XY_[1]][0], B[XY_[0]][XY_[1]][1], B[XY_[0]][XY_[1]][2], Grid4.Cos_Target(z), Grid4.Cos_Target(z));
 		if (XY_[1] >= 19 && XY_[1] <= 36)
 			Zone_ = 3;
 		else if (XY_[0] <= 24)
@@ -446,7 +439,7 @@ void Particle::Init(int k, int z)
 		if (this == &H || this == &D || this == &T)
 		{
 			Tn_ = T_Init_[z];
-			Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 1);
+			Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 0);
 		}
 		else if (this == &H2 || this == &D2 || this == &T2)
 		{

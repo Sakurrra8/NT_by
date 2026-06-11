@@ -758,6 +758,26 @@ void Prepare()
 		std::cout << endl;
 	}*/
 
+	std::vector<double> angle_B_with_target(N_radial * 2);
+	if (1) // 0: 固定角度60度； 1：实际角度
+		for (int i = 0; i < N_radial; i++)
+		{
+			angle_B_with_target[i] = Tools::CalBFieldToWallNormalAngle(B[1][i][0], B[1][i][1], B[1][i][2], Grid4.Cos_Target(i), Grid4.Sin_Target(i));
+			angle_B_with_target[i + N_radial] = Tools::CalBFieldToWallNormalAngle(B[N_radial - 2][i][0], B[N_radial - 2][i][1], B[N_radial - 2][i][2], Grid4.Cos_Target(i + N_radial), Grid4.Sin_Target(i + N_radial));
+		}
+	else
+	{
+		for (int i = 0; i < N_radial * 2; i++)
+		{
+			angle_B_with_target[i] = 60;
+		}
+	}
+	/*ofstream Out_temp("doc/angel.txt");
+	for (int i = 0; i < N_radial * 2; i++)
+	{
+		Out_temp << i << "\t" << angle_B_with_target[i] << endl;
+	}
+	Out_temp.close();*/
 	// H recycling
 	if (K_H)
 	{
@@ -765,16 +785,16 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				if (coeff_recyc_target > H_W.n_RefCoeff(K_Reflect, Ei_Dion[i]))
+				if (coeff_recyc_target > H_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]))
 				{
-					NumPar_H_recyc[i] = NumPar_wall_H[i] * H_W.n_RefCoeff(K_Reflect, Ei_Dion[i]);
-					Tn_H_recyc[i] = H_W.E_RefCoeff(K_Reflect, Ei_Dion[i]) / H_W.n_RefCoeff(K_Reflect, Ei_Dion[i]) * Ei_Dion[i] / 1.5;
-					NumPar_H2_recyc[i] = (coeff_recyc_target - H_W.n_RefCoeff(K_Reflect, Ei_Dion[i])) * NumPar_wall_H[i] / 2.;
+					NumPar_H_recyc[i] = NumPar_wall_H[i] * H_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
+					Tn_H_recyc[i] = H_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / H_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) * Ei_Dion[i] / 1.5;
+					NumPar_H2_recyc[i] = (coeff_recyc_target - H_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i])) * NumPar_wall_H[i] / 2.;
 				}
 				else
 				{
 					NumPar_H_recyc[i] = NumPar_wall_H[i] * coeff_recyc_target;
-					Tn_H_recyc[i] = H_W.E_RefCoeff(K_Reflect, Ei_Dion[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
+					Tn_H_recyc[i] = H_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
 					NumPar_H2_recyc[i] = 0.;
 				}
 			}
@@ -783,17 +803,17 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				if (coeff_recyc_target > H_C.n_RefCoeff(K_Reflect, Ei_Dion[i]))
+				if (coeff_recyc_target > H_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]))
 				{
-					NumPar_H_recyc[i] = NumPar_wall_H[i] * H_C.n_RefCoeff(K_Reflect, Ei_Dion[i]);
-					Tn_H_recyc[i] = H_C.E_RefCoeff(K_Reflect, Ei_Dion[i]) / H_C.n_RefCoeff(K_Reflect, Ei_Dion[i]) * Ei_Dion[i] / 1.5;
-					NumPar_H2_recyc[i] = (coeff_recyc_target - H_C.n_RefCoeff(K_Reflect, Ei_Dion[i])) *
+					NumPar_H_recyc[i] = NumPar_wall_H[i] * H_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
+					Tn_H_recyc[i] = H_C.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / H_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) * Ei_Dion[i] / 1.5;
+					NumPar_H2_recyc[i] = (coeff_recyc_target - H_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i])) *
 										 NumPar_wall_H[i] / 2.;
 				}
 				else
 				{
 					NumPar_H_recyc[i] = NumPar_wall_H[i] * coeff_recyc_target;
-					Tn_H_recyc[i] = H_C.E_RefCoeff(K_Reflect, Ei_Dion[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
+					Tn_H_recyc[i] = H_C.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
 					NumPar_H2_recyc[i] = 0.;
 				}
 			}
@@ -813,16 +833,16 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				if (coeff_recyc_target > D_W.n_RefCoeff(K_Reflect, Ei_Dion[i]))
+				if (coeff_recyc_target > D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]))
 				{
-					NumPar_D_recyc[i] = NumPar_wall_D[i] * D_W.n_RefCoeff(K_Reflect, Ei_Dion[i]);
-					Tn_D_recyc[i] = D_W.E_RefCoeff(K_Reflect, Ei_Dion[i]) / D_W.n_RefCoeff(K_Reflect, Ei_Dion[i]) * Ei_Dion[i] / 1.5;
-					NumPar_D2_recyc[i] = (coeff_recyc_target - D_W.n_RefCoeff(K_Reflect, Ei_Dion[i])) * NumPar_wall_D[i] / 2.;
+					NumPar_D_recyc[i] = NumPar_wall_D[i] * D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
+					Tn_D_recyc[i] = D_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) * Ei_Dion[i] / 1.5;
+					NumPar_D2_recyc[i] = (coeff_recyc_target - D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i])) * NumPar_wall_D[i] / 2.;
 				}
 				else
 				{
 					NumPar_D_recyc[i] = NumPar_wall_D[i] * coeff_recyc_target;
-					Tn_D_recyc[i] = D_W.E_RefCoeff(K_Reflect, Ei_Dion[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
+					Tn_D_recyc[i] = D_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
 					NumPar_D2_recyc[i] = 0.;
 				}
 				// out << NumPar_D_recyc[i] << '\t' << NumPar_D2_recyc[i] << endl;
@@ -832,16 +852,16 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				if (coeff_recyc_target > D_C.n_RefCoeff(K_Reflect, Ei_Dion[i]))
+				if (coeff_recyc_target > D_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]))
 				{
-					NumPar_D_recyc[i] = NumPar_wall_D[i] * D_C.n_RefCoeff(K_Reflect, Ei_Dion[i]);
-					Tn_D_recyc[i] = D_C.E_RefCoeff(K_Reflect, Ei_Dion[i]) / D_C.n_RefCoeff(K_Reflect, Ei_Dion[i]) * Ei_Dion[i] / 1.5;
-					NumPar_D2_recyc[i] = (coeff_recyc_target - D_C.n_RefCoeff(K_Reflect, Ei_Dion[i])) * NumPar_wall_D[i] / 2.;
+					NumPar_D_recyc[i] = NumPar_wall_D[i] * D_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
+					Tn_D_recyc[i] = D_C.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / D_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) * Ei_Dion[i] / 1.5;
+					NumPar_D2_recyc[i] = (coeff_recyc_target - D_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i])) * NumPar_wall_D[i] / 2.;
 				}
 				else
 				{
 					NumPar_D_recyc[i] = NumPar_wall_D[i] * coeff_recyc_target;
-					Tn_D_recyc[i] = D_C.E_RefCoeff(K_Reflect, Ei_Dion[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
+					Tn_D_recyc[i] = D_C.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
 					NumPar_D2_recyc[i] = 0.;
 				}
 				// out << NumPar_D_recyc[i] << '\t' << NumPar_D2_recyc[i] << endl;
@@ -863,16 +883,16 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				if (coeff_recyc_target > T_W.n_RefCoeff(K_Reflect, Ei_Dion[i]))
+				if (coeff_recyc_target > T_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]))
 				{
-					NumPar_T_recyc[i] = NumPar_wall_T[i] * T_W.n_RefCoeff(K_Reflect, Ei_Dion[i]);
-					Tn_T_recyc[i] = T_W.E_RefCoeff(K_Reflect, Ei_Dion[i]) / T_W.n_RefCoeff(K_Reflect, Ei_Dion[i]) * Ei_Dion[i] / 1.5;
-					NumPar_T2_recyc[i] = (coeff_recyc_target - T_W.n_RefCoeff(K_Reflect, Ei_Dion[i])) * NumPar_wall_T[i] / 2.;
+					NumPar_T_recyc[i] = NumPar_wall_T[i] * T_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
+					Tn_T_recyc[i] = T_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / T_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) * Ei_Dion[i] / 1.5;
+					NumPar_T2_recyc[i] = (coeff_recyc_target - T_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i])) * NumPar_wall_T[i] / 2.;
 				}
 				else
 				{
 					NumPar_T_recyc[i] = NumPar_wall_T[i] * coeff_recyc_target;
-					Tn_T_recyc[i] = T_W.E_RefCoeff(K_Reflect, Ei_Dion[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
+					Tn_T_recyc[i] = T_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
 					NumPar_T2_recyc[i] = 0.;
 				}
 			}
@@ -881,16 +901,16 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				if (coeff_recyc_target > T_C.n_RefCoeff(K_Reflect, Ei_Dion[i]))
+				if (coeff_recyc_target > T_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]))
 				{
-					NumPar_T_recyc[i] = NumPar_wall_T[i] * T_C.n_RefCoeff(K_Reflect, Ei_Dion[i]);
-					Tn_T_recyc[i] = T_C.E_RefCoeff(K_Reflect, Ei_Dion[i]) / T_C.n_RefCoeff(K_Reflect, Ei_Dion[i]) * Ei_Dion[i] / 1.5;
-					NumPar_T2_recyc[i] = (coeff_recyc_target - T_C.n_RefCoeff(K_Reflect, Ei_Dion[i])) * NumPar_wall_T[i] / 2.;
+					NumPar_T_recyc[i] = NumPar_wall_T[i] * T_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
+					Tn_T_recyc[i] = T_C.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / T_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) * Ei_Dion[i] / 1.5;
+					NumPar_T2_recyc[i] = (coeff_recyc_target - T_C.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i])) * NumPar_wall_T[i] / 2.;
 				}
 				else
 				{
 					NumPar_T_recyc[i] = NumPar_wall_T[i] * coeff_recyc_target;
-					Tn_T_recyc[i] = T_C.E_RefCoeff(K_Reflect, Ei_Dion[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
+					Tn_T_recyc[i] = T_C.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
 					NumPar_T2_recyc[i] = 0.;
 				}
 			}

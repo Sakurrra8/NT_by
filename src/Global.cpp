@@ -80,8 +80,8 @@ double Dn[38];
 /// @brief Plasma and device parameter
 double InterscePoint[10][6] = {0}; // 0: distance of particle and interscePoint; 1,2: x,y index; 3: number of boundary; 4:types of intersection boundaries
 double NumPar_now = 0;
-double T_N = 0.1;    // Temperature of injected impurities
-double T_wall = 0.1; // Temperture of Target(eV)
+double T_N = 0.02;    // Temperature of injected impurities
+double T_wall = 0.02; // Temperture of Target(eV)
 
 // 真空区域参数
 double Te_vacuum = 0.3, ne_vacuum = 1e13;

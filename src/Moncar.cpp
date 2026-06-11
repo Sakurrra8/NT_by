@@ -275,14 +275,6 @@ void Moncar()
     {
         Ar.Stat(2);
     }
-    /*free(*epx);
-    free(*epy);
-    free(*erx);
-    free(*ery);
-    free(epx);
-    free(epy);
-    free(erx);
-    free(ery);*/
 }
 
 void flight(int i, int j)

@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <algorithm>
 #include <random>
 #include <stdexcept>
 #include <vector>
@@ -49,6 +50,8 @@ namespace Tools
     int getLineSegmentIntersection(double lx1, double ly1, double lx2, double ly2,
                                    double sx1, double sy1, double sx2, double sy2,
                                    double &ix, double &iy);
+    double CalBFieldToWallNormalAngle(double bx, double by, double bz, double cos_wall, double sin_wall);
+    void AdjustIncidentVelocity(std::vector<double> &V, double bx, double by, double bz, double cos_wall, double sin_wall);
 }
 
 #endif
