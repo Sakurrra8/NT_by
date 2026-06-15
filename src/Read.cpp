@@ -2,6 +2,18 @@
 #include "Read.h"
 #include "Particle.h"
 
+namespace
+{
+    std::ifstream fp;
+    std::string Path_Grid,
+        Path_Te, Path_Ti, Path_ne, Path_ni, Path_Vol, Path_ua, Path_NumPar_l, Path_NumPar_r,
+        Path_n_D2_0, Path_n_D_0, Path_T_D_0, Path_D2_1, Path_T_D2_0,
+        Path_n_T2_0, Path_n_T_0, Path_T_T_0, Path_T2_1, Path_T_T2_0,
+        Path_Ei_Dion_l, Path_Ei_Dion_r, Path_bb, Path_bpol,
+        Path_brad, Path_btor, Path_Epol, Path_Erad, Path_Dn;
+    int a, b, c;
+}
+
 void Read()
 {
     /// Grid reading
@@ -494,8 +506,8 @@ void MatrixRead(int M, int N, string Path, double **Matrix)
     }
     for (int i = 0; i < 98; i++)
     {
-        for (int j; j < 38; j++)
-            fp >> Matrix[M][N];
+        for (int j = 0; j < 38; j++)
+            fp >> Matrix[i][j];
     }
     fp.close();
 }

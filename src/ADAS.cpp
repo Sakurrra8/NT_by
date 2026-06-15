@@ -7,6 +7,49 @@ ADAS::ADAS(string name)
 	read();
 }
 
+ADAS::~ADAS()
+{
+	release();
+}
+
+void ADAS::release()
+{
+	if (cross_section_ != nullptr)
+	{
+		const int rows = (num_waveLength_ > 0) ? num_waveLength_ : num_Zmax_;
+		for (int i = 0; i < rows; ++i)
+			free(cross_section_[i]);
+		free(cross_section_);
+		cross_section_ = nullptr;
+	}
+	if (ne_pec_ != nullptr)
+	{
+		for (int i = 0; i < num_waveLength_; ++i)
+			free(ne_pec_[i]);
+		free(ne_pec_);
+		ne_pec_ = nullptr;
+	}
+	if (Te_pec_ != nullptr)
+	{
+		for (int i = 0; i < num_waveLength_; ++i)
+			free(Te_pec_[i]);
+		free(Te_pec_);
+		Te_pec_ = nullptr;
+	}
+	free(waveLength_);
+	free(Te_);
+	free(ne_);
+	waveLength_ = nullptr;
+	Te_ = nullptr;
+	ne_ = nullptr;
+	num_Z_ = 0;
+	num_Dens_ = 0;
+	num_Temp_ = 0;
+	num_Zmin_ = 0;
+	num_Zmax_ = 0;
+	num_waveLength_ = 0;
+}
+
 void ADAS::readname(string name)
 {
 	ADAS::name_ = name;
@@ -85,6 +128,12 @@ double *ADAS::cross_section(int i, int Charge)
 
 double ADAS::cal(double Te, double ne, int Charge)
 {
+	if (num_Dens_ < 2 || num_Temp_ < 2 || ne_ == nullptr || Te_ == nullptr ||
+		cross_section_ == nullptr || Charge < 0 || Charge >= num_Zmax_)
+	{
+		std::cerr << "ADAS.cal() called with unavailable data: " << name_ << std::endl;
+		return 0.0;
+	}
 	if (ne < 0)
 	{
 		std::cerr << "T in ADAS.cal() less than 0" << endl;
@@ -148,21 +197,29 @@ double ADAS::waveLength(int i)
 
 int BinarySearch(double *array, int low, int high, double key)
 {
-	if (array[low] > key || array[high] < key)
+	if (array == nullptr || low < 0 || high <= low)
 		return -1;
-	if (array[low] <= key && array[low + 1] >= key || low == high)
-		return low;
-	int mid = (low + high) / 2;
-	if (key < array[mid])
-		return BinarySearch(array, low, mid, key);
-	else
-		return BinarySearch(array, mid, high, key);
+	if (key < array[low] || key > array[high])
+		return -1;
+	if (key == array[high])
+		return high - 1;
+
+	while (high - low > 1)
+	{
+		const int mid = low + (high - low) / 2;
+		if (key < array[mid])
+			high = mid;
+		else
+			low = mid;
+	}
+	return low;
 }
 
 void ADAS::read()
 {
 	// int resolved;
 	// double x, y;
+		release();
 	string path_ADAS, input, line;
 	// resolved = 0;
 	// x = y = 0;
@@ -175,9 +232,16 @@ void ADAS::read()
 	// tell you if
 	if (!fp.is_open())
 	{
-		std::cout << "This file from " + path_ADAS + " just have a little bit problem!!!\n";
+		std::cerr << "Cannot open ADAS file: " << path_ADAS << std::endl;
+		return;
 	}
 	readbase(fp);
+	if (!fp || num_Dens_ < 2 || num_Temp_ < 2 || num_Zmax_ <= 0)
+	{
+		std::cerr << "Invalid ADAS dimensions in: " << path_ADAS << std::endl;
+		release();
+		return;
+	}
 	ne_ = (double *)malloc(sizeof(double) * num_Dens_);
 	Te_ = (double *)malloc(sizeof(double) * num_Temp_);
 	cross_section_ = (double **)malloc(sizeof(double *) * (num_Zmax_));
@@ -198,6 +262,7 @@ void ADAS::readpec(int num_skip, int K_unit)
 {
 	// int resolved;
 	// double x, y;
+		release();
 	string path_ADAS, input, line;
 	// resolved = 0;
 	// x = y = 0;
@@ -210,9 +275,16 @@ void ADAS::readpec(int num_skip, int K_unit)
 	// tell you if
 	if (!fp.is_open())
 	{
-		std::cout << "This file from " + path_ADAS + " just have a little bit problem!!!\n";
+		std::cerr << "Cannot open ADAS PEC file: " << path_ADAS << std::endl;
+		return;
 	}
 	fp >> num_waveLength_; // nuclear charge
+	if (!fp || num_waveLength_ <= 0)
+	{
+		std::cerr << "Invalid ADAS PEC header in: " << path_ADAS << std::endl;
+		release();
+		return;
+	}
 	for (int i = 0; i < num_skip; i++)
 		std::getline(fp, line);
 	waveLength_ = (double *)malloc(sizeof(double) * num_waveLength_);
@@ -262,6 +334,13 @@ void ADAS::readpec(int num_skip, int K_unit)
 
 double ADAS::PecCal(double Te, double ne, int wave)
 {
+	if (num_Dens_ < 2 || num_Temp_ < 2 || wave < 0 || wave >= num_waveLength_ ||
+		ne_pec_ == nullptr || Te_pec_ == nullptr || cross_section_ == nullptr ||
+		ne_pec_[wave] == nullptr || Te_pec_[wave] == nullptr || cross_section_[wave] == nullptr)
+	{
+		std::cerr << "ADAS.PecCal() called with unavailable data: " << name_ << std::endl;
+		return 0.0;
+	}
 	if (ne < 0)
 	{
 		std::cerr << "T in ADAS.cal() less than 0" << endl;

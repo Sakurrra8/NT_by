@@ -5,7 +5,6 @@ void Initialize(int Input, char *settingfile[])
     string Inputstring, line;
     double number_temp;
     std::ifstream In;
-    K_Puff = (int *)malloc(sizeof(int) * 5);
     In.open(settingfile[1], std::ios::in); // ios::in means read
     if (!In.is_open())
     {
@@ -56,33 +55,14 @@ void Initialize(int Input, char *settingfile[])
     };
 
     make2D(ne);
-    make2D(n_H_1);
     make2D(n_D_1);
-    make2D(n_T_1);
     make2D(Te);
     make2D(Ti);
     // make2D(Te_coll);
     // make2D(Ti_coll);
 
-    make2D(ua_H_1);
     make2D(ua_D_1);
-    make2D(ua_T_1);
-    make2D(Ti_H_thermal);
     make2D(Ti_D_thermal);
-    make2D(Ti_T_thermal);
-
-    make1D(n_H_0_Tri);
-    make1D(T_H2_0_Tri);
-    make1D(T_H_0_Tri);
-    make1D(n_H2_0_Tri);
-    make1D_V(ua_H_0_Tri);
-    make1D_V(ua_H2_0_Tri);
-    make2D(n_H_0);
-    make2D(T_H2_0);
-    make2D(T_H_0);
-    make2D(n_H2_0);
-    make2D(n_H2_1);
-    make2D(Vi_H);
 
     make1D(n_D_0_Tri);
     make1D(T_D2_0_Tri);
@@ -96,19 +76,6 @@ void Initialize(int Input, char *settingfile[])
     make2D(n_D2_0);
     make2D(n_D2_1);
     make2D(Vi_D);
-
-    make1D(n_T_0_Tri);
-    make1D(T_T2_0_Tri);
-    make1D(T_T_0_Tri);
-    make1D(n_T2_0_Tri);
-    make1D_V(ua_T_0_Tri);
-    make1D_V(ua_T2_0_Tri);
-    make2D(n_T_0);
-    make2D(T_T2_0);
-    make2D(T_T_0);
-    make2D(n_T2_0);
-    make2D(n_T2_1);
-    make2D(Vi_T);
 
     make2D(Volume);
     make2D(Area);
@@ -316,6 +283,44 @@ void Initialize(int Input, char *settingfile[])
     }
 
     In.close();
+
+    if (K_H)
+    {
+        make2D(n_H_1);
+        make2D(ua_H_1);
+        make2D(Ti_H_thermal);
+        make1D(n_H_0_Tri);
+        make1D(T_H2_0_Tri);
+        make1D(T_H_0_Tri);
+        make1D(n_H2_0_Tri);
+        make1D_V(ua_H_0_Tri);
+        make1D_V(ua_H2_0_Tri);
+        make2D(n_H_0);
+        make2D(T_H2_0);
+        make2D(T_H_0);
+        make2D(n_H2_0);
+        make2D(n_H2_1);
+        make2D(Vi_H);
+    }
+
+    if (K_T)
+    {
+        make2D(n_T_1);
+        make2D(ua_T_1);
+        make2D(Ti_T_thermal);
+        make1D(n_T_0_Tri);
+        make1D(T_T2_0_Tri);
+        make1D(T_T_0_Tri);
+        make1D(n_T2_0_Tri);
+        make1D_V(ua_T_0_Tri);
+        make1D_V(ua_T2_0_Tri);
+        make2D(n_T_0);
+        make2D(T_T2_0);
+        make2D(T_T_0);
+        make2D(n_T2_0);
+        make2D(n_T2_1);
+        make2D(Vi_T);
+    }
 
     V_1.assign(3, 0.0);
     V_2.assign(3, 0.0);

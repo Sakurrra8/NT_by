@@ -156,7 +156,7 @@ void MatrixRead(string Path, double **Matrix)
     }
     for (int i = 0; i < N_poloidal_pec; i++)
     {
-        for (int j; j < N_radial_pec; j++)
+        for (int j = 0; j < N_radial_pec; j++)
             fp >> Matrix[i][j];
     }
     fp.close();

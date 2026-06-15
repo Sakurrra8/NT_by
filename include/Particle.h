@@ -50,7 +50,7 @@ private:
 	vector<double> V_relative_;
 	double V_2_relative_;
 	double V_relative_2_;
-	double num_trimesh_;
+	int num_trimesh_;
 
 	vector<double> Tri_cs_;
 	vector<double> Tri_Sn_;
@@ -247,24 +247,26 @@ public:
 				  const std::string &group = "/flux_stat") const;
 
 private:
-	int NREG_, NBIN_;
-	double E_MIN_, E_MAX_;
-	bool trackMom_, trackPow_; // 网格维度
+	int NREG_{0}, NBIN_{0};
+	double E_MIN_{0.0}, E_MAX_{0.0};
+	bool trackMom_{false}, trackPow_{false};
 	int NX_{0}, NY_{0};
-	bool gridEnabled_{false}; // 是否开启网格统计// 网格能谱：NX × NY × NBIN
-	std::vector<std::vector<std::vector<double>>> gridHist_;
+	bool gridEnabled_{false};
 
-	// 网格动量：NX × NY × 3
-	std::vector<std::vector<std::array<double, 3>>> gridMom_;
+	std::vector<double> gridHist_;                 // NX x NY x NBIN
+	std::vector<std::array<double, 3>> gridMom_;   // NX x NY x 3
+	std::vector<double> gridPow_;                  // NX x NY
+	std::vector<double> flux_;                     // NREG x NREG
+	std::vector<double> hist_;                     // NREG x NREG x NBIN
+	std::vector<std::array<double, 3>> momFlux_;   // NREG x NREG x 3
+	std::vector<double> powFlux_;                  // NREG x NREG
+	bool inited_{false};
 
-	// 网格能量：NX × NY
-	std::vector<std::vector<double>> gridPow_;
+	std::size_t regionIndex(int from, int to) const;
+	std::size_t histIndex(int from, int to, int bin) const;
+	std::size_t gridIndex(int i, int j) const;
+	std::size_t gridHistIndex(int i, int j, int bin) const;
 
-	std::vector<std::vector<double>> flux_;					  // NREG×NREG
-	std::vector<std::vector<std::vector<double>>> hist_;	  // NREG×NREG×NBIN
-	std::vector<std::vector<std::array<double, 3>>> momFlux_; // (可选)
-	std::vector<std::vector<double>> powFlux_;				  // (可选)
-	bool inited_{false};									  // 标记是否已初始化
 };
 
 class Particle
@@ -273,7 +275,9 @@ private:
 	/// @brief fixed property of this particle
 	string name_;
 	double mass_;
-	double MaxCharge_;
+	int MaxCharge_;
+	bool owns_storage_{false};
+	void allocateStorage();
 	vector<double> Pump_;
 	int Index_;
 
@@ -364,7 +368,7 @@ private:
 	double *Sum_V_CX_Neu_Be_[98][38][4];
 	double *Sum_V_CX_Neu_Af_[98][38][4];
 
-	vector<vector<double>> Sum_n_array_[98][38];
+	vector<array<double, 51>> Sum_n_array_[98][38];
 	vector<double> T_array_;
 	int Num_array_;
 
@@ -385,16 +389,18 @@ private:
 	vector<double> CollProb_[98][38];
 	vector<double> Totalcs_[98][38];
 
-	vector<vector<vector<double>>> n_Flux_Grid_;
-	vector<vector<vector<double>>> T_Flux_Grid_;
-	vector<vector<double>> First_CX_;
+	vector<double> n_Flux_Grid_; // [98][38][4], row-major
+	vector<double> T_Flux_Grid_; // [98][38][4], row-major
+	std::size_t fluxGridIndex(int i, int j, int direction) const;
 	FluxTracker FT_;
 
 public:
 	Particle();
 	Particle(string particle_name, double mass, int MaxCharge, int Index);
+	Particle(const Particle &) = delete;
+	Particle &operator=(const Particle &) = delete;
 	~Particle();
-	void ParInit(vector<int> &K_collision, std::vector<std::vector<int>> Tri_B2);
+	void ParInit(vector<int> &K_collision, const std::vector<std::vector<int>> &Tri_B2);
 
 	/// @brief fixed property of this particle
 	vector<ParCollCar> Ion_;
@@ -428,15 +434,12 @@ public:
 	vector<WallEro> AlltoWall_;
 	vector<WallEro> CXtoWall_;
 	vector<WallEro> RectoWall_;
-	vector<WallEro> DisstoWall_;
 	vector<WallEro> AlltoTarget_;
 	vector<WallEro> CXtoTarget_;
 	vector<WallEro> RectoTarget_;
-	vector<WallEro> DisstoTarget_;
 	vector<WallEro> AlltoPlasmaBoundary_;
 	vector<WallEro> CXtoPlasmaBoundary_;
 	vector<WallEro> RectoPlasmaBoundary_;
-	vector<WallEro> DisstoPlasmaBoundary_;
 
 	/*double MAR_cs_[98][38], MAR_Cor_cs_;	 // for D2
 	double Diss1_cs_[98][38], Diss1_Cor_cs_;	 // for D2
@@ -515,7 +518,6 @@ public:
 	double lambda(int i, int j, int charge);
 	double lambda_min(int charge);
 	double lambda_now();
-	void addCollProb(int zhonglei, ADAS *Coll1 = NULL, EIRENE *Coll2 = NULL);
 	void CalTn();
 	double n(int i, int j, int k);
 	double n_Tri(int i, int k);

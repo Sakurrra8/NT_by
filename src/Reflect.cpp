@@ -265,7 +265,7 @@ double Reflect::E_RefCoeff(int K_Reflect, double Energy_0, double angle)
 	else if (K_Reflect == 2 || K_Reflect == 3)
 	{
 		Energy_0 = log(Energy_0);
-		int a, b, c;
+		int a, b;
 		double x2x1, y2y1, x2x, y2y, yy1, xx1;
 		a = BinarySearch(RE_ne_, 0, num_ne_ - 1, Energy_0);
 		b = BinarySearch(RE_na_, 0, num_na_ - 1, angle);
@@ -318,22 +318,27 @@ double Reflect::E_RefCoeff(int K_Reflect, double Energy_0, double angle)
 		y2y = RE_na_[b + 1] - angle;
 		xx1 = Energy_0 - RE_ne_[a];
 		yy1 = angle - RE_na_[b];
-		if (c == 1)
-			std::cout << std::min(1.0, exp(1.0 / (x2x1 * y2y1) * (RE_[a][b] * x2x * y2y + RE_[a + 1][b] * xx1 * y2y + RE_[a][b + 1] * x2x * yy1 + RE_[a + 1][b + 1] * xx1 * yy1)));
 		return std::min(1.0, exp(1.0 / (x2x1 * y2y1) * (RE_[a][b] * x2x * y2y + RE_[a + 1][b] * xx1 * y2y + RE_[a][b + 1] * x2x * yy1 + RE_[a + 1][b + 1] * xx1 * yy1)));
 	}
 	throw std::invalid_argument("n_RefCoeff(): invalid K_Reflect value (must be 1, 2, or 3)");
 }
 
-int BinarySearch(vector<double> &array, int low, int high, double key)
+int BinarySearch(const vector<double> &array, int low, int high, double key)
 {
-	if (array[low] > key || array[high] < key)
+	if (low < 0 || high <= low || high >= static_cast<int>(array.size()))
 		return -1;
-	if (array[low] <= key && array[low + 1] >= key || low == high)
-		return low;
-	int mid = (low + high) / 2;
-	if (key < array[mid])
-		return BinarySearch(array, low, mid, key);
-	else
-		return BinarySearch(array, mid, high, key);
+	if (key < array[low] || key > array[high])
+		return -1;
+	if (key == array[high])
+		return high - 1;
+
+	while (high - low > 1)
+	{
+		const int mid = low + (high - low) / 2;
+		if (key < array[mid])
+			high = mid;
+		else
+			low = mid;
+	}
+	return low;
 }

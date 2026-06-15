@@ -152,7 +152,8 @@ void Prepare()
 
 			/// calculate the Vi
 			Vi_D[i][j] = sqrt(3. * qe * Ti[i][j] / Dmass / 3.);
-			Vi_T[i][j] = sqrt(3. * qe * Ti[i][j] / Tmass / 3.);
+			if (K_T)
+				Vi_T[i][j] = sqrt(3. * qe * Ti[i][j] / Tmass / 3.);
 			// std::cout << pow(B[i][j][0], 2) + pow(B[i][j][1], 2) << " ";
 			//  std::cout << erx[i][j] << '\t';
 		}
@@ -1046,9 +1047,9 @@ void get_unit_vector_xy()
 				x_temp = (i == 0) * (1) + (i == 97) * (-1) + i;
 				y_temp = (j == 0) * (1) + (j == 37) * (-1) + j;
 				epx[i][j] = epx[x_temp][y_temp];
-				epy[i][j] = epx[x_temp][y_temp];
-				erx[i][j] = epx[x_temp][y_temp];
-				ery[i][j] = epx[x_temp][y_temp];
+				epy[i][j] = epy[x_temp][y_temp];
+				erx[i][j] = erx[x_temp][y_temp];
+				ery[i][j] = ery[x_temp][y_temp];
 			}
 		}
 	/*ofstream f1, f2, f3, f4;

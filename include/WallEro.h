@@ -20,16 +20,17 @@ private:
     int N_p_;
     int N_r_;
     int CollSource_;
-    std::vector<std::vector<std::vector<double>>> sum_PartoWall;
-    std::vector<std::vector<std::vector<double>>> sum_E_PartoWall;
-
+    std::vector<double> particleCount_;
+    std::vector<double> energySum_;
+    size_t index(int wall, int i, int j) const;
 public:
     WallEro();
     ~WallEro();
     vector<double> All_PartoWall;
     vector<double> All_E_PartoWall;
-    std::vector<std::vector<std::vector<double>>> PartoWall;
-    std::vector<std::vector<std::vector<double>>> E_PartoWall;
+    double N(int wall, int i, int j) const;
+    double T(int wall, int i, int j) const;
+    double T_all(int wall) const;
 
     int num_wall();
     int N_p();

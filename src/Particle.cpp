@@ -13,6 +13,14 @@ Particle::Particle(string particle_name, double mass, int MaxCharge, int Index)
 	Zone_ = 0;
 	MaxCharge_ = MaxCharge;
 	ChargeTag_ = 0;
+	V_.resize(3, 0.0);
+}
+
+void Particle::allocateStorage()
+{
+	if (owns_storage_)
+		return;
+	owns_storage_ = true;
 	Num_array_ = 0;
 	V_.resize(3, 0.0);
 	/*for (double i = 0.1; i <= 0.9; i = i + 0.1)
@@ -28,78 +36,47 @@ Particle::Particle(string particle_name, double mass, int MaxCharge, int Index)
 		Num_array_ += 1;
 		// std::cout << i << '\t' << Num_array_ << endl;
 	}
+	const std::size_t fluxCells = static_cast<std::size_t>(98) * 38 * 4;
+	n_Flux_Grid_.assign(fluxCells, 0.0);
+	T_Flux_Grid_.assign(fluxCells, 0.0);
 	for (int i = 0; i < 98; i++)
 	{
-		n_Flux_Grid_.push_back(vector<vector<double>>());
-		T_Flux_Grid_.push_back(vector<vector<double>>());
-		First_CX_.push_back(vector<double>());
 		for (int j = 0; j < 38; j++)
 		{
-			n_Flux_Grid_[i].push_back(vector<double>());
-			T_Flux_Grid_[i].push_back(vector<double>());
-			First_CX_[i].push_back(double());
-			for (int k = 0; k < 4; k++)
-			{
-				n_Flux_Grid_[i][j].push_back(double());
-				T_Flux_Grid_[i][j].push_back(double());
-			}
-			n_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-			T_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-			E_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-			Sum_n_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-			Sum_E_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-			lambda_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-			for (int k = 0; k < MaxCharge_ + 1; k++)
-			{
-				CollProb_[i][j].push_back(0);
-				Totalcs_[i][j].push_back(0);
-				Sum_n_array_[i][j].push_back(vector<double>());
-				for (int m = 0; m < Num_array_ + 1; m++)
-				{
-					Sum_n_array_[i][j][k].push_back(0);
-				}
-			}
+			n_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			T_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			E_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			Sum_n_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			Sum_E_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			lambda_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			CollProb_[i][j].assign(MaxCharge_ + 1, 0.0);
+			Totalcs_[i][j].assign(MaxCharge_ + 1, 0.0);
+			Sum_n_array_[i][j].assign(MaxCharge_ + 1, {});
 
-			// CollProb_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-			// Totalcs_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
+			// CollProb_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			// Totalcs_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			Num_V_D_1_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
 			for (int k = 0; k < 3; k++)
 			{
-				V_Grid_CX_Ion_Be_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				V_Grid_CX_Ion_Af_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				V_Grid_CX_Neu_Be_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				V_Grid_CX_Neu_Af_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				V_Grid_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				Sum_V_CX_Ion_Be_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				Sum_V_CX_Ion_Af_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				Sum_V_CX_Neu_Be_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				Sum_V_CX_Neu_Af_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				Sum_V_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
+				V_Grid_CX_Ion_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				V_Grid_CX_Ion_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				V_Grid_CX_Neu_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				V_Grid_CX_Neu_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				V_Grid_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				Sum_V_CX_Ion_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				Sum_V_CX_Ion_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				Sum_V_CX_Neu_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				Sum_V_CX_Neu_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				Sum_V_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
 
-				V_D_1_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				Sum_V_D_1_[i][j][k] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				Num_V_D_1_[i][j] = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
-				for (int m = 0; m < MaxCharge_ + 1; m++)
-				{
-					Sum_V_[i][j][k][m] = 0.;
-					Sum_V_CX_Ion_Be_[i][j][k][m] = 0;
-					Sum_V_CX_Ion_Af_[i][j][k][m] = 0;
-					Sum_V_CX_Neu_Be_[i][j][k][m] = 0;
-					Sum_V_CX_Neu_Af_[i][j][k][m] = 0;
-					V_Grid_[i][j][k][m] = 0.;
-					V_Grid_CX_Ion_Be_[i][j][k][m] = 0;
-					V_Grid_CX_Ion_Af_[i][j][k][m] = 0;
-					V_Grid_CX_Neu_Be_[i][j][k][m] = 0;
-					V_Grid_CX_Neu_Af_[i][j][k][m] = 0;
-					V_D_1_[i][j][k][m] = 0;
-					Sum_V_D_1_[i][j][k][m] = 0;
-					Num_V_D_1_[i][j][m] = 0;
-				}
+				V_D_1_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				Sum_V_D_1_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
 			}
 			NumPar_Grid_[i][j] = 0;
 		}
 	}
 
-	lambda_min_ = (double *)malloc(sizeof(double) * (MaxCharge_ + 1));
+	lambda_min_ = (double *)calloc(MaxCharge_ + 1, sizeof(double));
 
 	Pump_.push_back(0);
 	Pump_.push_back(0);
@@ -108,62 +85,48 @@ Particle::Particle(string particle_name, double mass, int MaxCharge, int Index)
 	FT_.FluxTraInit(11, 200, 0.0, 1500, 98, 38, true, true); // 初始化 nRegion, nBin, eMin, eMax
 }
 
+
+std::size_t Particle::fluxGridIndex(int i, int j, int direction) const
+{
+	return (static_cast<std::size_t>(i) * 38 + j) * 4 + direction;
+}
+
 Particle::~Particle()
 {
-	/*for (int i = 0; i < 98; i++)
+	if (!owns_storage_)
+		return;
+
+	for (int i = 0; i < 98; ++i)
 	{
-		for (int j = 0; j < 38; j++)
+		for (int j = 0; j < 38; ++j)
 		{
-			// --- 1. 释放二维层面的指针并立即置空 ---
-			if (n_ && n_[i] && n_[i][j] != nullptr)
-			{
-				free(n_[i][j]);
-				n_[i][j] = nullptr;
-			}
+			free(n_[i][j]);
+			free(T_[i][j]);
+			free(E_[i][j]);
+			free(Sum_n_[i][j]);
+			free(Sum_E_[i][j]);
+			free(lambda_[i][j]);
+			free(Num_V_D_1_[i][j]);
 
-			if (T_ && T_[i] && T_[i][j] != nullptr)
+			for (int k = 0; k < 3; ++k)
 			{
-				free(T_[i][j]);
-				T_[i][j] = nullptr;
-			}
-
-			if (Sum_n_ && Sum_n_[i] && Sum_n_[i][j] != nullptr)
-			{
-				free(Sum_n_[i][j]);
-				Sum_n_[i][j] = nullptr;
-			}
-
-			if (lambda_ && lambda_[i] && lambda_[i][j] != nullptr)
-			{
-				free(lambda_[i][j]);
-				lambda_[i][j] = nullptr;
-			}
-
-			// --- 2. 释放三维层面的指针并立即置空 ---
-			for (int k = 0; k < 3; k++)
-			{
-				// 层级安全检查：确保上层 V_Grid_[i][j] 存在，才去检查并释放 [k]
-				if (V_Grid_ && V_Grid_[i] && V_Grid_[i][j] && V_Grid_[i][j][k] != nullptr)
-				{
-					free(V_Grid_[i][j][k]);
-					V_Grid_[i][j][k] = nullptr;
-				}
-
-				if (Sum_V_ && Sum_V_[i] && Sum_V_[i][j] && Sum_V_[i][j][k] != nullptr)
-				{
-					free(Sum_V_[i][j][k]);
-					Sum_V_[i][j][k] = nullptr;
-				}
+				free(V_Grid_CX_Ion_Be_[i][j][k]);
+				free(V_Grid_CX_Ion_Af_[i][j][k]);
+				free(V_Grid_CX_Neu_Be_[i][j][k]);
+				free(V_Grid_CX_Neu_Af_[i][j][k]);
+				free(V_Grid_[i][j][k]);
+				free(Sum_V_CX_Ion_Be_[i][j][k]);
+				free(Sum_V_CX_Ion_Af_[i][j][k]);
+				free(Sum_V_CX_Neu_Be_[i][j][k]);
+				free(Sum_V_CX_Neu_Af_[i][j][k]);
+				free(Sum_V_[i][j][k]);
+				free(V_D_1_[i][j][k]);
+				free(Sum_V_D_1_[i][j][k]);
 			}
 		}
 	}
 
-	// --- 3. 释放独立指针并置空 ---
-	if (lambda_min_ != nullptr)
-	{
-		free(lambda_min_);
-		lambda_min_ = nullptr;
-	}*/
+	free(lambda_min_);
 }
 
 /// @brief Particle *this get Particle *A's All
@@ -247,8 +210,9 @@ void Particle::RecombinCal(std::vector<double> &Recombin_counts, std::vector<dou
 	}
 }
 
-void Particle::ParInit(vector<int> &K_collision, std::vector<std::vector<int>> Tri_B2)
+void Particle::ParInit(vector<int> &K_collision, const std::vector<std::vector<int>> &Tri_B2)
 {
+	allocateStorage();
 	num_trimesh_ = Tri_B2.size();
 	Tri_Totalcs_.resize(num_trimesh_);
 	Tri_CollProb_.resize(num_trimesh_);
@@ -310,14 +274,21 @@ void Particle::ParInit(vector<int> &K_collision, std::vector<std::vector<int>> T
 	}
 	out_temp.close();*/
 
+	const size_t charge_states = static_cast<size_t>(MaxCharge_ + 1);
+	CoreCollProb_.reserve(charge_states);
+	CoreTotalcs_.reserve(charge_states);
+	Ion_.reserve(charge_states);
+	Rec_.reserve(charge_states);
+	CX_.reserve(charge_states);
+
 	for (int i = 0; i < MaxCharge_ + 1; i++)
 	{
 		CoreCollProb_.push_back(0);
 		CoreTotalcs_.push_back(0);
 
-		Ion_.push_back(ParCollCar());
-		Rec_.push_back(ParCollCar());
-		CX_.push_back(ParCollCar());
+		Ion_.emplace_back();
+		Rec_.emplace_back();
+		CX_.emplace_back();
 		Ion_[i].initialize(1, num_trimesh_);
 		Rec_[i].initialize(1, num_trimesh_);
 		CX_[i].initialize(2, num_trimesh_);
@@ -325,9 +296,9 @@ void Particle::ParInit(vector<int> &K_collision, std::vector<std::vector<int>> T
 
 	if (this == &H2 || this == &D2 || this == &T2 || this == &H || this == &D || this == &T)
 	{
-		R_with_H_.push_back(ParCollCar());
-		R_with_H2_.push_back(ParCollCar());
-		CX_DT_.push_back(ParCollCar());
+		R_with_H_.emplace_back();
+		R_with_H2_.emplace_back();
+		CX_DT_.emplace_back();
 
 		CX_DT_[0].initialize(2, num_trimesh_);
 		R_with_H_[0].initialize(3, num_trimesh_);
@@ -336,25 +307,25 @@ void Particle::ParInit(vector<int> &K_collision, std::vector<std::vector<int>> T
 
 	if (this == &H2 || this == &D2 || this == &T2)
 	{
-		Ela_.push_back(ParCollCar());
-		MAR_.push_back(ParCollCar());
-		Diss1_.push_back(ParCollCar());
-		Diss2_.push_back(ParCollCar());
-		Diss3_.push_back(ParCollCar());
+		Ela_.emplace_back();
+		MAR_.emplace_back();
+		Diss1_.emplace_back();
+		Diss2_.emplace_back();
+		Diss3_.emplace_back();
 
 		Ela_[0].initialize(2, num_trimesh_);
 		MAR_[0].initialize(1, num_trimesh_);
 		Diss1_[0].initialize(1, num_trimesh_);
 		Diss2_[0].initialize(1, num_trimesh_);
 		Diss3_[0].initialize(1, num_trimesh_);
-		Ela_DT_.push_back(ParCollCar());
+		Ela_DT_.emplace_back();
 		Ela_DT_[0].initialize(2, num_trimesh_);
 
 		DS_.resize(2);
-		DS_[1].push_back(ParCollCar());
-		DS_[1].push_back(ParCollCar());
-		DS_[1].push_back(ParCollCar());
-		DS_[1].push_back(ParCollCar());
+		DS_[1].emplace_back();
+		DS_[1].emplace_back();
+		DS_[1].emplace_back();
+		DS_[1].emplace_back();
 		DS_[1][0].initialize(1, num_trimesh_);
 		DS_[1][1].initialize(1, num_trimesh_);
 		DS_[1][2].initialize(1, num_trimesh_);
@@ -373,29 +344,23 @@ void Particle::ParInit(vector<int> &K_collision, std::vector<std::vector<int>> T
 	AlltoWall_.push_back(WallEro());
 	CXtoWall_.push_back(WallEro());
 	RectoWall_.push_back(WallEro());
-	DisstoWall_.push_back(WallEro());
 	AlltoWall_.begin()->WallEroInit(Grid1.Wall_num(), N_poloidal, N_radial);
 	CXtoWall_.begin()->WallEroInit(Grid1.Wall_num(), N_poloidal, N_radial);
 	RectoWall_.begin()->WallEroInit(Grid1.Wall_num(), N_poloidal, N_radial);
-	DisstoWall_.begin()->WallEroInit(Grid1.Wall_num(), N_poloidal, N_radial);
 
 	AlltoTarget_.push_back(WallEro());
 	CXtoTarget_.push_back(WallEro());
 	RectoTarget_.push_back(WallEro());
-	DisstoTarget_.push_back(WallEro());
 	AlltoTarget_.begin()->WallEroInit(N_radial * 2, N_poloidal, N_radial);
 	CXtoTarget_.begin()->WallEroInit(N_radial * 2, N_poloidal, N_radial);
 	RectoTarget_.begin()->WallEroInit(N_radial * 2, N_poloidal, N_radial);
-	DisstoTarget_.begin()->WallEroInit(N_radial * 2, N_poloidal, N_radial);
 
 	AlltoPlasmaBoundary_.push_back(WallEro());
 	CXtoPlasmaBoundary_.push_back(WallEro());
 	RectoPlasmaBoundary_.push_back(WallEro());
-	DisstoPlasmaBoundary_.push_back(WallEro());
 	AlltoPlasmaBoundary_.begin()->WallEroInit(Grid1.PLasma_Grid_Boundry_num(), N_poloidal, N_radial);
 	CXtoPlasmaBoundary_.begin()->WallEroInit(Grid1.PLasma_Grid_Boundry_num(), N_poloidal, N_radial);
 	RectoPlasmaBoundary_.begin()->WallEroInit(Grid1.PLasma_Grid_Boundry_num(), N_poloidal, N_radial);
-	DisstoPlasmaBoundary_.begin()->WallEroInit(Grid1.PLasma_Grid_Boundry_num(), N_poloidal, N_radial);
 }
 
 void Particle::Init(int k, int z)
@@ -1206,32 +1171,6 @@ void Particle::Init(int k, int z)
 	for (int i = 0; i < 3; i++)
 		V_[i] *= vel;
 	// std::cout << V_[0] << V_[1] << V_[2] << endl;
-}
-
-/// @brief add a collision in the Particle class
-/// @param zhonglei 1 for ADAS collision database, 2 for EIRENE collision
-/// database
-/// @param Coll1 ADAS collision class
-/// @param Coll2 EIRENE collision class
-void Particle::addCollProb(int zhonglei, ADAS *Coll1, EIRENE *Coll2)
-{
-	double CollProb[N_poloidal][N_radial];
-	if (zhonglei == 1)
-	{
-		for (int i = 0; i < N_poloidal; i++)
-			for (int j = 0; j < N_radial; j++)
-			{
-				CollProb[i][j] = Coll1->cal(Te[i][j], ne[i][j], Charge_);
-			}
-	}
-	if (zhonglei == 2)
-	{
-		for (int i = 0; i < N_poloidal; i++)
-			for (int j = 0; j < N_radial; j++)
-			{
-				CollProb[i][j] = Coll2->cal(ne[i][j], Te[i][j]);
-			}
-	}
 }
 
 double Particle::lambda(int i, int j, int charge)
@@ -2448,8 +2387,8 @@ void Particle::Caltrace()
 			}
 
 			NumParStat();
-			n_Flux_Grid_[XY_[0]][XY_[1]][0] += Weight_ * NumPar_now;
-			T_Flux_Grid_[XY_[0]][XY_[1]][0] += Tn_ * Weight_ * NumPar_now;
+			n_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 0)] += Weight_ * NumPar_now;
+			T_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 0)] += Tn_ * Weight_ * NumPar_now;
 			if (XY_[1] == 1)
 			{
 				if (XY_[0] < 25 || XY_[0] > 72)
@@ -2576,8 +2515,8 @@ void Particle::Caltrace()
 				}
 			}
 			NumParStat();
-			n_Flux_Grid_[XY_[0]][XY_[1]][1] += Weight_ * NumPar_now;
-			T_Flux_Grid_[XY_[0]][XY_[1]][1] += Tn_ * Weight_ * NumPar_now;
+			n_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 1)] += Weight_ * NumPar_now;
+			T_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 1)] += Tn_ * Weight_ * NumPar_now;
 
 			if (XY_[0] == 96)
 			{
@@ -2687,8 +2626,8 @@ void Particle::Caltrace()
 				}
 			}
 			NumParStat();
-			n_Flux_Grid_[XY_[0]][XY_[1]][2] += Weight_ * NumPar_now;
-			T_Flux_Grid_[XY_[0]][XY_[1]][2] += Tn_ * Weight_ * NumPar_now;
+			n_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 2)] += Weight_ * NumPar_now;
+			T_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 2)] += Tn_ * Weight_ * NumPar_now;
 
 			if (XY_[1] == 36)
 			{
@@ -2788,8 +2727,8 @@ void Particle::Caltrace()
 				}
 			}
 			NumParStat();
-			n_Flux_Grid_[XY_[0]][XY_[1]][3] += Weight_ * NumPar_now;
-			T_Flux_Grid_[XY_[0]][XY_[1]][3] += Tn_ * Weight_ * NumPar_now;
+			n_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 3)] += Weight_ * NumPar_now;
+			T_Flux_Grid_[fluxGridIndex(XY_[0], XY_[1], 3)] += Tn_ * Weight_ * NumPar_now;
 
 			if (XY_[0] == 1)
 			{
@@ -6160,8 +6099,8 @@ void Particle::Stat(int n)
 				}
 				n_[i][j][0] = Sum_n_[i][j][0] / Volume[i][j];
 				for (int m = 0; m < 4; m++)
-					if (n_Flux_Grid_[i][j][m] != 0)
-						T_Flux_Grid_[i][j][m] /= n_Flux_Grid_[i][j][m];
+					if (n_Flux_Grid_[fluxGridIndex(i, j, m)] != 0)
+						T_Flux_Grid_[fluxGridIndex(i, j, m)] /= n_Flux_Grid_[fluxGridIndex(i, j, m)];
 				// FT_.normalizeByVolume();
 			}
 			else
@@ -6761,10 +6700,8 @@ void Particle::OutWallEro(int fate)
 {
 	string filename = Outputpath + fatename(fate) + "WallEro.h5";
 	std::cout << filename << endl;
-	H5File *file = new H5File(filename, H5F_ACC_TRUNC);
-	hsize_t dimsf1[3], *dimsf2; /* dataset dimensions */
-	dimsf2 = (hsize_t *)malloc(sizeof(hsize_t));
-	herr_t status;
+	H5File file(filename, H5F_ACC_TRUNC);
+	hsize_t dimsf1[3], dimsf2[1]; /* dataset dimensions */
 	dimsf1[2] = N_radial;
 	dimsf1[1] = N_poloidal;
 	if (fate == 1)
@@ -6772,7 +6709,7 @@ void Particle::OutWallEro(int fate)
 		dimsf1[0] = CXtoWall_.begin()->num_wall();
 		dimsf2[0] = CXtoWall_.begin()->num_wall();
 		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
-		double data2[dimsf2[0]];
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		std::cout << CXtoWall_.size() << endl;
@@ -6780,39 +6717,28 @@ void Particle::OutWallEro(int fate)
 		{
 			string groupname = "/" + sourcename(CXtoWall_[i].CollSource());
 			std::cout << groupname << endl;
-			Group *group = new Group(file->createGroup(groupname));
+			Group group = file.createGroup(groupname);
 
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoWall_[i].PartoWall[m][j][k];
-			DataSet *dataset1 = new DataSet(file->createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset1->write(data1.data(), PredType::NATIVE_DOUBLE);
-			delete dataset1;
-
+						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoWall_[i].N(m, j, k);
+			DataSet dataset1 = file.createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoWall_[i].E_PartoWall[m][j][k];
-			DataSet *dataset2 = new DataSet(
-				file->createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset2->write(data1.data(), PredType::NATIVE_DOUBLE);
-			delete dataset2;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoWall_[i].T(m, j, k);
+			DataSet dataset2 = file.createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				data2[m] = CXtoWall_[i].All_PartoWall[m];
-			DataSet *dataset3 = new DataSet(
-				file->createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset3->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset3;
-
+			DataSet dataset3 = file.createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
-				data2[m] = CXtoWall_[i].All_E_PartoWall[m];
-			DataSet *dataset4 = new DataSet(
-				file->createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset4->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset4;
-			delete group;
+			data2[m] = CXtoWall_[i].T_all(m);
+			DataSet dataset4 = file.createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 		}
 	}
 	else if (fate == 4)
@@ -6820,47 +6746,35 @@ void Particle::OutWallEro(int fate)
 		dimsf1[0] = RectoWall_.begin()->num_wall();
 		dimsf2[0] = RectoWall_.begin()->num_wall();
 		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
-		double data2[dimsf2[0]];
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		for (int i = 0; i < RectoWall_.size(); i++)
 		{
 			string groupname = "/" + sourcename(RectoWall_[i].CollSource());
 			std::cout << RectoWall_[i].CollSource() << '\t' << groupname << endl;
-			Group *group = new Group(file->createGroup(groupname));
+			Group group = file.createGroup(groupname);
 
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoWall_[i].PartoWall[m][j][k];
-			DataSet *dataset1 = new DataSet(
-				file->createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset1->write(data1.data(), PredType::NATIVE_DOUBLE);
-			delete dataset1;
-
+						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoWall_[i].N(m, j, k);
+			DataSet dataset1 = file.createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoWall_[i].E_PartoWall[m][j][k];
-			DataSet *dataset2 = new DataSet(
-				file->createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset2->write(data1.data(), PredType::NATIVE_DOUBLE);
-			delete dataset2;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoWall_[i].T(m, j, k);
+			DataSet dataset2 = file.createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				data2[m] = RectoWall_[i].All_PartoWall[m];
-			DataSet *dataset3 = new DataSet(
-				file->createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset3->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset3;
-
+			DataSet dataset3 = file.createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
-				data2[m] = RectoWall_[i].All_E_PartoWall[m];
-			DataSet *dataset4 = new DataSet(
-				file->createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset4->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset4;
-			delete group;
+			data2[m] = RectoWall_[i].T_all(m);
+			DataSet dataset4 = file.createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 		}
 	}
 	else if (fate == -1)
@@ -6868,42 +6782,30 @@ void Particle::OutWallEro(int fate)
 		dimsf1[0] = AlltoWall_.begin()->num_wall();
 		dimsf2[0] = AlltoWall_.begin()->num_wall();
 		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
-		double data2[dimsf2[0]];
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		for (int m = 0; m < dimsf1[0]; m++)
 			for (int j = 0; j < dimsf1[1]; j++)
 				for (int k = 0; k < dimsf1[2]; k++)
-					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoWall_.begin()->PartoWall[m][j][k];
-		DataSet *dataset1 = new DataSet(
-			file->createDataSet("n", PredType::NATIVE_DOUBLE, dataspace1));
-		dataset1->write(data1.data(), PredType::NATIVE_DOUBLE);
-		delete dataset1;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoWall_.begin()->N(m, j, k);
+		DataSet dataset1 = file.createDataSet("n", PredType::NATIVE_DOUBLE, dataspace1);
+		dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
 			for (int j = 0; j < dimsf1[1]; j++)
 				for (int k = 0; k < dimsf1[2]; k++)
-					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoWall_.begin()->E_PartoWall[m][j][k];
-		DataSet *dataset2 = new DataSet(
-			file->createDataSet("T", PredType::NATIVE_DOUBLE, dataspace1));
-		dataset2->write(data1.data(), PredType::NATIVE_DOUBLE);
-		delete dataset2;
-
+				data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoWall_.begin()->T(m, j, k);
+		DataSet dataset2 = file.createDataSet("T", PredType::NATIVE_DOUBLE, dataspace1);
+		dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
 			data2[m] = AlltoWall_.begin()->All_PartoWall[m];
-		DataSet *dataset3 = new DataSet(
-			file->createDataSet("n_all", PredType::NATIVE_DOUBLE, dataspace2));
-		dataset3->write(data2, PredType::NATIVE_DOUBLE);
-		delete dataset3;
-
+		DataSet dataset3 = file.createDataSet("n_all", PredType::NATIVE_DOUBLE, dataspace2);
+		dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
-			data2[m] = AlltoWall_.begin()->All_E_PartoWall[m];
-		DataSet *dataset4 = new DataSet(
-			file->createDataSet("T_all", PredType::NATIVE_DOUBLE, dataspace2));
-		dataset4->write(data2, PredType::NATIVE_DOUBLE);
-		delete dataset4;
+		data2[m] = AlltoWall_.begin()->T_all(m);
+		DataSet dataset4 = file.createDataSet("T_all", PredType::NATIVE_DOUBLE, dataspace2);
+		dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 	}
-	delete file;
 }
 
 void Particle::AddTargetEro(int num_Ero_wall)
@@ -6965,18 +6867,16 @@ void Particle::OutTargetEro(int fate)
 {
 	string filename = Outputpath + fatename(fate) + "TargetEro.h5";
 	std::cout << filename << endl;
-	H5File *file = new H5File(filename, H5F_ACC_TRUNC);
-	hsize_t dimsf1[3], *dimsf2; /* dataset dimensions */
-	dimsf2 = (hsize_t *)malloc(sizeof(hsize_t));
-	herr_t status;
+	H5File file(filename, H5F_ACC_TRUNC);
+	hsize_t dimsf1[3], dimsf2[1]; /* dataset dimensions */
 	dimsf1[2] = N_radial;
 	dimsf1[1] = N_poloidal;
 	if (fate == 1)
 	{
 		dimsf1[0] = CXtoTarget_.begin()->num_wall();
 		dimsf2[0] = CXtoTarget_.begin()->num_wall();
-		double data1[dimsf1[0]][dimsf1[1]][dimsf1[2]];
-		double data2[dimsf2[0]];
+		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		std::cout << CXtoTarget_.size() << endl;
@@ -6984,131 +6884,95 @@ void Particle::OutTargetEro(int fate)
 		{
 			string groupname = "/" + sourcename(CXtoTarget_[i].CollSource());
 			std::cout << groupname << endl;
-			Group *group = new Group(file->createGroup(groupname));
+			Group group = file.createGroup(groupname);
 
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = CXtoTarget_[i].PartoWall[m][j][k];
-			DataSet *dataset1 = new DataSet(
-				file->createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset1->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset1;
-
+						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoTarget_[i].N(m, j, k);
+			DataSet dataset1 = file.createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = CXtoTarget_[i].E_PartoWall[m][j][k];
-			DataSet *dataset2 = new DataSet(
-				file->createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset2->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset2;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoTarget_[i].T(m, j, k);
+			DataSet dataset2 = file.createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				data2[m] = CXtoTarget_[i].All_PartoWall[m];
-			DataSet *dataset3 = new DataSet(
-				file->createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset3->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset3;
-
+			DataSet dataset3 = file.createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
-				data2[m] = CXtoTarget_[i].All_E_PartoWall[m];
-			DataSet *dataset4 = new DataSet(
-				file->createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset4->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset4;
-			delete group;
+			data2[m] = CXtoTarget_[i].T_all(m);
+			DataSet dataset4 = file.createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 		}
 	}
 	else if (fate == 4)
 	{
 		dimsf1[0] = RectoTarget_.begin()->num_wall();
 		dimsf2[0] = RectoTarget_.begin()->num_wall();
-		double data1[dimsf1[0]][dimsf1[1]][dimsf1[2]];
-		double data2[dimsf2[0]];
+		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		for (int i = 0; i < RectoTarget_.size(); i++)
 		{
 			string groupname = "/" + sourcename(RectoTarget_[i].CollSource());
 			std::cout << RectoTarget_[i].CollSource() << '\t' << groupname << endl;
-			Group *group = new Group(file->createGroup(groupname));
+			Group group = file.createGroup(groupname);
 
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = RectoTarget_[i].PartoWall[m][j][k];
-			DataSet *dataset1 = new DataSet(
-				file->createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset1->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset1;
-
+						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoTarget_[i].N(m, j, k);
+			DataSet dataset1 = file.createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = RectoTarget_[i].E_PartoWall[m][j][k];
-			DataSet *dataset2 = new DataSet(
-				file->createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset2->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset2;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoTarget_[i].T(m, j, k);
+			DataSet dataset2 = file.createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				data2[m] = RectoTarget_[i].All_PartoWall[m];
-			DataSet *dataset3 = new DataSet(
-				file->createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset3->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset3;
-
+			DataSet dataset3 = file.createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
-				data2[m] = RectoTarget_[i].All_E_PartoWall[m];
-			DataSet *dataset4 = new DataSet(
-				file->createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset4->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset4;
-			delete group;
+			data2[m] = RectoTarget_[i].T_all(m);
+			DataSet dataset4 = file.createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 		}
 	}
 	else if (fate == -1)
 	{
 		dimsf1[0] = AlltoTarget_.begin()->num_wall();
 		dimsf2[0] = AlltoTarget_.begin()->num_wall();
-		double data1[dimsf1[0]][dimsf1[1]][dimsf1[2]];
-		double data2[dimsf2[0]];
+		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		for (int m = 0; m < dimsf1[0]; m++)
 			for (int j = 0; j < dimsf1[1]; j++)
 				for (int k = 0; k < dimsf1[2]; k++)
-					data1[m][j][k] = AlltoTarget_.begin()->PartoWall[m][j][k];
-		DataSet *dataset1 = new DataSet(
-			file->createDataSet("n", PredType::NATIVE_DOUBLE, dataspace1));
-		dataset1->write(data1, PredType::NATIVE_DOUBLE);
-		delete dataset1;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoTarget_.begin()->N(m, j, k);
+		DataSet dataset1 = file.createDataSet("n", PredType::NATIVE_DOUBLE, dataspace1);
+		dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
 			for (int j = 0; j < dimsf1[1]; j++)
 				for (int k = 0; k < dimsf1[2]; k++)
-					data1[m][j][k] = AlltoTarget_.begin()->E_PartoWall[m][j][k];
-		DataSet *dataset2 = new DataSet(
-			file->createDataSet("T", PredType::NATIVE_DOUBLE, dataspace1));
-		dataset2->write(data1, PredType::NATIVE_DOUBLE);
-		delete dataset2;
-
+				data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoTarget_.begin()->T(m, j, k);
+		DataSet dataset2 = file.createDataSet("T", PredType::NATIVE_DOUBLE, dataspace1);
+		dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
 			data2[m] = AlltoTarget_.begin()->All_PartoWall[m];
-		DataSet *dataset3 = new DataSet(
-			file->createDataSet("n_all", PredType::NATIVE_DOUBLE, dataspace2));
-		dataset3->write(data2, PredType::NATIVE_DOUBLE);
-		delete dataset3;
-
+		DataSet dataset3 = file.createDataSet("n_all", PredType::NATIVE_DOUBLE, dataspace2);
+		dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
-			data2[m] = AlltoTarget_.begin()->All_E_PartoWall[m];
-		DataSet *dataset4 = new DataSet(
-			file->createDataSet("T_all", PredType::NATIVE_DOUBLE, dataspace2));
-		dataset4->write(data2, PredType::NATIVE_DOUBLE);
-		delete dataset4;
+		data2[m] = AlltoTarget_.begin()->T_all(m);
+		DataSet dataset4 = file.createDataSet("T_all", PredType::NATIVE_DOUBLE, dataspace2);
+		dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 	}
-	delete file;
 }
 
 void Particle::AddPlasmaBoundaryEro(int num_Ero_wall)
@@ -7162,18 +7026,16 @@ void Particle::OutPlasmaBoundaryEro(int fate)
 {
 	string filename = Outputpath + fatename(fate) + "PlasmaBoundaryEro.h5";
 	std::cout << filename << endl;
-	H5File *file = new H5File(filename, H5F_ACC_TRUNC);
-	hsize_t dimsf1[3], *dimsf2; /* dataset dimensions */
-	dimsf2 = (hsize_t *)malloc(sizeof(hsize_t));
-	herr_t status;
+	H5File file(filename, H5F_ACC_TRUNC);
+	hsize_t dimsf1[3], dimsf2[1]; /* dataset dimensions */
 	dimsf1[2] = N_radial;
 	dimsf1[1] = N_poloidal;
 	if (fate == 1)
 	{
 		dimsf1[0] = CXtoPlasmaBoundary_.begin()->num_wall();
 		dimsf2[0] = CXtoPlasmaBoundary_.begin()->num_wall();
-		double data1[dimsf1[0]][dimsf1[1]][dimsf1[2]];
-		double data2[dimsf2[0]];
+		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		std::cout << CXtoPlasmaBoundary_.size() << endl;
@@ -7181,131 +7043,95 @@ void Particle::OutPlasmaBoundaryEro(int fate)
 		{
 			string groupname = "/" + sourcename(CXtoPlasmaBoundary_[i].CollSource());
 			std::cout << groupname << endl;
-			Group *group = new Group(file->createGroup(groupname));
+			Group group = file.createGroup(groupname);
 
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = CXtoPlasmaBoundary_[i].PartoWall[m][j][k];
-			DataSet *dataset1 = new DataSet(
-				file->createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset1->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset1;
-
+						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoPlasmaBoundary_[i].N(m, j, k);
+			DataSet dataset1 = file.createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = CXtoPlasmaBoundary_[i].E_PartoWall[m][j][k];
-			DataSet *dataset2 = new DataSet(
-				file->createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset2->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset2;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = CXtoPlasmaBoundary_[i].T(m, j, k);
+			DataSet dataset2 = file.createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				data2[m] = CXtoPlasmaBoundary_[i].All_PartoWall[m];
-			DataSet *dataset3 = new DataSet(
-				file->createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset3->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset3;
-
+			DataSet dataset3 = file.createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
-				data2[m] = CXtoPlasmaBoundary_[i].All_E_PartoWall[m];
-			DataSet *dataset4 = new DataSet(
-				file->createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset4->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset4;
-			delete group;
+			data2[m] = CXtoPlasmaBoundary_[i].T_all(m);
+			DataSet dataset4 = file.createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 		}
 	}
 	else if (fate == 4)
 	{
 		dimsf1[0] = RectoPlasmaBoundary_.begin()->num_wall();
 		dimsf2[0] = RectoPlasmaBoundary_.begin()->num_wall();
-		double data1[dimsf1[0]][dimsf1[1]][dimsf1[2]];
-		double data2[dimsf2[0]];
+		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		for (int i = 0; i < RectoPlasmaBoundary_.size(); i++)
 		{
 			string groupname = "/" + sourcename(RectoPlasmaBoundary_[i].CollSource());
 			std::cout << RectoPlasmaBoundary_[i].CollSource() << '\t' << groupname << endl;
-			Group *group = new Group(file->createGroup(groupname));
+			Group group = file.createGroup(groupname);
 
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = RectoPlasmaBoundary_[i].PartoWall[m][j][k];
-			DataSet *dataset1 = new DataSet(
-				file->createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset1->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset1;
-
+						data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoPlasmaBoundary_[i].N(m, j, k);
+			DataSet dataset1 = file.createDataSet(groupname + "/n", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				for (int j = 0; j < dimsf1[1]; j++)
 					for (int k = 0; k < dimsf1[2]; k++)
-						data1[m][j][k] = RectoPlasmaBoundary_[i].E_PartoWall[m][j][k];
-			DataSet *dataset2 = new DataSet(
-				file->createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1));
-			dataset2->write(data1, PredType::NATIVE_DOUBLE);
-			delete dataset2;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = RectoPlasmaBoundary_[i].T(m, j, k);
+			DataSet dataset2 = file.createDataSet(groupname + "/T", PredType::NATIVE_DOUBLE, dataspace1);
+			dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
 				data2[m] = RectoPlasmaBoundary_[i].All_PartoWall[m];
-			DataSet *dataset3 = new DataSet(
-				file->createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset3->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset3;
-
+			DataSet dataset3 = file.createDataSet(groupname + "/n_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 			for (int m = 0; m < dimsf1[0]; m++)
-				data2[m] = RectoPlasmaBoundary_[i].All_E_PartoWall[m];
-			DataSet *dataset4 = new DataSet(
-				file->createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2));
-			dataset4->write(data2, PredType::NATIVE_DOUBLE);
-			delete dataset4;
-			delete group;
+			data2[m] = RectoPlasmaBoundary_[i].T_all(m);
+			DataSet dataset4 = file.createDataSet(groupname + "/T_all", PredType::NATIVE_DOUBLE, dataspace2);
+			dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 		}
 	}
 	else if (fate == -1)
 	{
 		dimsf1[0] = AlltoPlasmaBoundary_.begin()->num_wall();
 		dimsf2[0] = AlltoPlasmaBoundary_.begin()->num_wall();
-		double data1[dimsf1[0]][dimsf1[1]][dimsf1[2]];
-		double data2[dimsf2[0]];
+		std::vector<double> data1(dimsf1[0] * dimsf1[1] * dimsf1[2]);
+		std::vector<double> data2(dimsf2[0]);
 		DataSpace dataspace1(3, dimsf1);
 		DataSpace dataspace2(1, dimsf2);
 		for (int m = 0; m < dimsf1[0]; m++)
 			for (int j = 0; j < dimsf1[1]; j++)
 				for (int k = 0; k < dimsf1[2]; k++)
-					data1[m][j][k] = AlltoPlasmaBoundary_.begin()->PartoWall[m][j][k];
-		DataSet *dataset1 = new DataSet(
-			file->createDataSet("n", PredType::NATIVE_DOUBLE, dataspace1));
-		dataset1->write(data1, PredType::NATIVE_DOUBLE);
-		delete dataset1;
-
+					data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoPlasmaBoundary_.begin()->N(m, j, k);
+		DataSet dataset1 = file.createDataSet("n", PredType::NATIVE_DOUBLE, dataspace1);
+		dataset1.write(data1.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
 			for (int j = 0; j < dimsf1[1]; j++)
 				for (int k = 0; k < dimsf1[2]; k++)
-					data1[m][j][k] = AlltoPlasmaBoundary_.begin()->E_PartoWall[m][j][k];
-		DataSet *dataset2 = new DataSet(
-			file->createDataSet("T", PredType::NATIVE_DOUBLE, dataspace1));
-		dataset2->write(data1, PredType::NATIVE_DOUBLE);
-		delete dataset2;
-
+				data1[m * dimsf1[1] * dimsf1[2] + j * dimsf1[2] + k] = AlltoPlasmaBoundary_.begin()->T(m, j, k);
+		DataSet dataset2 = file.createDataSet("T", PredType::NATIVE_DOUBLE, dataspace1);
+		dataset2.write(data1.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
 			data2[m] = AlltoPlasmaBoundary_.begin()->All_PartoWall[m];
-		DataSet *dataset3 = new DataSet(
-			file->createDataSet("n_all", PredType::NATIVE_DOUBLE, dataspace2));
-		dataset3->write(data2, PredType::NATIVE_DOUBLE);
-		delete dataset3;
-
+		DataSet dataset3 = file.createDataSet("n_all", PredType::NATIVE_DOUBLE, dataspace2);
+		dataset3.write(data2.data(), PredType::NATIVE_DOUBLE);
 		for (int m = 0; m < dimsf1[0]; m++)
-			data2[m] = AlltoPlasmaBoundary_.begin()->All_E_PartoWall[m];
-		DataSet *dataset4 = new DataSet(
-			file->createDataSet("T_all", PredType::NATIVE_DOUBLE, dataspace2));
-		dataset4->write(data2, PredType::NATIVE_DOUBLE);
-		delete dataset4;
+		data2[m] = AlltoPlasmaBoundary_.begin()->T_all(m);
+		DataSet dataset4 = file.createDataSet("T_all", PredType::NATIVE_DOUBLE, dataspace2);
+		dataset4.write(data2.data(), PredType::NATIVE_DOUBLE);
 	}
-	delete file;
 }
 
 double Particle::CalAngle(int num_wall)
@@ -8359,7 +8185,7 @@ void Particle::FluxOutput()
 		{
 			out << i << "\t" << j << "\t";
 			for (int k = 0; k < 4; k++)
-				out << n_Flux_Grid_[i][j][k] << "\t";
+				out << n_Flux_Grid_[fluxGridIndex(i, j, k)] << "\t";
 			out << endl;
 		}
 	}
@@ -8373,7 +8199,7 @@ void Particle::FluxOutput()
 		{
 			out << i << "\t" << j << "\t";
 			for (int k = 0; k < 4; k++)
-				out << T_Flux_Grid_[i][j][k] << "\t";
+				out << T_Flux_Grid_[fluxGridIndex(i, j, k)] << "\t";
 			out << endl;
 		}
 	}
@@ -9085,12 +8911,11 @@ bool PartoPar::ifChange() { return ifChange_; }
 void PartoPar::store(Particle *PP, double factor, Particle *QQ, std::vector<double> &V,
 					 int SOURCE, int toCollPar, int Charge)
 {
-	Particle PQ_temp;
 	toV_.push(V);
 	toCollPar_.push(toCollPar);
 	toSource_.push(SOURCE);
-	PQ_temp.Particlefrom(PP, factor, Charge);
-	PQ_.push(PQ_temp);
+	PQ_.emplace();
+	PQ_.back().Particlefrom(PP, factor, Charge);
 	Q_.push(QQ);
 	// Q_[Q_.size() - 1]->Particlefrom(PP, factor, Charge);
 	// Q_[Q_.size() - 1]->setfate(0, SOURCE, toCollPar);
@@ -9155,31 +8980,27 @@ void ParCollCar::initialize(int e_or_i, int num_trimesh)
 		}
 	Cor_cs_ = 0.;
 	num_trimesh_ = num_trimesh;
-	for (int i = 0; i < num_trimesh_; i++)
-	{
-		Tri_cs_.push_back(1.e-74);
-		Tri_Sn_.push_back(0.);
-		Tri_Smu_.push_back(0.);
-		Tri_Smu_0_.push_back(0.);
-		Tri_Smu_1_.push_back(0.);
-		Tri_Smu_2_.push_back(0.);
-		Tri_Smu1_.push_back(0.);
-		Tri_Smu2_.push_back(0.);
-		Tri_SE_.push_back(0.);
-
-		Tri_Num_n_.push_back(0.);
-		Tri_Num_mu_.push_back(0.);
-		Tri_Num_mu_0_.push_back(0.);
-		Tri_Num_mu_1_.push_back(0.);
-		Tri_Num_mu_2_.push_back(0.);
-		Tri_Num_mu1_.push_back(0.);
-		Tri_Num_mu2_.push_back(0.);
-		Tri_Num_E_.push_back(0.);
-		Tri_Pra_.push_back(0.);
-		Tri_crossSection.push_back(0.);
-		Tri_SE_n_.push_back(0.);
-		Tri_Num_E_n_.push_back(0.);
-	}
+	Tri_cs_.assign(num_trimesh_, 1.e-74);
+	Tri_Sn_.assign(num_trimesh_, 0.);
+	Tri_Smu_.assign(num_trimesh_, 0.);
+	Tri_Smu_0_.assign(num_trimesh_, 0.);
+	Tri_Smu_1_.assign(num_trimesh_, 0.);
+	Tri_Smu_2_.assign(num_trimesh_, 0.);
+	Tri_Smu1_.assign(num_trimesh_, 0.);
+	Tri_Smu2_.assign(num_trimesh_, 0.);
+	Tri_SE_.assign(num_trimesh_, 0.);
+	Tri_Num_n_.assign(num_trimesh_, 0.);
+	Tri_Num_mu_.assign(num_trimesh_, 0.);
+	Tri_Num_mu_0_.assign(num_trimesh_, 0.);
+	Tri_Num_mu_1_.assign(num_trimesh_, 0.);
+	Tri_Num_mu_2_.assign(num_trimesh_, 0.);
+	Tri_Num_mu1_.assign(num_trimesh_, 0.);
+	Tri_Num_mu2_.assign(num_trimesh_, 0.);
+	Tri_Num_E_.assign(num_trimesh_, 0.);
+	Tri_Pra_.assign(num_trimesh_, 0.);
+	Tri_crossSection.assign(num_trimesh_, 0.);
+	Tri_SE_n_.assign(num_trimesh_, 0.);
+	Tri_Num_E_n_.assign(num_trimesh_, 0.);
 	V_relative_.resize(3);
 }
 
@@ -9787,271 +9608,216 @@ BoutReal interpolation_1D(BoutReal Te, double *Te_DATA, double *Cross_DATA, int 
 FluxTracker::FluxTracker() {}
 
 FluxTracker::FluxTracker(int nRegion, int nBin, double eMin, double eMax,
-						 bool trackMom, bool trackPow)
-	: NREG_(nRegion), NBIN_(nBin),
-	  E_MIN_(eMin), E_MAX_(eMax),
-	  trackMom_(trackMom), trackPow_(trackPow),
-	  flux_(nRegion, std::vector<double>(nRegion, 0.0)),
-	  hist_(nRegion, std::vector<std::vector<double>>(nRegion, std::vector<double>(nBin, 0.0)))
+                         bool trackMom, bool trackPow)
+    : NREG_(nRegion), NBIN_(nBin), E_MIN_(eMin), E_MAX_(eMax),
+      trackMom_(trackMom), trackPow_(trackPow),
+      flux_(static_cast<std::size_t>(nRegion) * nRegion, 0.0),
+      hist_(static_cast<std::size_t>(nRegion) * nRegion * nBin, 0.0)
 {
-	if (trackMom_)
-		momFlux_.assign(NREG_,
-						std::vector<std::array<double, 3>>(NREG_, {0.0, 0.0, 0.0}));
-	if (trackPow_)
-		powFlux_.assign(NREG_, std::vector<double>(NREG_, 0.0));
+    if (trackMom_)
+        momFlux_.assign(static_cast<std::size_t>(NREG_) * NREG_, {0.0, 0.0, 0.0});
+    if (trackPow_)
+        powFlux_.assign(static_cast<std::size_t>(NREG_) * NREG_, 0.0);
+}
+
+std::size_t FluxTracker::regionIndex(int from, int to) const
+{
+    return static_cast<std::size_t>(from) * NREG_ + to;
+}
+
+std::size_t FluxTracker::histIndex(int from, int to, int bin) const
+{
+    return regionIndex(from, to) * NBIN_ + bin;
+}
+
+std::size_t FluxTracker::gridIndex(int i, int j) const
+{
+    return static_cast<std::size_t>(i) * NY_ + j;
+}
+
+std::size_t FluxTracker::gridHistIndex(int i, int j, int bin) const
+{
+    return gridIndex(i, j) * NBIN_ + bin;
 }
 
 bool FluxTracker::FluxTraInit(int nRegion, int nBin,
-							  double eMin, double eMax,
-							  int nx, int ny,
-							  bool trackMom, bool trackPow)
+                              double eMin, double eMax,
+                              int nx, int ny,
+                              bool trackMom, bool trackPow)
 {
-	// 防止重复初始化；如需支持重复，可先清空数据
-	if (inited_)
-		return false;
+    if (inited_)
+        return false;
 
-	// 1) 存参数
-	NREG_ = nRegion;
-	NBIN_ = nBin;
-	E_MIN_ = eMin;
-	E_MAX_ = eMax;
-	trackMom_ = trackMom;
-	trackPow_ = trackPow;
+    NREG_ = nRegion;
+    NBIN_ = nBin;
+    E_MIN_ = eMin;
+    E_MAX_ = eMax;
+    trackMom_ = trackMom;
+    trackPow_ = trackPow;
+    NX_ = nx;
+    NY_ = ny;
+    gridEnabled_ = true;
 
-	// 2) 分配并置零
-	flux_.assign(NREG_, std::vector<double>(NREG_, 0.0));
+    const std::size_t regionCells = static_cast<std::size_t>(NREG_) * NREG_;
+    const std::size_t gridCells = static_cast<std::size_t>(NX_) * NY_;
+    flux_.assign(regionCells, 0.0);
+    hist_.assign(regionCells * NBIN_, 0.0);
+    gridHist_.assign(gridCells * NBIN_, 0.0);
 
-	hist_.assign(NREG_,
-				 std::vector<std::vector<double>>(
-					 NREG_, std::vector<double>(NBIN_, 0.0)));
+    if (trackMom_)
+    {
+        momFlux_.assign(regionCells, {0.0, 0.0, 0.0});
+        gridMom_.assign(gridCells, {0.0, 0.0, 0.0});
+    }
+    if (trackPow_)
+    {
+        powFlux_.assign(regionCells, 0.0);
+        gridPow_.assign(gridCells, 0.0);
+    }
 
-	if (trackMom_)
-		momFlux_.assign(NREG_,
-						std::vector<std::array<double, 3>>(NREG_, {0.0, 0.0, 0.0}));
-
-	if (trackPow_)
-		powFlux_.assign(NREG_, std::vector<double>(NREG_, 0.0));
-
-	NX_ = nx;
-	NY_ = ny;
-	gridEnabled_ = true;
-
-	gridHist_.assign(NX_, std::vector<std::vector<double>>(NY_, std::vector<double>(NBIN_, 0.0)));
-
-	if (trackMom_)
-		gridMom_.assign(NX_, std::vector<std::array<double, 3>>(NY_, {0.0, 0.0, 0.0}));
-
-	if (trackPow_)
-		gridPow_.assign(NX_, std::vector<double>(NY_, 0.0));
-
-	inited_ = true;
-	return true;
+    inited_ = true;
+    return true;
 }
 
 void FluxTracker::accumulate(int from, int to, double E,
-							 double vx, double vy, double vz, double w)
+                             double vx, double vy, double vz, double w)
 {
-	assert(from >= 0 && from < NREG_ && to >= 0 && to < NREG_);
-	flux_[from][to] += w;
+    assert(from >= 0 && from < NREG_ && to >= 0 && to < NREG_);
+    const std::size_t region = regionIndex(from, to);
+    flux_[region] += w;
 
-	int bin = int((E - E_MIN_) / (E_MAX_ - E_MIN_) * NBIN_);
-	if (bin < 0)
-		bin = 0;
-	else if (bin >= NBIN_)
-		bin = NBIN_ - 1;
-	hist_[from][to][bin] += w;
+    int bin = int((E - E_MIN_) / (E_MAX_ - E_MIN_) * NBIN_);
+    if (bin < 0)
+        bin = 0;
+    else if (bin >= NBIN_)
+        bin = NBIN_ - 1;
+    hist_[histIndex(from, to, bin)] += w;
 
-	if (trackMom_)
-	{
-		momFlux_[from][to][0] += w * vx;
-		momFlux_[from][to][1] += w * vy;
-		momFlux_[from][to][2] += w * vz;
-	}
-	if (trackPow_)
-		powFlux_[from][to] += w * E; // eV·权重
+    if (trackMom_)
+    {
+        momFlux_[region][0] += w * vx;
+        momFlux_[region][1] += w * vy;
+        momFlux_[region][2] += w * vz;
+    }
+    if (trackPow_)
+        powFlux_[region] += w * E;
 }
 
 void FluxTracker::write_H5(const std::string &fn, const std::string &grp) const
-{ // 在最外层加一个 try-catch，捕获所有可能的 HDF5 写入错误（磁盘满、权限等）
-	try
-	{
-		// 1. 创建全新的 HDF5 文件
-		// 使用 H5F_ACC_TRUNC: 如果文件已存在，则截断清空它；如果不存在，则新建。
-		H5File file(fn, H5F_ACC_TRUNC);
+{
+    try
+    {
+        H5File file(fn, H5F_ACC_TRUNC);
+        Group g = file.createGroup("MyGroup");
 
-		// 2. 直接创建 Group
-		// 因为文件是刚建的空文件，绝不会发生 "name already exists" 的错误
-		Group g = file.createGroup("MyGroup");
+        hsize_t d2[2]{(hsize_t)NREG_, (hsize_t)NREG_};
+        DataSpace s2(2, d2);
+        DataSet dsFlux = g.createDataSet("flux", PredType::NATIVE_DOUBLE, s2);
+        dsFlux.write(flux_.data(), PredType::NATIVE_DOUBLE);
 
-		// ---- 粒子通量 (2D: NREG_ x NREG_) ----
-		hsize_t d2[2]{(hsize_t)NREG_, (hsize_t)NREG_};
-		DataSpace s2(2, d2);
-		DataSet dsFlux = g.createDataSet("flux", PredType::NATIVE_DOUBLE, s2);
+        hsize_t d3[3]{(hsize_t)NREG_, (hsize_t)NREG_, (hsize_t)NBIN_};
+        DataSpace s3(3, d3);
+        DataSet dsHist = g.createDataSet("hist", PredType::NATIVE_DOUBLE, s3);
+        dsHist.write(hist_.data(), PredType::NATIVE_DOUBLE);
 
-		std::vector<double> flatFlux;
-		flatFlux.reserve(NREG_ * NREG_); // 【优化】：一次性分配好所需内存
-		for (const auto &r : flux_)		 // 【优化】：使用 const auto& 避免拷贝
-			flatFlux.insert(flatFlux.end(), r.begin(), r.end());
-		dsFlux.write(flatFlux.data(), PredType::NATIVE_DOUBLE);
+        if (trackMom_)
+        {
+            hsize_t dimsMom[3]{(hsize_t)NREG_, (hsize_t)NREG_, 3};
+            DataSpace spaceMom(3, dimsMom);
+            DataSet dsMom = g.createDataSet("momFlux", PredType::NATIVE_DOUBLE, spaceMom);
+            dsMom.write(momFlux_.data(), PredType::NATIVE_DOUBLE);
+        }
+        if (trackPow_)
+        {
+            DataSet dsPow = g.createDataSet("powFlux", PredType::NATIVE_DOUBLE, s2);
+            dsPow.write(powFlux_.data(), PredType::NATIVE_DOUBLE);
+        }
 
-		// ---- 能谱 (3D: NREG_ x NREG_ x NBIN_) ----
-		hsize_t d3[3]{(hsize_t)NREG_, (hsize_t)NREG_, (hsize_t)NBIN_};
-		DataSpace s3(3, d3);
-		DataSet dsHist = g.createDataSet("hist", PredType::NATIVE_DOUBLE, s3);
+        g.createAttribute("E_min", PredType::NATIVE_DOUBLE, DataSpace())
+            .write(PredType::NATIVE_DOUBLE, &E_MIN_);
+        g.createAttribute("E_max", PredType::NATIVE_DOUBLE, DataSpace())
+            .write(PredType::NATIVE_DOUBLE, &E_MAX_);
 
-		std::vector<double> flatHist;
-		flatHist.reserve(NREG_ * NREG_ * NBIN_);
-		for (const auto &m : hist_)
-			for (const auto &r : m)
-				flatHist.insert(flatHist.end(), r.begin(), r.end());
-		dsHist.write(flatHist.data(), PredType::NATIVE_DOUBLE);
+        if (gridEnabled_)
+        {
+            hsize_t dims3[3]{(hsize_t)NX_, (hsize_t)NY_, (hsize_t)NBIN_};
+            DataSpace space3(3, dims3);
+            DataSet dsGridHist = g.createDataSet("gridHist", PredType::NATIVE_DOUBLE, space3);
+            dsGridHist.write(gridHist_.data(), PredType::NATIVE_DOUBLE);
 
-		// ---- 动量 ----
-		if (trackMom_)
-		{
-			DataSet dsMom = g.createDataSet("momFlux", PredType::NATIVE_DOUBLE, s3);
-			std::vector<double> flatMom;
-			flatMom.reserve(NREG_ * NREG_ * NBIN_);
-			for (const auto &m : momFlux_)
-				for (const auto &r : m)
-					flatMom.insert(flatMom.end(), r.begin(), r.end());
-			dsMom.write(flatMom.data(), PredType::NATIVE_DOUBLE);
-		}
+            if (trackMom_)
+            {
+                hsize_t dimsGridMom[3]{(hsize_t)NX_, (hsize_t)NY_, 3};
+                DataSpace spaceGridMom(3, dimsGridMom);
+                DataSet dsGridMom = g.createDataSet("gridMom", PredType::NATIVE_DOUBLE, spaceGridMom);
+                dsGridMom.write(gridMom_.data(), PredType::NATIVE_DOUBLE);
+            }
+            if (trackPow_)
+            {
+                hsize_t dimsPow[2]{(hsize_t)NX_, (hsize_t)NY_};
+                DataSpace spacePow(2, dimsPow);
+                DataSet dsGridPow = g.createDataSet("gridPow", PredType::NATIVE_DOUBLE, spacePow);
+                dsGridPow.write(gridPow_.data(), PredType::NATIVE_DOUBLE);
+            }
+        }
 
-		// ---- 能量 ----
-		if (trackPow_)
-		{
-			DataSet dsPow = g.createDataSet("powFlux", PredType::NATIVE_DOUBLE, s2);
-			std::vector<double> flatPow;
-			flatPow.reserve(NREG_ * NREG_);
-			for (const auto &r : powFlux_)
-				flatPow.insert(flatPow.end(), r.begin(), r.end());
-			dsPow.write(flatPow.data(), PredType::NATIVE_DOUBLE);
-		}
-
-		// ---- 元数据 (Attributes) ----
-		// 记录能量边界等标量信息
-		g.createAttribute("E_min", PredType::NATIVE_DOUBLE, DataSpace())
-			.write(PredType::NATIVE_DOUBLE, &E_MIN_);
-		g.createAttribute("E_max", PredType::NATIVE_DOUBLE, DataSpace())
-			.write(PredType::NATIVE_DOUBLE, &E_MAX_);
-
-		// ---- 空间网格分布数据 ----
-		if (gridEnabled_)
-		{
-			// 网格能谱 (3D: NX_ x NY_ x NBIN_)
-			hsize_t dims3[3]{(hsize_t)NX_, (hsize_t)NY_, (hsize_t)NBIN_};
-			DataSpace space3(3, dims3);
-			DataSet dsGridHist = g.createDataSet("gridHist", PredType::NATIVE_DOUBLE, space3);
-
-			std::vector<double> flatGridHist;
-			flatGridHist.reserve(NX_ * NY_ * NBIN_);
-			for (const auto &row : gridHist_)
-				for (const auto &cell : row)
-					flatGridHist.insert(flatGridHist.end(), cell.begin(), cell.end());
-			dsGridHist.write(flatGridHist.data(), PredType::NATIVE_DOUBLE);
-
-			// 网格动量分布
-			if (trackMom_)
-			{
-				hsize_t dimsMom[3]{(hsize_t)NX_, (hsize_t)NY_, 3};
-				DataSpace spaceMom(3, dimsMom);
-				DataSet dsGridMom = g.createDataSet("gridMom", PredType::NATIVE_DOUBLE, spaceMom);
-
-				std::vector<double> flatGridMom;
-				flatGridMom.reserve(NX_ * NY_ * 3);
-				for (const auto &row : gridMom_)
-					for (const auto &cell : row)
-						flatGridMom.insert(flatGridMom.end(), cell.begin(), cell.end());
-				dsGridMom.write(flatGridMom.data(), PredType::NATIVE_DOUBLE);
-			}
-
-			// 网格能量分布
-			if (trackPow_)
-			{
-				hsize_t dimsPow[2]{(hsize_t)NX_, (hsize_t)NY_};
-				DataSpace spacePow(2, dimsPow);
-				DataSet dsGridPow = g.createDataSet("gridPow", PredType::NATIVE_DOUBLE, spacePow);
-
-				std::vector<double> flatGridPow;
-				flatGridPow.reserve(NX_ * NY_);
-				for (const auto &row : gridPow_)
-					flatGridPow.insert(flatGridPow.end(), row.begin(), row.end());
-				dsGridPow.write(flatGridPow.data(), PredType::NATIVE_DOUBLE);
-			}
-		}
-
-		std::cout << ">>> 数据已成功保存至 HDF5 文件: " << fn << std::endl;
-	}
-	catch (const H5::Exception &ee)
-	{
-		// 捕获并打印出任何 HDF5 层面的错误
-		std::cerr << "!!! HDF5 写入失败 !!!" << std::endl;
-		ee.printErrorStack();
-	}
+        std::cout << ">>> data saved to HDF5 file: " << fn << std::endl;
+    }
+    catch (const H5::Exception &ee)
+    {
+        std::cerr << "HDF5 write failed" << std::endl;
+        ee.printErrorStack();
+    }
 }
 
-void FluxTracker::accumulateGrid(int i, int j,
-								 double E,
-								 double vx, double vy, double vz,
-								 double w)
+void FluxTracker::accumulateGrid(int i, int j, double E,
+                                 double vx, double vy, double vz, double w)
 {
-	if (!gridEnabled_ || i < 0 || i >= NX_ || j < 0 || j >= NY_)
-		return;
+    if (!gridEnabled_ || i < 0 || i >= NX_ || j < 0 || j >= NY_)
+        return;
 
-	// 能谱 bin 编号
-	int bin = int((E - E_MIN_) / (E_MAX_ - E_MIN_) * NBIN_);
-	if (bin < 0)
-		bin = 0;
-	else if (bin >= NBIN_)
-		bin = NBIN_ - 1;
+    int bin = int((E - E_MIN_) / (E_MAX_ - E_MIN_) * NBIN_);
+    if (bin < 0)
+        bin = 0;
+    else if (bin >= NBIN_)
+        bin = NBIN_ - 1;
 
-	// 能谱直方图统计
-	gridHist_[i][j][bin] += w;
-
-	// 动量通量
-	if (trackMom_)
-	{
-		gridMom_[i][j][0] += w * vx;
-		gridMom_[i][j][1] += w * vy;
-		gridMom_[i][j][2] += w * vz;
-	}
-
-	// 功率通量
-	if (trackPow_)
-		gridPow_[i][j] += w * E; // eV·权重
+    const std::size_t grid = gridIndex(i, j);
+    gridHist_[gridHistIndex(i, j, bin)] += w;
+    if (trackMom_)
+    {
+        gridMom_[grid][0] += w * vx;
+        gridMom_[grid][1] += w * vy;
+        gridMom_[grid][2] += w * vz;
+    }
+    if (trackPow_)
+        gridPow_[grid] += w * E;
 }
 
 void FluxTracker::normalizeByVolume()
 {
-	assert(gridEnabled_);
+    assert(gridEnabled_);
+    for (int i = 0; i < NX_; ++i)
+    {
+        for (int j = 0; j < NY_; ++j)
+        {
+            const double V = Volume[i][j];
+            if (V <= 0.0)
+                continue;
 
-	// --- 能谱 ---
-	for (int i = 0; i < NX_; ++i)
-	{
-		for (int j = 0; j < NY_; ++j)
-		{
-			double V = Volume[i][j];
-			if (V <= 0.0)
-				continue;
-
-			for (int b = 0; b < NBIN_; ++b)
-				gridHist_[i][j][b] /= V;
-
-			// 动量
-			if (trackMom_)
-			{
-				gridMom_[i][j][0] /= V;
-				gridMom_[i][j][1] /= V;
-				gridMom_[i][j][2] /= V;
-			}
-			// 功率
-			if (trackPow_)
-			{
-				gridPow_[i][j] /= V;
-			}
-		}
-	}
+            const std::size_t grid = gridIndex(i, j);
+            for (int b = 0; b < NBIN_; ++b)
+                gridHist_[gridHistIndex(i, j, b)] /= V;
+            if (trackMom_)
+            {
+                gridMom_[grid][0] /= V;
+                gridMom_[grid][1] /= V;
+                gridMom_[grid][2] /= V;
+            }
+            if (trackPow_)
+                gridPow_[grid] /= V;
+        }
+    }
 }
 
 /// @brief Set and calculate the relative velocity
@@ -10066,7 +9832,9 @@ void ParCollCar::Set_V_relative(double Vi0, double Vi1, double Vi2, double Vn0, 
 	V_relative_[0] = Vi0 - Vn0;
 	V_relative_[1] = Vi1 - Vn1;
 	V_relative_[2] = Vi2 - Vn2;
-	V_relative_2_ = pow(V_relative_[0], 2) + pow(V_relative_[0], 2) + pow(V_relative_[0], 2);
+	V_relative_2_ = V_relative_[0] * V_relative_[0]
+		+ V_relative_[1] * V_relative_[1]
+		+ V_relative_[2] * V_relative_[2];
 	V_2_relative_ = pow(Vi0, 2) + pow(Vi1, 2) + pow(Vi2, 2) - (pow(Vn0, 2) + pow(Vn1, 2) + pow(Vn2, 2));
 }
 

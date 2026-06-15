@@ -32,7 +32,7 @@ int K_backScatter;        // OP: 1: Chance backing-scatter; 2: Real backing-scat
 int K_MarColl;            // OP: 1: 2 Separate sub-reactions; 2: 1 Sum-reaction;
 int K_Prob;               // OP: 1: add the cross-section; 2: add the collision probability
 int K_CX_impurity;        // OP: CX collision recation
-int *K_Puff;              // OP: Puff, 0 and 1 for diffierent puff port
+std::array<int, 5> K_Puff{};  // OP: Puff, 0 and 1 for different puff ports
 int K_D2Flight;           // OP: D2 flight
 int K_abnormal_transport; // OP: abnormal transport
 int K_flight;             // OP: 1 for mean free path; 2 for fixed time step; 3 for

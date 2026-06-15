@@ -9,7 +9,7 @@
 
 using namespace std;
 
-int BinarySearch(vector<double> &array, int low, int high, double key);
+int BinarySearch(const vector<double> &array, int low, int high, double key);
 class Reflect
 {
 private:
@@ -35,4 +35,25 @@ public:
 	double n_RefCoeff(int K_Reflect, double Energy_0, double angle = 30);
 	double E_RefCoeff(int K_Reflect, double Energy_0, double angle = 30);
 };
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <cmath>
+#include <algorithm>
+
+// 存储单个能级和角度网格点的 TRIM 数据块
+struct TrimBlock
+{
+	double m1 = 0.0;					  // 入射粒子质量
+	double z2 = 0.0;					  // 壁面原子序数
+	double m2 = 0.0;					  // 壁面原子质量
+	double E0 = 0.0;					  // 网格点入射能 (eV)
+	double theta0 = 0.0;				  // 网格点入射角 (度)
+	double RN = 0.0;					  // 粒子反射系数
+	std::vector<double> energy_quantiles; // 5个能量分布分位数
+};
+
 #endif
