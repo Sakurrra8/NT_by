@@ -72,6 +72,13 @@ int K_Vi = 1;       // 1 for Ti maxwell and calculate the relative v; 2 for don'
 int K_mu = 3;       // 3 is the default option;
 int K_PartoPar = 0; // OP: if the PartoPar is working
 int K_NNCs = 0;
+int K_Roulette = 0;
+int K_Splitting = 0;
+double W_RouletteMin = 0.05;
+double W_RouletteTarget = 0.2;
+double W_SplitMax = 5.0;
+double W_SplitTarget = 1.0;
+int MaxSplit = 4;
 
 int MeshMode; // Option 1: Orthogonal grid; 2: Full grid; 3: Triangular grid
 

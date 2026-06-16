@@ -2,9 +2,22 @@
 
 Particle *Q;
 Particle ParTemp;
+#define FINISH_SPLIT_STATE(label) \
+    do \
+    { \
+        if (!split_states.empty()) \
+        { \
+            PP->RestoreState(split_states.front()); \
+            split_states.pop(); \
+            goto label; \
+        } \
+        return; \
+    } while (0)
 void Push(Particle *PP)
 {
+    std::queue<Particle::State> split_states;
     double step_now = 0;
+restart_particle:
     // while (PP->Weight() != 0)
     while (PP->Weight() > 1e-3)
     {
@@ -24,8 +37,10 @@ void Push(Particle *PP)
         P = PP;
         P->track();
         PP = P;
+        PP->ApplyRussianRoulette();
+        PP->ApplySplitting(split_states);
         if (PP->Weight() == 0)
-            return;
+            FINISH_SPLIT_STATE(restart_particle);
         IfOut = 0;
         if (PP->Charge() != 0)
         {
@@ -55,11 +70,11 @@ void Push(Particle *PP)
                     if (!backGridBoundry)
                     {
                         PP->SetWeight(0.);
-                        return;
+                        FINISH_SPLIT_STATE(restart_particle);
                     }
                     else if (random() < 0.95)
                     {
-                        return;
+                        FINISH_SPLIT_STATE(restart_particle);
                         // PP->track();
                     }
                 }
@@ -86,7 +101,7 @@ void Push(Particle *PP)
                 if (num_intersect > 0)
                 {
                     PP->SetWeight(0.);
-                    return;
+                    FINISH_SPLIT_STATE(restart_particle);
                 }
 
                 /// search if the charged particle fly to target
@@ -136,7 +151,7 @@ void Push(Particle *PP)
                     P->track();
                     PP = P;
                     if (PP->Weight() == 0)
-                        return;
+                        FINISH_SPLIT_STATE(restart_particle);
                 }
                 else
                 {
@@ -153,7 +168,7 @@ void Push(Particle *PP)
                         std::cout << B[PP->XY(0)][PP->XY(1)][0] << " " << B[PP->XY(0)][PP->XY(1)][1] << " " << B[PP->XY(0)][PP->XY(1)][2] << endl;
                         std::cout << Num_Reflect_Core << '\t' << PP->Charge() << endl;
                     }
-                    return;
+                    FINISH_SPLIT_STATE(restart_particle);
                 }
             }
         }
@@ -175,7 +190,7 @@ void Push(Particle *PP)
                         P->track();
                         PP = P;
                         if (PP->Weight() == 0)
-                            return;
+                            FINISH_SPLIT_STATE(restart_particle);
                     }
                     /// if the test particle flight out from
                     if (PP->IfFlightOut() == 7)
@@ -285,13 +300,13 @@ void Push(Particle *PP)
                             P = PP;
                             WallReflect();
                             if (P->Weight() == 0)
-                                return;
+                                FINISH_SPLIT_STATE(restart_particle);
                             P->track();
                             PP = P;
                             // std::cout << "reflect: " << PP->Zone() << ", ";
                             // std::cout << PP->X(0) << ", " << PP->X(1) << " " << PP->X_new(0) << ", " << PP->X_new(1) << endl;
                             if (PP->Weight() == 0)
-                                return;
+                                FINISH_SPLIT_STATE(restart_particle);
                             // continue;
 
                             /*if (!Grid1.IfinIndex1(PP->XY(0), PP->XY(1), PP->X_new(0), PP->X_new(1)))
@@ -363,7 +378,7 @@ void Push(Particle *PP)
                             P->track();
                             PP = P;
                             if (PP->Weight() == 0)
-                                return;
+                                FINISH_SPLIT_STATE(restart_particle);
                         }
                     }
                     /*else
@@ -436,13 +451,13 @@ void Push(Particle *PP)
                     /*if (InterscePoint[0][3] == 27 || InterscePoint[0][3] == 34)
                     {
                         Weight_ = 0;
-                        return;
+                        FINISH_SPLIT_STATE(restart_particle);
                     }*/
                     P = PP;
                     WallReflect();
                     PP = P;
                     if (PP->Weight() == 0)
-                        return;
+                        FINISH_SPLIT_STATE(restart_particle);
                 }
             }
             if (PP->Zone() == 7)
@@ -494,10 +509,17 @@ void Push(Particle *PP)
             Change.ParChange();
         }*/
     }
+    if (!split_states.empty())
+    {
+        PP->RestoreState(split_states.front());
+        split_states.pop();
+        goto restart_particle;
+    }
 }
-
 void Push_Tri(Particle *PP)
 {
+    std::queue<Particle::State> split_states;
+restart_particle_tri:
     while (PP->Weight() > 1e-3)
     {
         if (PP->Charge() != 0)
@@ -516,9 +538,11 @@ void Push_Tri(Particle *PP)
         P = PP;
         P->track();
         PP = P;
+        PP->ApplyRussianRoulette();
+        PP->ApplySplitting(split_states);
 
         if (PP->Weight() < 1e-3)
-            return;
+            FINISH_SPLIT_STATE(restart_particle_tri);
         else if (PP->IfColl())
         {
             P = PP;
@@ -575,7 +599,7 @@ void Push_Tri(Particle *PP)
                     P->track();
                     PP = P;
                     if (PP->Weight() == 0)
-                        return;
+                        FINISH_SPLIT_STATE(restart_particle_tri);
                 }
                 else
                 {
@@ -593,16 +617,23 @@ void Push_Tri(Particle *PP)
                     }
                     pause();
                     PP->SetWeight(0.);
-                    return;
+                    FINISH_SPLIT_STATE(restart_particle_tri);
                 }
             }*/
 
             P = PP;
             WallReflect();
             if (P->Weight() == 0)
-                return;
+                FINISH_SPLIT_STATE(restart_particle_tri);
             P->track();
             PP = P;
         }
     }
+    if (!split_states.empty())
+    {
+        PP->RestoreState(split_states.front());
+        split_states.pop();
+        goto restart_particle_tri;
+    }
 }
+#undef FINISH_SPLIT_STATE

@@ -429,6 +429,38 @@ private:
 	FluxTracker FT_;
 
 public:
+	struct State
+	{
+		int Tri_Index;
+		int Charge;
+		int ChargeTag;
+		int Zone;
+		int XY[3];
+		int GridIndex;
+		int boundary_start;
+		int IfColl;
+		int IfFlightOut;
+		int fate[2];
+		int sourcePar[2];
+		int sourceGrid[2];
+		int Zone_old;
+		int GridIndex_old;
+		double X[3];
+		double X_new[3];
+		double X_old[3];
+		double Xold[3];
+		double V_Charge[8];
+		double dt;
+		double dt_trace;
+		double Tn;
+		double Weight;
+		double sourceWall[4];
+		double lambda_now;
+		double d_flight;
+		double Rand_flight;
+		std::vector<double> V;
+	};
+
 	Particle();
 	Particle(string particle_name, double mass, int MaxCharge, int Index);
 	Particle(const Particle &) = delete;
@@ -501,6 +533,10 @@ public:
 	void NumParStat();
 	void BeginDeferredFlightStats(double scale);
 	void EndDeferredFlightStats();
+	void ApplyRussianRoulette();
+	State SaveState() const;
+	void RestoreState(const State &state);
+	void ApplySplitting(std::queue<State> &pending_states);
 	void CalProb();
 	double CollProb();
 	void Coll();

@@ -1,13 +1,77 @@
 #include "Global.h"
 
+#include <chrono>
+
+namespace
+{
+using Clock = std::chrono::steady_clock;
+
+double elapsedSeconds(const Clock::time_point &start, const Clock::time_point &end)
+{
+	return std::chrono::duration<double>(end - start).count();
+}
+
+void printRuntimeReport(const std::vector<std::pair<std::string, double>> &stages, double total_seconds)
+{
+	std::cout << std::endl;
+	std::cout << "===== Runtime report =====" << std::endl;
+	for (const auto &stage : stages)
+	{
+		std::cout << std::left << std::setw(12) << stage.first << std::right << std::fixed << std::setprecision(3)
+		          << stage.second << " s" << std::endl;
+	}
+	std::cout << std::left << std::setw(12) << "Total" << std::right << std::fixed << std::setprecision(3)
+	          << total_seconds << " s" << std::endl;
+	std::cout << "==========================" << std::endl;
+
+	if (!Outputpath.empty())
+	{
+		std::ofstream out(Outputpath + "runtime_report.txt");
+		if (out.is_open())
+		{
+			out << "Stage Seconds" << std::endl;
+			for (const auto &stage : stages)
+			{
+				out << stage.first << " " << std::fixed << std::setprecision(6) << stage.second << std::endl;
+			}
+			out << "Total " << std::fixed << std::setprecision(6) << total_seconds << std::endl;
+		}
+	}
+}
+}
+
 int main(int argc, char *argv[])
 
 {
+	std::vector<std::pair<std::string, double>> runtime_stages;
+	auto total_start = Clock::now();
+	auto stage_start = total_start;
+
 	Initialize(argc, argv);
+	auto stage_end = Clock::now();
+	runtime_stages.push_back({"Initialize", elapsedSeconds(stage_start, stage_end)});
+	stage_start = stage_end;
+
 	Read();
+	stage_end = Clock::now();
+	runtime_stages.push_back({"Read", elapsedSeconds(stage_start, stage_end)});
+	stage_start = stage_end;
+
 	Prepare();
+	stage_end = Clock::now();
+	runtime_stages.push_back({"Prepare", elapsedSeconds(stage_start, stage_end)});
+	stage_start = stage_end;
+
 	Moncar();
+	stage_end = Clock::now();
+	runtime_stages.push_back({"Moncar", elapsedSeconds(stage_start, stage_end)});
+	stage_start = stage_end;
+
 	Output();
+	stage_end = Clock::now();
+	runtime_stages.push_back({"Output", elapsedSeconds(stage_start, stage_end)});
+
+	printRuntimeReport(runtime_stages, elapsedSeconds(total_start, stage_end));
 	return 0;
 }
 // CalPec();

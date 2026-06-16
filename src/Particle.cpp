@@ -3451,6 +3451,135 @@ double Particle::collisionStatWeight() const
 	return Weight_ * (defer_flight_stats_ ? 1.0 : NumPar_now);
 }
 
+void Particle::ApplyRussianRoulette()
+{
+	if (!K_Roulette || Weight_ <= 0.)
+		return;
+	if (W_RouletteMin <= 0. || W_RouletteTarget <= W_RouletteMin)
+		return;
+	if (Zone_ <= 1)
+		return;
+	if (MeshMode == 1 && Zone_ >= 6)
+		return;
+	if (MeshMode == 3 && Zone_ >= 7)
+		return;
+	if (Weight_ >= W_RouletteMin)
+		return;
+
+	const double survival_probability = Weight_ / W_RouletteTarget;
+	if (Tools::Random() < survival_probability)
+		Weight_ = W_RouletteTarget;
+	else
+		Weight_ = 0.;
+}
+
+
+Particle::State Particle::SaveState() const
+{
+	State state{};
+	state.Tri_Index = Tri_Index_;
+	state.Charge = Charge_;
+	state.ChargeTag = ChargeTag_;
+	state.Zone = Zone_;
+	state.GridIndex = GridIndex_;
+	state.boundary_start = boundary_start_;
+	state.IfColl = IfColl_;
+	state.IfFlightOut = IfFlightOut_;
+	state.Zone_old = Zone_old_;
+	state.GridIndex_old = GridIndex_old_;
+	state.dt = dt_;
+	state.dt_trace = dt_trace_;
+	state.Tn = Tn_;
+	state.Weight = Weight_;
+	state.lambda_now = lambda_now_;
+	state.d_flight = d_flight_;
+	state.Rand_flight = Rand_flight_;
+	state.V = V_;
+	for (int i = 0; i < 3; ++i)
+	{
+		state.X[i] = X_[i];
+		state.X_new[i] = X_new_[i];
+		state.X_old[i] = X_old_[i];
+		state.Xold[i] = Xold_[i];
+		state.XY[i] = XY_[i];
+	}
+	for (int i = 0; i < 8; ++i)
+		state.V_Charge[i] = V_Charge_[i];
+	for (int i = 0; i < 2; ++i)
+	{
+		state.fate[i] = fate_[i];
+		state.sourcePar[i] = sourcePar_[i];
+		state.sourceGrid[i] = sourceGrid_[i];
+	}
+	for (int i = 0; i < 4; ++i)
+		state.sourceWall[i] = sourceWall_[i];
+	return state;
+}
+
+void Particle::RestoreState(const State &state)
+{
+	Tri_Index_ = state.Tri_Index;
+	Charge_ = state.Charge;
+	ChargeTag_ = state.ChargeTag;
+	Zone_ = state.Zone;
+	GridIndex_ = state.GridIndex;
+	boundary_start_ = state.boundary_start;
+	IfColl_ = state.IfColl;
+	IfFlightOut_ = state.IfFlightOut;
+	Zone_old_ = state.Zone_old;
+	GridIndex_old_ = state.GridIndex_old;
+	dt_ = state.dt;
+	dt_trace_ = state.dt_trace;
+	Tn_ = state.Tn;
+	Weight_ = state.Weight;
+	lambda_now_ = state.lambda_now;
+	d_flight_ = state.d_flight;
+	Rand_flight_ = state.Rand_flight;
+	V_ = state.V;
+	for (int i = 0; i < 3; ++i)
+	{
+		X_[i] = state.X[i];
+		X_new_[i] = state.X_new[i];
+		X_old_[i] = state.X_old[i];
+		Xold_[i] = state.Xold[i];
+		XY_[i] = state.XY[i];
+	}
+	for (int i = 0; i < 8; ++i)
+		V_Charge_[i] = state.V_Charge[i];
+	for (int i = 0; i < 2; ++i)
+	{
+		fate_[i] = state.fate[i];
+		sourcePar_[i] = state.sourcePar[i];
+		sourceGrid_[i] = state.sourceGrid[i];
+	}
+	for (int i = 0; i < 4; ++i)
+		sourceWall_[i] = state.sourceWall[i];
+}
+
+void Particle::ApplySplitting(std::queue<State> &pending_states)
+{
+	if (!K_Splitting || Weight_ <= 0.)
+		return;
+	if (W_SplitMax <= 0. || W_SplitTarget <= 0. || MaxSplit < 2)
+		return;
+	if (Zone_ <= 1)
+		return;
+	if (MeshMode == 1 && Zone_ >= 6)
+		return;
+	if (MeshMode == 3 && Zone_ >= 7)
+		return;
+	if (Weight_ <= W_SplitMax)
+		return;
+
+	int split_count = static_cast<int>(std::ceil(Weight_ / W_SplitTarget));
+	split_count = std::max(2, std::min(split_count, MaxSplit));
+	Weight_ /= split_count;
+
+	State child = SaveState();
+	for (int i = 1; i < split_count; ++i)
+		pending_states.push(child);
+}
+
 void Particle::beginDeferredCollisionStats(double scale)
 {
 	auto beginVector = [scale](std::vector<ParCollCar> &cars) {
