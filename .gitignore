@@ -9,6 +9,7 @@ obj/*
 inputfile_Pec/
 pythonbat/
 figout/
+numcheck_work/
 triangle/*
 callgrind.out*
 *.h5

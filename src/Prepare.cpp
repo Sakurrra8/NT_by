@@ -760,7 +760,7 @@ void Prepare()
 	}*/
 
 	std::vector<double> angle_B_with_target(N_radial * 2);
-	if (1) // 0: 固定角度60度； 1：实际角度
+	if (0) // 0: 固定角度60度； 1：实际角度
 		for (int i = 0; i < N_radial; i++)
 		{
 			angle_B_with_target[i] = Tools::CalBFieldToWallNormalAngle(B[1][i][0], B[1][i][1], B[1][i][2], Grid4.Cos_Target(i), Grid4.Sin_Target(i));

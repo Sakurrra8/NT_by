@@ -334,7 +334,17 @@ private:
 	std::vector<double> Recombin_counts_;
 	std::vector<double> T_Init_;
 
-	/// @brief Statistical parameters
+	/// @brief Contiguous storage backing the pointer views below
+	std::vector<double> nStorage_, TStorage_, EStorage_;
+	std::vector<double> sumNStorage_, sumEStorage_, lambdaStorage_;
+	std::vector<double> numVD1Storage_, lambdaMinStorage_;
+	std::vector<double> vGridStorage_, vD1Storage_, sumVStorage_, sumVD1Storage_;
+	std::vector<double> vCxIonBeforeStorage_, vCxIonAfterStorage_;
+	std::vector<double> vCxNeutralBeforeStorage_, vCxNeutralAfterStorage_;
+	std::vector<double> sumVCxIonBeforeStorage_, sumVCxIonAfterStorage_;
+	std::vector<double> sumVCxNeutralBeforeStorage_, sumVCxNeutralAfterStorage_;
+
+	/// @brief Statistical pointer views
 	double *n_[98][38];
 	double *T_[98][38];
 	double *E_[98][38];

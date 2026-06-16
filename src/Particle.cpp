@@ -39,44 +39,73 @@ void Particle::allocateStorage()
 	const std::size_t fluxCells = static_cast<std::size_t>(98) * 38 * 4;
 	n_Flux_Grid_.assign(fluxCells, 0.0);
 	T_Flux_Grid_.assign(fluxCells, 0.0);
-	for (int i = 0; i < 98; i++)
+	const std::size_t chargeStates = static_cast<std::size_t>(MaxCharge_ + 1);
+	const std::size_t gridCells = static_cast<std::size_t>(98) * 38;
+	const std::size_t scalarCells = gridCells * chargeStates;
+	const std::size_t vectorCells = gridCells * 3 * chargeStates;
+
+	nStorage_.assign(scalarCells, 0.0);
+	TStorage_.assign(scalarCells, 0.0);
+	EStorage_.assign(scalarCells, 0.0);
+	sumNStorage_.assign(scalarCells, 0.0);
+	sumEStorage_.assign(scalarCells, 0.0);
+	lambdaStorage_.assign(scalarCells, 0.0);
+	numVD1Storage_.assign(scalarCells, 0.0);
+	lambdaMinStorage_.assign(chargeStates, 0.0);
+
+	vGridStorage_.assign(vectorCells, 0.0);
+	vD1Storage_.assign(vectorCells, 0.0);
+	sumVStorage_.assign(vectorCells, 0.0);
+	sumVD1Storage_.assign(vectorCells, 0.0);
+	vCxIonBeforeStorage_.assign(vectorCells, 0.0);
+	vCxIonAfterStorage_.assign(vectorCells, 0.0);
+	vCxNeutralBeforeStorage_.assign(vectorCells, 0.0);
+	vCxNeutralAfterStorage_.assign(vectorCells, 0.0);
+	sumVCxIonBeforeStorage_.assign(vectorCells, 0.0);
+	sumVCxIonAfterStorage_.assign(vectorCells, 0.0);
+	sumVCxNeutralBeforeStorage_.assign(vectorCells, 0.0);
+	sumVCxNeutralAfterStorage_.assign(vectorCells, 0.0);
+
+	for (int i = 0; i < 98; ++i)
 	{
-		for (int j = 0; j < 38; j++)
+		for (int j = 0; j < 38; ++j)
 		{
-			n_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			T_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			E_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			Sum_n_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			Sum_E_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			lambda_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+			const std::size_t scalarOffset =
+				(static_cast<std::size_t>(i) * 38 + j) * chargeStates;
+			n_[i][j] = nStorage_.data() + scalarOffset;
+			T_[i][j] = TStorage_.data() + scalarOffset;
+			E_[i][j] = EStorage_.data() + scalarOffset;
+			Sum_n_[i][j] = sumNStorage_.data() + scalarOffset;
+			Sum_E_[i][j] = sumEStorage_.data() + scalarOffset;
+			lambda_[i][j] = lambdaStorage_.data() + scalarOffset;
+			Num_V_D_1_[i][j] = numVD1Storage_.data() + scalarOffset;
+
 			CollProb_[i][j].assign(MaxCharge_ + 1, 0.0);
 			Totalcs_[i][j].assign(MaxCharge_ + 1, 0.0);
 			Sum_n_array_[i][j].assign(MaxCharge_ + 1, {});
 
-			// CollProb_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			// Totalcs_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			Num_V_D_1_[i][j] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-			for (int k = 0; k < 3; k++)
+			for (int k = 0; k < 3; ++k)
 			{
-				V_Grid_CX_Ion_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				V_Grid_CX_Ion_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				V_Grid_CX_Neu_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				V_Grid_CX_Neu_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				V_Grid_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				Sum_V_CX_Ion_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				Sum_V_CX_Ion_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				Sum_V_CX_Neu_Be_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				Sum_V_CX_Neu_Af_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				Sum_V_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-
-				V_D_1_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
-				Sum_V_D_1_[i][j][k] = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+				const std::size_t vectorOffset =
+					((static_cast<std::size_t>(i) * 38 + j) * 3 + k) * chargeStates;
+				V_Grid_[i][j][k] = vGridStorage_.data() + vectorOffset;
+				V_D_1_[i][j][k] = vD1Storage_.data() + vectorOffset;
+				Sum_V_[i][j][k] = sumVStorage_.data() + vectorOffset;
+				Sum_V_D_1_[i][j][k] = sumVD1Storage_.data() + vectorOffset;
+				V_Grid_CX_Ion_Be_[i][j][k] = vCxIonBeforeStorage_.data() + vectorOffset;
+				V_Grid_CX_Ion_Af_[i][j][k] = vCxIonAfterStorage_.data() + vectorOffset;
+				V_Grid_CX_Neu_Be_[i][j][k] = vCxNeutralBeforeStorage_.data() + vectorOffset;
+				V_Grid_CX_Neu_Af_[i][j][k] = vCxNeutralAfterStorage_.data() + vectorOffset;
+				Sum_V_CX_Ion_Be_[i][j][k] = sumVCxIonBeforeStorage_.data() + vectorOffset;
+				Sum_V_CX_Ion_Af_[i][j][k] = sumVCxIonAfterStorage_.data() + vectorOffset;
+				Sum_V_CX_Neu_Be_[i][j][k] = sumVCxNeutralBeforeStorage_.data() + vectorOffset;
+				Sum_V_CX_Neu_Af_[i][j][k] = sumVCxNeutralAfterStorage_.data() + vectorOffset;
 			}
 			NumPar_Grid_[i][j] = 0;
 		}
 	}
 
-	lambda_min_ = (double *)calloc(MaxCharge_ + 1, sizeof(double));
+	lambda_min_ = lambdaMinStorage_.data();
 
 	Pump_.push_back(0);
 	Pump_.push_back(0);
@@ -91,43 +120,7 @@ std::size_t Particle::fluxGridIndex(int i, int j, int direction) const
 	return (static_cast<std::size_t>(i) * 38 + j) * 4 + direction;
 }
 
-Particle::~Particle()
-{
-	if (!owns_storage_)
-		return;
-
-	for (int i = 0; i < 98; ++i)
-	{
-		for (int j = 0; j < 38; ++j)
-		{
-			free(n_[i][j]);
-			free(T_[i][j]);
-			free(E_[i][j]);
-			free(Sum_n_[i][j]);
-			free(Sum_E_[i][j]);
-			free(lambda_[i][j]);
-			free(Num_V_D_1_[i][j]);
-
-			for (int k = 0; k < 3; ++k)
-			{
-				free(V_Grid_CX_Ion_Be_[i][j][k]);
-				free(V_Grid_CX_Ion_Af_[i][j][k]);
-				free(V_Grid_CX_Neu_Be_[i][j][k]);
-				free(V_Grid_CX_Neu_Af_[i][j][k]);
-				free(V_Grid_[i][j][k]);
-				free(Sum_V_CX_Ion_Be_[i][j][k]);
-				free(Sum_V_CX_Ion_Af_[i][j][k]);
-				free(Sum_V_CX_Neu_Be_[i][j][k]);
-				free(Sum_V_CX_Neu_Af_[i][j][k]);
-				free(Sum_V_[i][j][k]);
-				free(V_D_1_[i][j][k]);
-				free(Sum_V_D_1_[i][j][k]);
-			}
-		}
-	}
-
-	free(lambda_min_);
-}
+Particle::~Particle() = default;
 
 /// @brief Particle *this get Particle *A's All
 /// @param A old Particle *
