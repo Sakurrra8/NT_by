@@ -221,7 +221,7 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
         Cos_Wall_[i] = (Wall_[i + 1][0] - Wall_[i][0]) / Var_temp;
         Sin_Wall_[i] = (Wall_[i + 1][1] - Wall_[i][1]) / Var_temp;
     }
-    std::cout << Wall_.size() - 1 << endl;
+    // std::cout << Wall_.size() - 1 << endl;
     ofstream out("doc/Wall_.txt");
     for (int i = 0; i < Wall_.size(); i++)
     {
@@ -249,8 +249,8 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
     for (int i = 1; i < N_poloidal_ - 1; i++)
     {
         PLasma_Grid_Boundry_.push_back(vector<double>());
-        PLasma_Grid_Boundry_[count].push_back(Plasma_Grid_[i][36].Grid_Point(2, 0));
-        PLasma_Grid_Boundry_[count++].push_back(Plasma_Grid_[i][36].Grid_Point(2, 1));
+        PLasma_Grid_Boundry_[count].push_back(Plasma_Grid_[i][N_radial_ - 2].Grid_Point(2, 0));
+        PLasma_Grid_Boundry_[count++].push_back(Plasma_Grid_[i][N_radial_ - 2].Grid_Point(2, 1));
     }
     // std::cout << PLasma_Grid_Boundry_.size() << endl;
     Target2_Index_[0] = count;
@@ -258,8 +258,8 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
     {
         Target2_Index_[1] = count;
         PLasma_Grid_Boundry_.push_back(vector<double>());
-        PLasma_Grid_Boundry_[count].push_back(Plasma_Grid_[96][i].Grid_Point(1, 0));
-        PLasma_Grid_Boundry_[count++].push_back(Plasma_Grid_[96][i].Grid_Point(1, 1));
+        PLasma_Grid_Boundry_[count].push_back(Plasma_Grid_[N_poloidal_ - 2][i].Grid_Point(1, 0));
+        PLasma_Grid_Boundry_[count++].push_back(Plasma_Grid_[N_poloidal_ - 2][i].Grid_Point(1, 1));
     }
     // std::cout << PLasma_Grid_Boundry_.size() << endl;
     for (int i = N_poloidal_ - 2; i > 72; i--)
@@ -311,8 +311,8 @@ void GRID::PointRead(string Path1, string Path2, int n)
     {
         cerr << "This file READING for " + Path1 + " have some problem!!!\n";
     }
-    for (int i = 0; i < 98; i++)
-        for (int j = 0; j < 38; j++)
+    for (int i = 0; i < N_poloidal_; i++)
+        for (int j = 0; j < N_radial_; j++)
         {
             fp >> griddata_[i][j][n];
         }
@@ -322,8 +322,8 @@ void GRID::PointRead(string Path1, string Path2, int n)
     {
         cerr << "This file READING for " + Path2 + " have some problem!!!\n";
     }
-    for (int i = 0; i < 98; i++)
-        for (int j = 0; j < 38; j++)
+    for (int i = 0; i < N_poloidal_; i++)
+        for (int j = 0; j < N_radial_; j++)
         {
             fp >> griddata_[i][j][n + 4];
         }
@@ -558,7 +558,7 @@ void GRID::Find(double X[], int *Zone, int XY[])
             return;
         }
     }
-    if (XY[0] > 1 && XY[0] < 96 && XY[1] > 1 && XY[1] < 36)
+    if (XY[0] > 1 && XY[0] < N_poloidal_ - 2 && XY[1] > 1 && XY[1] < N_radial_ - 2)
     {
         if (IfinIndex(XY[0] + 1, XY[1], X[0], X[1]))
         {
@@ -606,7 +606,7 @@ void GRID::Find(double X[], int *Zone, int XY[])
         }
         if (IfFind)
         {
-            if (XY[1] >= 19 && XY[1] <= 36)
+            if (XY[1] >= N_radial_ / 2 && XY[1] <= N_radial_ - 2)
                 *Zone = 3;
             else if (XY[0] <= 24)
                 *Zone = 4;
@@ -647,7 +647,7 @@ void GRID::Find(double X[], int *Zone, int XY[])
                 XY[0] = Correlation_Grid_Index_[index_x][index_y][i] / Plasma_num_[1];
                 XY[1] = Correlation_Grid_Index_[index_x][index_y][i] % Plasma_num_[1];
 
-                if (XY[1] >= 19 && XY[1] <= 36)
+                if (XY[1] >= N_radial_ / 2 && XY[1] <= N_radial_ - 2)
                     *Zone = 3;
                 else if (XY[0] <= 24)
                     *Zone = 4;
@@ -749,8 +749,8 @@ void GRID::CalAngleTarget()
         deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
         Cos_target_[i] = -deltaX / deltaL;
         Sin_target_[i] = -deltaY / deltaL;
-        deltaX = Plasma_Grid_[96][i].Grid_Point(1, 0) - Plasma_Grid_[96][i].Grid_Point(2, 0);
-        deltaY = Plasma_Grid_[96][i].Grid_Point(1, 1) - Plasma_Grid_[96][i].Grid_Point(2, 1);
+        deltaX = Plasma_Grid_[N_poloidal_ - 2][i].Grid_Point(1, 0) - Plasma_Grid_[N_poloidal_ - 2][i].Grid_Point(2, 0);
+        deltaY = Plasma_Grid_[N_poloidal_ - 2][i].Grid_Point(1, 1) - Plasma_Grid_[N_poloidal_ - 2][i].Grid_Point(2, 1);
         deltaL = sqrt(deltaX * deltaX + deltaY * deltaY);
         Cos_target_[i + N_radial_] = -deltaX / deltaL;
         Sin_target_[i + N_radial_] = -deltaY / deltaL;
@@ -2020,7 +2020,7 @@ namespace eirene
                     TargetIndex_[tris_[i].neigh[10]][0] = i;
                     TargetIndex_[tris_[i].neigh[10]][1] = 0;
                 }
-                else if (tris_[i].neigh[9] == 96)
+                else if (tris_[i].neigh[9] == N_poloidal_ - 2)
                 {
                     TargetIndex_[tris_[i].neigh[10] + N_radial_][0] = i;
                     TargetIndex_[tris_[i].neigh[10] + N_radial_][1] = 0;
@@ -2033,7 +2033,7 @@ namespace eirene
                     TargetIndex_[tris_[i].neigh[10]][0] = i;
                     TargetIndex_[tris_[i].neigh[10]][1] = 1;
                 }
-                else if (tris_[i].neigh[9] == 96)
+                else if (tris_[i].neigh[9] == N_poloidal_ - 2)
                 {
                     TargetIndex_[tris_[i].neigh[10] + N_radial_][0] = i;
                     TargetIndex_[tris_[i].neigh[10] + N_radial_][1] = 1;
@@ -2046,7 +2046,7 @@ namespace eirene
                     TargetIndex_[tris_[i].neigh[10]][0] = i;
                     TargetIndex_[tris_[i].neigh[10]][1] = 2;
                 }
-                else if (tris_[i].neigh[9] == 96)
+                else if (tris_[i].neigh[9] == N_poloidal_ - 2)
                 {
                     TargetIndex_[tris_[i].neigh[10] + N_radial_][0] = i;
                     TargetIndex_[tris_[i].neigh[10] + N_radial_][1] = 2;

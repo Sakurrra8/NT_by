@@ -213,10 +213,10 @@ void Output()
     }
     outpump.close();*/
 
-    /*double Var_temp[98][38] = {0};
-    for (int i = 0; i < 98; i++)
+    /*double Var_temp[N_POLOIDAL_GRID][N_RADIAL_GRID] = {0};
+    for (int i = 0; i < N_poloidal; i++)
     {
-        for (int j = 0; j < 38; j++)
+        for (int j = 0; j < N_radial; j++)
         {
             Var_temp[i][j] = D2.n_1(i, j);
             std::cout << D2.n_1(i, j) << '\t';
@@ -227,15 +227,15 @@ void Output()
     // Dump_2D_Global(D.Ion_rate, "Ion_rate_D");
 }
 
-void Dump_2D_Global(double Var[98][38], string name)
+void Dump_2D_Global(double Var[N_POLOIDAL_GRID][N_RADIAL_GRID], string name)
 {
     string pathout;
     pathout = Outputpath + "/data/" + name;
     ofstream out;
     out.open(pathout);
-    for (int i = 0; i < 98; i++)
+    for (int i = 0; i < N_poloidal; i++)
     {
-        for (int j = 0; j < 38; j++)
+        for (int j = 0; j < N_radial; j++)
             out << Var[i][j] << " ";
         out << endl;
     }

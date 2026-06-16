@@ -21,18 +21,18 @@ void Prepare()
 	/*double Ti_He[98][38], Ta_He[98][38];
 	ifstream He_read;
 	He_read.open("doc/He/Ti_96.txt");
-	for (int i = 0; i < 98; i++)
-		for (int j = 0; j < 38; j++)
+	for (int i = 0; i < N_poloidal; i++)
+		for (int j = 0; j < N_radial; j++)
 			He_read >> Ti_He[i][j];
 	He_read.close();
 	He_read.open("doc/He/Ta_96.txt");
-	for (int i = 0; i < 98; i++)
-		for (int j = 0; j < 38; j++)
+	for (int i = 0; i < N_poloidal; i++)
+		for (int j = 0; j < N_radial; j++)
 			He_read >> Ta_He[i][j];
 	out.open("doc/He/Cross_CX_He_96.txt");
-	for (int i = 0; i < 98; i++)
+	for (int i = 0; i < N_poloidal; i++)
 	{
-		for (int j = 0; j < 38; j++)
+		for (int j = 0; j < N_radial; j++)
 		{
 			out << R5_3_1_H3.cal(1.5 * Ta_He[i][j], Ti_He[i][j]) << "\t";
 		}
@@ -124,8 +124,8 @@ void Prepare()
 	}*/
 	Grid1.CalAngleTarget();
 	/// calculate the area of Grid
-	for (int i = 0; i < 98; i++)
-		for (int j = 0; j < 38; j++)
+	for (int i = 0; i < N_poloidal; i++)
+		for (int j = 0; j < N_radial; j++)
 		{
 			for (int k = 0; k < 4; k++)
 			{
@@ -140,9 +140,9 @@ void Prepare()
 	get_center();
 	get_dTi();
 
-	for (int i = 0; i < 98; i++)
+	for (int i = 0; i < N_poloidal; i++)
 	{
-		for (int j = 0; j < 38; j++)
+		for (int j = 0; j < N_radial; j++)
 		{
 			B[i][j][0] = (Bpol[i][j] * epx[i][j] + Brad[i][j] * erx[i][j]) / Btot[i][j];
 			B[i][j][1] = (Bpol[i][j] * epy[i][j] + Brad[i][j] * ery[i][j]) / Btot[i][j];
@@ -241,9 +241,9 @@ void Prepare()
 				T.calCXRateADAS(&CCD96_H, 1);
 		}
 	}
-	for (int i = 0; i < 98; i++)
+	for (int i = 0; i < N_poloidal; i++)
 	{
-		for (int j = 0; j < 38; j++)
+		for (int j = 0; j < N_radial; j++)
 		{
 			if (K_database == 2)
 			{
@@ -672,7 +672,7 @@ void Prepare()
 		/*out.open("doc/D2_lambda.txt");
 		for (double i = 0; i < 98; i++)
 		{
-			for (int j = 0; j < 38; j++)
+			for (int j = 0; j < N_radial; j++)
 			{
 				out << D.lambda(i, j, 0) << ' ';
 			}
@@ -686,9 +686,9 @@ void Prepare()
 		T2.CalProb();
 	}
 	int xy[2];
-	/*for (int i = 0; i < 98; i++)
+	/*for (int i = 0; i < N_poloidal; i++)
 	{
-		for (int j = 0; j < 38; j++)
+		for (int j = 0; j < N_radial; j++)
 		{
 			xy[0] = i;
 			xy[1] = j;
@@ -698,9 +698,9 @@ void Prepare()
 		std::cout << endl;
 	}*/
 	/*out.open("doc/D2_Ela_cs_1.txt");
-	for (int i = 0; i < 98; i++)
+	for (int i = 0; i < N_poloidal; i++)
 	{
-		for (int j = 0; j < 38; j++)
+		for (int j = 0; j < N_radial; j++)
 		{
 			out << D2.Ela_[0].cs_[i][j] << ' ';
 		}
@@ -733,12 +733,12 @@ void Prepare()
 	out.close();*/
 
 	/// prepare for particle recycle
-	for (int i = 0; i < 38; i++)
+	for (int i = 0; i < N_radial; i++)
 	{
 		if (K_Ei == 2)
 		{
 			Ei_Dion[i] = 2. * Ti[1][i] + 3. * 1.0 * Te[1][i];
-			Ei_Dion[i + 38] = 2. * Ti[96][i] + 3. * 1.0 * Te[96][i];
+			Ei_Dion[i + N_radial] = 2. * Ti[poloidalLastIndex()][i] + 3. * 1.0 * Te[poloidalLastIndex()][i];
 		}
 	}
 
@@ -824,7 +824,7 @@ void Prepare()
 		H2.CalWeight2(NumPar_H2_recyc, numPar_flight_Target);
 
 		H.RecycledCal(NumPar_H_recyc, Tn_H_recyc);
-		H2.RecycledCal(NumPar_H_recyc);
+		H2.RecycledCal(NumPar_H2_recyc);
 	}
 	// D recycling
 	if (K_D)
@@ -874,7 +874,7 @@ void Prepare()
 		D2.CalWeight2(NumPar_D2_recyc, numPar_flight_Target);
 
 		D.RecycledCal(NumPar_D_recyc, Tn_D_recyc);
-		D2.RecycledCal(NumPar_D_recyc);
+		D2.RecycledCal(NumPar_D2_recyc);
 	}
 	// T recycling
 	if (K_T)
@@ -922,7 +922,7 @@ void Prepare()
 		T.CalWeight2(NumPar_T_recyc, numPar_flight_Target); // numPar_flight_Target is Sum of test
 		T2.CalWeight2(NumPar_T2_recyc, numPar_flight_Target);
 		T.RecycledCal(NumPar_T_recyc, Tn_T_recyc);
-		T2.RecycledCal(NumPar_T_recyc);
+		T2.RecycledCal(NumPar_T2_recyc);
 	}
 
 	for (int i = 0; i <= num_CoreBoundry / 2; i++)
@@ -935,18 +935,18 @@ void Prepare()
 
 	for (int i = 0; i <= num_GridBoundry / 2; i++)
 	{
-		GridBoundry[num_GridBoundry - i][0] = Grid[i][36][3];
-		GridBoundry[num_GridBoundry - i][1] = Grid[i][36][7];
-		GridBoundry[i][0] = Grid[96 - i][36][2];
-		GridBoundry[i][1] = Grid[96 - i][36][6];
+		GridBoundry[num_GridBoundry - i][0] = Grid[i][radialLastIndex()][3];
+		GridBoundry[num_GridBoundry - i][1] = Grid[i][radialLastIndex()][7];
+		GridBoundry[i][0] = Grid[poloidalLastIndex() - i][radialLastIndex()][2];
+		GridBoundry[i][1] = Grid[poloidalLastIndex() - i][radialLastIndex()][6];
 	}
 
 	for (int i = 0; i <= num_PFRBoundry / 2; i++)
 	{
-		PFRBoundry[num_PFRBoundry - i][0] = Grid[i][36][3];
-		PFRBoundry[num_PFRBoundry - i][1] = Grid[i][36][7];
-		PFRBoundry[i][0] = Grid[96 - i][1][1];
-		PFRBoundry[i][1] = Grid[96 - i][1][6];
+		PFRBoundry[num_PFRBoundry - i][0] = Grid[i][radialLastIndex()][3];
+		PFRBoundry[num_PFRBoundry - i][1] = Grid[i][radialLastIndex()][7];
+		PFRBoundry[i][0] = Grid[poloidalLastIndex() - i][1][1];
+		PFRBoundry[i][1] = Grid[poloidalLastIndex() - i][1][6];
 	}
 
 	/// get the area of the target and wall
@@ -959,10 +959,10 @@ void Prepare()
 	}
 	out.close();*/
 
-	/*for (int i = 0; i < 38; i++)
+	/*for (int i = 0; i < N_radial; i++)
 	{
-		D.SetX_new(0, Grid[96][i][2]);
-		D.SetX_new(1, Grid[96][i][6]);
+		D.SetX_new(0, Grid[poloidalLastIndex()][i][2]);
+		D.SetX_new(1, Grid[poloidalLastIndex()][i][6]);
 		D.Find();
 		std::cout << i << '\t' << D.Zone() << endl;
 	}*/
@@ -1038,8 +1038,8 @@ void get_unit_vector_xy()
 			ery[i][j] = ery_tmp;
 		}
 	}
-	for (int i = 0; i < 98; i++)
-		for (int j = 0; j < 38; j++)
+	for (int i = 0; i < N_poloidal; i++)
+		for (int j = 0; j < N_radial; j++)
 		{
 			if (i == 0 || i == 97 || j == 0 || j == 37)
 			{
@@ -1080,8 +1080,8 @@ void get_unit_vector_xy()
 void get_center()
 {
 	int Nt, Nr;
-	Nt = 98;
-	Nr = 38;
+	Nt = N_poloidal;
+	Nr = N_radial;
 	crx.assign(Nt, std::vector<double>(Nr, 0.0));
 	cry.assign(Nt, std::vector<double>(Nr, 0.0));
 
@@ -1114,8 +1114,8 @@ void get_center()
 void get_dTi()
 {
 	int Nt, Nr, Np;
-	Nt = 98;
-	Nr = 38;
+	Nt = N_poloidal;
+	Nr = N_radial;
 	Np = 25;
 
 	std::vector<std::vector<double>> TIx, TIy;

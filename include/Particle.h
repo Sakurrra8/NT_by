@@ -29,24 +29,30 @@ private:
 	int e_or_i_;
 	int cc;
 
-	double Sn_[98][38];
-	double Smu_[98][38];
-	double Smu1_[98][38];
-	double Smu2_[98][38];
-	double SE_[98][38];
-	double Num_n_[98][38];
-	double Num_mu_[98][38];
-	double Num_mu1_[98][38];
-	double Num_mu2_[98][38];
-	double Num_E_[98][38];
-	double Pra_[98][38];
-	double crossSection[98][38];
-	double cs_[98][38];
-	double SE_n_[98][38];
-	double Num_E_n_[98][38];
+	double Sn_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Smu_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Smu1_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Smu2_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double SE_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Num_n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Num_mu_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Num_mu1_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Num_mu2_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Num_E_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Pra_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double crossSection[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double cs_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double SE_n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double Num_E_n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
 
 	double Cor_cs_;
 	double cs_now_;
+	bool defer_stats_{false};
+	double deferred_stat_scale_{1.0};
+	vector<double> pendingNumN_, pendingNumMu_, pendingNumMu1_, pendingNumMu2_, pendingNumE_, pendingNumEN_;
+	vector<double> pendingTriNumN_, pendingTriNumMu_, pendingTriNumMu0_, pendingTriNumMu1_, pendingTriNumMu2_, pendingTriNumE_, pendingTriNumEN_;
+	std::size_t statGridIndex(int i, int j) const;
+	void clearDeferredStats();
 	vector<double> V_relative_;
 	double V_2_relative_;
 	double V_relative_2_;
@@ -77,12 +83,14 @@ private:
 public:
 	ParCollCar() {}
 	void Clear();
+	void BeginDeferredStats(double scale);
+	void EndDeferredStats();
 	int K();
 	void Set_K(int i);
-	void Stat(int Charge, double *n[98][38], ADAS *PraADAS, const std::vector<std::vector<double>> &ni = {});
-	void Stat1(int Charge, double *n[98][38], ADAS *PraADAS, const std::vector<std::vector<double>> &ni = {});
-	void StatEIRENE(int Charge, double *n[98][38], EIRENE *PraEIRENE, double E, double **ni = NULL);
-	void RecStat(int Charge, double *n[98][38], ADAS *PraADAS);
+	void Stat(int Charge, double *n[N_POLOIDAL_GRID][N_RADIAL_GRID], ADAS *PraADAS, const std::vector<std::vector<double>> &ni = {});
+	void Stat1(int Charge, double *n[N_POLOIDAL_GRID][N_RADIAL_GRID], ADAS *PraADAS, const std::vector<std::vector<double>> &ni = {});
+	void StatEIRENE(int Charge, double *n[N_POLOIDAL_GRID][N_RADIAL_GRID], EIRENE *PraEIRENE, double E, double **ni = NULL);
+	void RecStat(int Charge, double *n[N_POLOIDAL_GRID][N_RADIAL_GRID], ADAS *PraADAS);
 
 	void Stat_Tri(int Charge, const std::vector<std::vector<double>> &n, ADAS *PraADAS, const std::vector<std::vector<double>> &ni = {});
 	void StatEIRENE_Tri(int Charge, std::vector<std::vector<double>> &n, EIRENE *PraEIRENE, double E, const std::vector<std::vector<double>> &ni = {});
@@ -253,20 +261,19 @@ private:
 	int NX_{0}, NY_{0};
 	bool gridEnabled_{false};
 
-	std::vector<double> gridHist_;                 // NX x NY x NBIN
-	std::vector<std::array<double, 3>> gridMom_;   // NX x NY x 3
-	std::vector<double> gridPow_;                  // NX x NY
-	std::vector<double> flux_;                     // NREG x NREG
-	std::vector<double> hist_;                     // NREG x NREG x NBIN
-	std::vector<std::array<double, 3>> momFlux_;   // NREG x NREG x 3
-	std::vector<double> powFlux_;                  // NREG x NREG
+	std::vector<double> gridHist_;				 // NX x NY x NBIN
+	std::vector<std::array<double, 3>> gridMom_; // NX x NY x 3
+	std::vector<double> gridPow_;				 // NX x NY
+	std::vector<double> flux_;					 // NREG x NREG
+	std::vector<double> hist_;					 // NREG x NREG x NBIN
+	std::vector<std::array<double, 3>> momFlux_; // NREG x NREG x 3
+	std::vector<double> powFlux_;				 // NREG x NREG
 	bool inited_{false};
 
 	std::size_t regionIndex(int from, int to) const;
 	std::size_t histIndex(int from, int to, int bin) const;
 	std::size_t gridIndex(int i, int j) const;
 	std::size_t gridHistIndex(int i, int j, int bin) const;
-
 };
 
 class Particle
@@ -319,15 +326,14 @@ private:
 	double lambda_now_;
 	double d_flight_;
 	double Rand_flight_;
-	double *lambda_[98][38];
+	double *lambda_[N_POLOIDAL_GRID][N_RADIAL_GRID];
 
 	/// @brief Initial launch parameters
-	int Num_Target_[80];		 // for Particle from Recycling
-	double NumPar_Target_[80];	 // for Particle from Recycling
-	double Weight_Target_[80];	 // for Particle from Recycling
+	double NumPar_Target_;		 // for Particle from Recycling
+	double Weight_Target_;		 // for Particle from Recycling
 	double NumPar_sum_Target_;	 // for Particle from Recycling
-	double NumPar_Grid_[98][38]; // for Particle from Grid Collision
-	double Weight_Grid_[98][38]; // for Particle from Grid Collision
+	double NumPar_Grid_[N_POLOIDAL_GRID][N_RADIAL_GRID]; // for Particle from Grid Collision
+	double Weight_Grid_[N_POLOIDAL_GRID][N_RADIAL_GRID]; // for Particle from Grid Collision
 	double NumPar_sum_Grid_;	 // for Particle from Grid Collision
 
 	std::vector<double> Recycled_counts_;
@@ -343,18 +349,36 @@ private:
 	std::vector<double> vCxNeutralBeforeStorage_, vCxNeutralAfterStorage_;
 	std::vector<double> sumVCxIonBeforeStorage_, sumVCxIonAfterStorage_;
 	std::vector<double> sumVCxNeutralBeforeStorage_, sumVCxNeutralAfterStorage_;
+	bool defer_flight_stats_{false};
+	double deferred_flight_stat_scale_{1.0};
+	std::vector<double> pendingGridN_, pendingGridE_, pendingGridV_;
+	std::vector<double> pendingTriN_, pendingTriE_, pendingTriV_;
+	std::vector<double> pendingCxIonBefore_, pendingCxIonAfter_;
+	std::vector<double> pendingCxNeutralBefore_, pendingCxNeutralAfter_;
+	std::size_t gridScalarIndex(int i, int j, int charge) const;
+	std::size_t gridVectorIndex(int i, int j, int component, int charge) const;
+	std::size_t triScalarIndex(int tri, int charge) const;
+	std::size_t triVectorIndex(int tri, int component, int charge) const;
+	void addDensityStatGrid(int i, int j, int charge, double n);
+	void addFlightStatGrid(int i, int j, int charge, double n, double energy, const std::vector<double> &v);
+	void addFlightStatTri(int tri, int charge, double n, double energy, const std::vector<double> &v);
+	void addCxVelocityBeforeGrid(int i, int j, int component, int charge, double ion, double neutral, double n);
+	void addCxVelocityAfterGrid(int i, int j, int component, int charge, double ion, double neutral, double n);
+	double collisionStatWeight() const;
+	void beginDeferredCollisionStats(double scale);
+	void endDeferredCollisionStats();
 
 	/// @brief Statistical pointer views
-	double *n_[98][38];
-	double *T_[98][38];
-	double *E_[98][38];
-	double *V_Grid_[98][38][4];
-	double *V_D_1_[98][38][4];
-	double *Num_V_D_1_[98][38];
-	double *Sum_n_[98][38];
-	double *Sum_E_[98][38];
-	double *Sum_V_[98][38][4];
-	double *Sum_V_D_1_[98][38][4];
+	double *n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double *T_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double *E_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double *V_Grid_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *V_D_1_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *Num_V_D_1_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double *Sum_n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double *Sum_E_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	double *Sum_V_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *Sum_V_D_1_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
 
 	/// @brief Triangle Statistical parameters
 	std::vector<std::vector<double>> Tri_n_;
@@ -369,16 +393,16 @@ private:
 	std::vector<std::vector<std::vector<double>>> Tri_Sum_V_D_1_;
 	std::vector<double> Tri_NumPar_Grid_;
 
-	double *V_Grid_CX_Ion_Be_[98][38][4];
-	double *V_Grid_CX_Ion_Af_[98][38][4];
-	double *V_Grid_CX_Neu_Be_[98][38][4];
-	double *V_Grid_CX_Neu_Af_[98][38][4];
-	double *Sum_V_CX_Ion_Be_[98][38][4];
-	double *Sum_V_CX_Ion_Af_[98][38][4];
-	double *Sum_V_CX_Neu_Be_[98][38][4];
-	double *Sum_V_CX_Neu_Af_[98][38][4];
+	double *V_Grid_CX_Ion_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *V_Grid_CX_Ion_Af_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *V_Grid_CX_Neu_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *V_Grid_CX_Neu_Af_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *Sum_V_CX_Ion_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *Sum_V_CX_Ion_Af_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *Sum_V_CX_Neu_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
+	double *Sum_V_CX_Neu_Af_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
 
-	vector<array<double, 51>> Sum_n_array_[98][38];
+	vector<array<double, 51>> Sum_n_array_[N_POLOIDAL_GRID][N_RADIAL_GRID];
 	vector<double> T_array_;
 	int Num_array_;
 
@@ -396,11 +420,11 @@ private:
 	/// @brief collision parameters
 	vector<double> CoreTotalcs_;
 	vector<double> CoreCollProb_;
-	vector<double> CollProb_[98][38];
-	vector<double> Totalcs_[98][38];
+	vector<double> CollProb_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	vector<double> Totalcs_[N_POLOIDAL_GRID][N_RADIAL_GRID];
 
-	vector<double> n_Flux_Grid_; // [98][38][4], row-major
-	vector<double> T_Flux_Grid_; // [98][38][4], row-major
+	vector<double> n_Flux_Grid_; // [N_POLOIDAL_GRID][N_RADIAL_GRID][4], row-major
+	vector<double> T_Flux_Grid_; // [N_POLOIDAL_GRID][N_RADIAL_GRID][4], row-major
 	std::size_t fluxGridIndex(int i, int j, int direction) const;
 	FluxTracker FT_;
 
@@ -451,14 +475,16 @@ public:
 	vector<WallEro> CXtoPlasmaBoundary_;
 	vector<WallEro> RectoPlasmaBoundary_;
 
-	/*double MAR_cs_[98][38], MAR_Cor_cs_;	 // for D2
-	double Diss1_cs_[98][38], Diss1_Cor_cs_;	 // for D2
-	double Diss2_cs_[98][38], Diss2_Cor_cs_; // for D2
-	double Diss3_cs_[98][38], Diss3_Cor_cs_; // for D2
-	double DS_cs_[98][38][4], DS_Cor_cs_[4];*/
+	/*double MAR_cs_[N_POLOIDAL_GRID][N_RADIAL_GRID], MAR_Cor_cs_;	 // for D2
+	double Diss1_cs_[N_POLOIDAL_GRID][N_RADIAL_GRID], Diss1_Cor_cs_;	 // for D2
+	double Diss2_cs_[N_POLOIDAL_GRID][N_RADIAL_GRID], Diss2_Cor_cs_; // for D2
+	double Diss3_cs_[N_POLOIDAL_GRID][N_RADIAL_GRID], Diss3_Cor_cs_; // for D2
+	double DS_cs_[N_POLOIDAL_GRID][N_RADIAL_GRID][4], DS_Cor_cs_[4];*/
 
 	void Particlefrom(Particle *A, double K = 1, int Charge = -100);
 	int sampleTargetPlate(const std::vector<double> &Counts);
+	double RecombinSourceSum();
+	int sampleRecombinCell();
 	void RecycledCal(std::vector<double> &NumPar_wall);
 	void RecycledCal(std::vector<double> &NumPar_wall, std::vector<double> &T_Init);
 	void RecombinCal(std::vector<double> &NumPar_wall, std::vector<double> &T_Init);
@@ -473,6 +499,8 @@ public:
 	void Caltrace();
 	void Caltrace_Tri();
 	void NumParStat();
+	void BeginDeferredFlightStats(double scale);
+	void EndDeferredFlightStats();
 	void CalProb();
 	double CollProb();
 	void Coll();
@@ -533,8 +561,9 @@ public:
 	double n_Tri(int i, int k);
 	double T_n(int i, int j, int k);
 	double Gamma();
-	double Weight_Target(int i);
-	double NumPar_Target(int i);
+	double Weight_Target();
+	double NumPar_Target();
+	double NumPar_Grid();
 	void Dump_Flux();
 	void Dump_array_2D(string type, string coll, int Charge);
 	void Dump_2D(string type, string coll = "", int Charge = 0);

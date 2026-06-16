@@ -193,9 +193,9 @@ void Read()
     Path_Erad = Casepath + "2D_data/Er_2D.dat";
     PlasmaRead(Path_Erad, Erad);
 
-    for (int i = 0; i < 98; i++)
+    for (int i = 0; i < N_poloidal; i++)
     {
-        for (int j = 0; j < 38; j++)
+        for (int j = 0; j < N_radial; j++)
         {
             Etor[i][j] = 0.;
         }
@@ -321,8 +321,8 @@ void GridRead(string Path, int n)
     {
         cerr << "This file READING for grid have some problem!!!\n";
     }
-    for (int i = 0; i < 98; i++)
-        for (int j = 0; j < 38; j++)
+    for (int i = 0; i < N_poloidal; i++)
+        for (int j = 0; j < N_radial; j++)
         {
             fp >> Grid[i][j][n];
         }
@@ -339,8 +339,8 @@ void radial_Read(string Path, double Var[])
         std::cerr << "This file READING for radialRead have some problem!!!\n";
     }
     getline(fp, line);
-    double temp[38];
-    for (int i = 0; i < 38; i++)
+    double temp[N_RADIAL_GRID];
+    for (int i = 0; i < N_radial; i++)
     {
         fp >> temp[i] >> Var[i];
         if (Var[i] < 0)
@@ -359,8 +359,8 @@ void TargetRead(string Path_l, string Path_r, double Var[])
         std::cerr << "This file READING for " + Path_l + " have some problem!!!\n";
     }
     getline(fp, line);
-    double temp[38];
-    for (int i = 0; i < 38; i++)
+    double temp[N_RADIAL_GRID];
+    for (int i = 0; i < N_radial; i++)
     {
         fp >> temp[i] >> Var[i];
         if (Var[i] < 0)
@@ -373,11 +373,11 @@ void TargetRead(string Path_l, string Path_r, double Var[])
         std::cerr << "This file READING for " + Path_r + " have some problem!!!\n";
     }
     getline(fp, line);
-    for (int i = 0; i < 38; i++)
+    for (int i = 0; i < N_radial; i++)
     {
-        fp >> temp[i] >> Var[i + 38];
-        if (Var[i + 38] < 0)
-            Var[i + 38] *= -1;
+        fp >> temp[i] >> Var[i + N_radial];
+        if (Var[i + N_radial] < 0)
+            Var[i + N_radial] *= -1;
     }
     fp.close();
 }
@@ -392,7 +392,7 @@ void PlasmaRead(string Path, std::vector<std::vector<double>> &Plasma, std::vect
         cerr << "This file READING for " + Path + " have some problem!!!\n";
     }
     getline(fp, line);
-    for (int i = 0; i < 98 * 38; i++)
+    for (int i = 0; i < gridCellCount(); i++)
     {
         fp >> a >> b >> c;
         fp >> Plasma[a + 1][b + 1];
@@ -457,7 +457,7 @@ void PlasmaRead(string Path, std::vector<std::vector<double>> &Plasma)
         cerr << "This file READING for " + Path + " have some problem!!!\n";
     }
     getline(fp, line);
-    for (int i = 0; i < 98 * 38; i++)
+    for (int i = 0; i < gridCellCount(); i++)
     {
         fp >> a >> b >> c;
         fp >> Plasma[a + 1][b + 1];
@@ -469,13 +469,13 @@ void PlasmaRead(string Path, std::vector<double> &Plasma)
     string line;
     std::ifstream fp;            // file stream
     fp.open(Path, std::ios::in); // ios::in means read
-    double Plasma_temp[98][38];
+    double Plasma_temp[N_POLOIDAL_GRID][N_RADIAL_GRID];
     if (!fp.is_open())
     {
         cerr << "This file READING for " + Path + " have some problem!!!\n";
     }
     getline(fp, line);
-    for (int i = 0; i < 98 * 38; i++)
+    for (int i = 0; i < gridCellCount(); i++)
     {
         fp >> a >> b >> c;
         fp >> Plasma_temp[a + 1][b + 1];
@@ -504,9 +504,9 @@ void MatrixRead(int M, int N, string Path, double **Matrix)
     {
         cerr << "This file READING for " + Path + " have some problem!!!\n";
     }
-    for (int i = 0; i < 98; i++)
+    for (int i = 0; i < N_poloidal; i++)
     {
-        for (int j = 0; j < 38; j++)
+        for (int j = 0; j < N_radial; j++)
             fp >> Matrix[i][j];
     }
     fp.close();

@@ -20,6 +20,7 @@
 input_file=$1
 ##do your job
 cd $SLURM_SUBMIT_DIR
+export LD_LIBRARY_PATH=/data/leuven/379/vsc37950/nt/opt/hdf5/lib:/vsc-hard-mounts/leuven-apps/rocky9/skylake/2025b/software/GCCcore/14.3.0/lib64
 mkdir $PWD/$SLURM_JOBID
 mkdir $PWD/$SLURM_JOBID/data
 mkdir $PWD/$SLURM_JOBID/fig

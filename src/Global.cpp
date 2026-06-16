@@ -75,7 +75,7 @@ int K_NNCs = 0;
 
 int MeshMode; // Option 1: Orthogonal grid; 2: Full grid; 3: Triangular grid
 
-double Dn[38];
+double Dn[N_RADIAL_GRID];
 
 /// @brief Plasma and device parameter
 double InterscePoint[10][6] = {0}; // 0: distance of particle and interscePoint; 1,2: x,y index; 3: number of boundary; 4:types of intersection boundaries
@@ -94,7 +94,7 @@ double coefficient_D = 2., coefficient_T = 3.;
 
 /// @brief Variable about wall
 int num_CoreBoundry = 48;
-int num_GridBoundry = 96;
+int num_GridBoundry = N_poloidal - 2;
 int num_PFRBoundry = 48;
 double CoreBoundry[55][2], GridBoundry[100][2], PFRBoundry[55][2];
 
@@ -102,8 +102,8 @@ double CoreBoundry[55][2], GridBoundry[100][2], PFRBoundry[55][2];
 double coeff_recyc_target, coeff_ercyc_wall, coeff_puff;
 
 /// @brief 2D Grid Value
-int N_poloidal = 98;
-int N_radial = 38;
+int N_poloidal = N_POLOIDAL_GRID;
+int N_radial = N_RADIAL_GRID;
 
 // 三维网格
 std::vector<std::vector<std::vector<double>>> Grid;
@@ -409,7 +409,7 @@ EIRENE R_H2_H2(EIRENE_H2, 1033, "ammonx_elsa");
 EIRENE R_H_H2(EIRENE_H2, 1040, "ammonx_elsa");
 EIRENE R_H2_H(EIRENE_H2, 1050, "ammonx_elsa");
 
-GRID Grid1(98, 38);
+GRID Grid1(N_poloidal, N_radial);
 Grid_extern Grid3;
 TriMesh Grid4;
 

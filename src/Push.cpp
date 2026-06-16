@@ -33,7 +33,7 @@ void Push(Particle *PP)
             {
                 /// search if the charged particle fly out of grid
                 int num_intersect = 0;
-                for (int i = 0; i < 98; i++)
+                for (int i = 0; i < N_poloidal; i++)
                 {
                     if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][1][3], Grid[i][1][7], Grid[i][1][2], Grid[i][1][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
@@ -68,7 +68,7 @@ void Push(Particle *PP)
                 num_intersect = 0;
                 for (int i = 25; i < 73; i++)
                 {
-                    if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][36][0], Grid[i][36][4], Grid[i][36][1], Grid[i][36][5], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                    if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][radialLastIndex()][0], Grid[i][radialLastIndex()][4], Grid[i][radialLastIndex()][1], Grid[i][radialLastIndex()][5], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
                         InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                         InterscePoint[num_intersect++][3] = i;
@@ -99,17 +99,17 @@ void Push(Particle *PP)
                     }
                 if (num_intersect == 0)
                 {
-                    for (int i = 0; i < 38; i++)
+                    for (int i = 0; i < N_radial; i++)
                     {
                         if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
                             InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                             InterscePoint[num_intersect++][3] = i;
                         }
-                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[96][i][1], Grid[96][i][5], Grid[96][i][2], Grid[96][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[poloidalLastIndex()][i][1], Grid[poloidalLastIndex()][i][5], Grid[poloidalLastIndex()][i][2], Grid[poloidalLastIndex()][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
                             InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
-                            InterscePoint[num_intersect++][3] = i + 38;
+                            InterscePoint[num_intersect++][3] = i + N_radial;
                         }
                     }
                 }
@@ -189,11 +189,11 @@ void Push(Particle *PP)
                         }
                         else
                         {
-                            PP->SetXY(0, 96);
+                            PP->SetXY(0, poloidalLastIndex());
                             PP->SetXY(1, InterscePoint[0][3] - N_radial);
                         }
 
-                        if (PP->XY(1) >= 19 && PP->XY(1) <= 36)
+                        if (PP->XY(1) >= 19 && PP->XY(1) <= radialLastIndex())
                             PP->SetZone(3);
                         else if (PP->XY(0) <= 24)
                             PP->SetZone(4);
@@ -317,13 +317,13 @@ void Push(Particle *PP)
                             else if (InterscePoint[0][3] < N_poloidal + N_radial - 4)
                             {
                                 PP->SetXY(0, InterscePoint[0][3] - N_radial + 3);
-                                PP->SetXY(1, 36);
+                                PP->SetXY(1, radialLastIndex());
                                 PP->SetZone(ZonefromXY(PP->XY(0), PP->XY(1)));
                                 // std::cout << PP->XY(0) << ", " << PP->XY(1) << endl;
                             }
                             else if (InterscePoint[0][3] < N_poloidal + 2 * N_radial - 6)
                             {
-                                PP->SetXY(0, 96);
+                                PP->SetXY(0, poloidalLastIndex());
                                 PP->SetXY(1, N_radial - 2 - (InterscePoint[0][3] - N_poloidal - N_radial + 4));
                                 PP->SetZone(ZonefromXY(PP->XY(0), PP->XY(1)));
                                 // std::cout << PP->XY(0) << ", " << PP->XY(1) << endl;
@@ -529,17 +529,17 @@ void Push_Tri(Particle *PP)
         {
             int num_intersect = 0; /*
              /// about target reflect
-             for (int i = 0; i < 38; i++)
+             for (int i = 0; i < N_radial; i++)
              {
                  if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                  {
                      InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
                      InterscePoint[num_intersect++][3] = i;
                  }
-                 if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[96][i][1], Grid[96][i][5], Grid[96][i][2], Grid[96][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                 if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[poloidalLastIndex()][i][1], Grid[poloidalLastIndex()][i][5], Grid[poloidalLastIndex()][i][2], Grid[poloidalLastIndex()][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                  {
                      InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
-                     InterscePoint[num_intersect++][3] = i + 38;
+                     InterscePoint[num_intersect++][3] = i + N_radial;
                  }
              }
 

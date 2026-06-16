@@ -35,121 +35,156 @@ void Moncar()
     }
 
     if (K_Recyc)
-        for (int i = 0; i < N_radial * 2; i++)
+    {
+        if (K_H)
         {
-            if (K_H)
+            double source_sum = 0.;
+            for (double count : NumPar_H_recyc)
+                source_sum += count;
+            if (source_sum > 0.)
             {
-                for (int j = 1; j <= H.Num_Target(i); j++)
+                H.BeginDeferredFlightStats(H.NumPar_Target());
+                for (int j = 1; j <= numPar_flight_Target; j++)
                 {
-                    /// neutral particle transport from target
-
+                    const int target = H.sampleTargetPlate(NumPar_H_recyc);
                     P = &H;
-                    P->Init(1, i);
-                    flight(i, j);
+                    P->Init(1, target);
+                    flight(target, j);
+                }
+                H.EndDeferredFlightStats();
+            }
+
+            source_sum = 0.;
+            for (double count : NumPar_H2_recyc)
+                source_sum += count;
+            if (source_sum > 0.)
+            {
+                H2.BeginDeferredFlightStats(H2.NumPar_Target());
+                for (int j = 1; j <= numPar_flight_Target; j++)
+                {
+                    const int target = H2.sampleTargetPlate(NumPar_H2_recyc);
                     P = &H2;
-                    P->Init(1, i);
-                    flight(i, j);
+                    P->Init(1, target);
+                    flight(target, j);
                 }
+                H2.EndDeferredFlightStats();
             }
-            if (K_D)
-            {
-                for (int j = 1; j <= D.Num_Target(i); j++)
-                {
-                    P = &D;
-                    P->Init(1, i);
-                    flight(i, j);
-                    P = &D2;
-                    P->Init(1, i);
-                    flight(i, j);
-                }
-            }
-            if (K_T)
-            {
-                for (int j = 1; j <= T.Num_Target(i); j++)
-                {
-                    P = &T;
-                    P->Init(1, i);
-                    flight(i, j);
-                    P = &T2;
-                    P->Init(1, i);
-                    flight(i, j);
-                }
-            }
-            if (StepLog)
-                std::cout << "Target flight " << i << " finished;" << endl;
         }
+        if (K_D)
+        {
+            double source_sum = 0.;
+            for (double count : NumPar_D_recyc)
+                source_sum += count;
+            if (source_sum > 0.)
+            {
+                D.BeginDeferredFlightStats(D.NumPar_Target());
+                for (int j = 1; j <= numPar_flight_Target; j++)
+                {
+                    const int target = D.sampleTargetPlate(NumPar_D_recyc);
+                    P = &D;
+                    P->Init(1, target);
+                    flight(target, j);
+                }
+                D.EndDeferredFlightStats();
+            }
+
+            source_sum = 0.;
+            for (double count : NumPar_D2_recyc)
+                source_sum += count;
+            if (source_sum > 0.)
+            {
+                D2.BeginDeferredFlightStats(D2.NumPar_Target());
+                for (int j = 1; j <= numPar_flight_Target; j++)
+                {
+                    const int target = D2.sampleTargetPlate(NumPar_D2_recyc);
+                    P = &D2;
+                    P->Init(1, target);
+                    flight(target, j);
+                }
+                D2.EndDeferredFlightStats();
+            }
+        }
+        if (K_T)
+        {
+            double source_sum = 0.;
+            for (double count : NumPar_T_recyc)
+                source_sum += count;
+            if (source_sum > 0.)
+            {
+                T.BeginDeferredFlightStats(T.NumPar_Target());
+                for (int j = 1; j <= numPar_flight_Target; j++)
+                {
+                    const int target = T.sampleTargetPlate(NumPar_T_recyc);
+                    P = &T;
+                    P->Init(1, target);
+                    flight(target, j);
+                }
+                T.EndDeferredFlightStats();
+            }
+
+            source_sum = 0.;
+            for (double count : NumPar_T2_recyc)
+                source_sum += count;
+            if (source_sum > 0.)
+            {
+                T2.BeginDeferredFlightStats(T2.NumPar_Target());
+                for (int j = 1; j <= numPar_flight_Target; j++)
+                {
+                    const int target = T2.sampleTargetPlate(NumPar_T2_recyc);
+                    P = &T2;
+                    P->Init(1, target);
+                    flight(target, j);
+                }
+                T2.EndDeferredFlightStats();
+            }
+        }
+    }
 
     /// neutral particle transport from Recom and Grid
     if (K_Rec)
     {
-        if (MeshMode == 1)
+        if (K_H && H.RecombinSourceSum() > 0.)
         {
-            for (int i = 1; i < N_poloidal - 1; i++)
+            H.BeginDeferredFlightStats(H.NumPar_Grid());
+            for (int k = 1; k <= numPar_flight; k++)
             {
-                for (int j = 1; j < N_radial - 1; j++)
-                {
-                    for (int k = 1; k <= numPar_flight; k++)
-                        if (K_H)
-                        {
-                            P = &H;
-                            P->Init(4, i * 38 + j);
-                            flight(i, j);
-                        }
-                    for (int k = 1; k <= numPar_flight; k++)
-                        if (K_D)
-                        {
-                            P = &D;
-                            P->Init(4, i * 38 + j);
-                            flight(i, j);
-                        }
-                    for (int k = 1; k <= numPar_flight; k++)
-                        if (K_T)
-                        {
-                            P = &T;
-                            P->Init(4, i * 38 + j);
-                            flight(i, j);
-                        }
-                    if (StepLog)
-                        cout << "D Grid " << i << ' ' << j << " finished;" << endl;
-                }
+                const int source = H.sampleRecombinCell();
+                P = &H;
+                P->Init(4, source);
+                flight(source, k);
             }
+            H.EndDeferredFlightStats();
         }
-        else if (MeshMode == 3)
+        if (K_D && D.RecombinSourceSum() > 0.)
         {
-            for (int i = 0; i < Grid4.num_tris(); i++)
+            D.BeginDeferredFlightStats(D.NumPar_Grid());
+            for (int k = 1; k <= numPar_flight; k++)
             {
-                if (Grid4.if_in_plasmagrid(i))
-                {
-                    for (int k = 1; k <= numPar_flight; k++)
-                    {
-                        if (K_H)
-                        {
-                            P = &H;
-                            P->Init(4, i);
-                            flight(i, 0);
-                        }
-                        if (K_D)
-                        {
-                            P = &D;
-                            P->Init(4, i);
-                            flight(i, 0);
-                        }
-                        if (K_T)
-                        {
-                            P = &T;
-                            P->Init(4, i);
-                            flight(i, 0);
-                        }
-                    }
-                    if (StepLog)
-                        cout << "D Grid " << i << " finished;" << endl;
-                }
+                const int source = D.sampleRecombinCell();
+                P = &D;
+                P->Init(4, source);
+                flight(source, k);
             }
+            D.EndDeferredFlightStats();
+        }
+        if (K_T && T.RecombinSourceSum() > 0.)
+        {
+            T.BeginDeferredFlightStats(T.NumPar_Grid());
+            for (int k = 1; k <= numPar_flight; k++)
+            {
+                const int source = T.sampleRecombinCell();
+                P = &T;
+                P->Init(4, source);
+                flight(source, k);
+            }
+            T.EndDeferredFlightStats();
         }
     }
     if (K_Pump)
     {
-        if (K_D)
+        if (K_D && Num_D2_pump > 0. && numPar_flight_D2 > 0)
+        {
+            D2.BeginDeferredFlightStats(Num_D2_pump / (double)numPar_flight_D2);
             for (int i = 0; i < numPar_flight_D2; i++)
             {
                 P = &D2;
@@ -158,7 +193,11 @@ void Moncar()
                 if (StepLog)
                     cout << "Puff " << i << " finished;" << endl;
             }
-        if (K_T)
+            D2.EndDeferredFlightStats();
+        }
+        if (K_T && Num_T2_pump > 0. && numPar_flight_T2 > 0)
+        {
+            T2.BeginDeferredFlightStats(Num_T2_pump / (double)numPar_flight_T2);
             for (int i = 0; i < numPar_flight_D2; i++)
             {
                 P = &T2;
@@ -167,9 +206,12 @@ void Moncar()
                 if (StepLog)
                     cout << "Puff " << i << " finished;" << endl;
             }
+            T2.EndDeferredFlightStats();
+        }
     }
-    if (K_Methane)
+    if (K_Methane && Num_CD4_pump > 0. && numPar_flight_CD4 > 0)
     {
+        CD4.BeginDeferredFlightStats(Num_CD4_pump / (double)numPar_flight_CD4);
         for (int i = 0; i < numPar_flight_CD4; i++)
         {
             /*if (i % 1000 == 0 && i != numPar_flight_CD4)
@@ -190,9 +232,11 @@ void Moncar()
             if (StepLog)
                 cout << "CD4 Puff " << i << " finished;" << endl;
         }
+        CD4.EndDeferredFlightStats();
     }
-    if (K_Ar)
+    if (K_Ar && Num_CD4_pump > 0. && numPar_flight_CD4 > 0)
     {
+        Ar.BeginDeferredFlightStats(Num_CD4_pump / (double)numPar_flight_CD4);
         for (int i = 0; i < numPar_flight_CD4; i++)
         {
             /*if (i % 1000 == 0 && i != numPar_flight_CD4)
@@ -213,9 +257,12 @@ void Moncar()
             if (StepLog)
                 cout << "Ar Puff " << i << " finished;" << endl;
         }
+        Ar.EndDeferredFlightStats();
     }
-    if (K_C)
+    if (K_C && Num_CD4_pump > 0. && numPar_flight_CD4 > 0)
     {
+        C.BeginDeferredFlightStats(Num_CD4_pump / (double)numPar_flight_CD4);
+        D.BeginDeferredFlightStats(4. * Num_CD4_pump / (double)numPar_flight_CD4);
         for (int i = 0; i < numPar_flight_CD4; i++)
         {
             /*if (i % 1000 == 0 && i != numPar_flight_CD4)
@@ -241,6 +288,8 @@ void Moncar()
             if (StepLog)
                 cout << "D2 Puff " << i << " finished;" << endl;
         }
+        C.EndDeferredFlightStats();
+        D.EndDeferredFlightStats();
     }
     if (K_H)
     {

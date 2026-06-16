@@ -44,6 +44,9 @@
 #define qe 1.602e-19
 #define e 2.71828
 
+constexpr int N_POLOIDAL_GRID = 98;
+constexpr int N_RADIAL_GRID = 38;
+
 using namespace std;
 using namespace H5;
 using namespace eirene;
@@ -54,13 +57,18 @@ void CalPec();
 void Prepare();
 void Moncar();
 void Output();
-void Dump_2D_Global(double Var[98][38], string name);
+void Dump_2D_Global(double Var[N_POLOIDAL_GRID][N_RADIAL_GRID], string name);
 void flight(int i, int j);
 double Xrecycling(double rand_, int a, int b);
 void read_extend_plasma();
 
 ////Plasma and device parameter
 extern int N_poloidal, N_radial;
+
+inline int poloidalLastIndex() { return N_poloidal - 2; }
+inline int radialLastIndex() { return N_radial - 2; }
+inline int gridCellCount() { return N_poloidal * N_radial; }
+inline int gridIndex2D(int i, int j) { return i * N_radial + j; }
 extern bool K_log, StepLog, K_H2_elastic, K_EcrossBDrift, backGridBoundry, K_H, K_D, K_T;
 extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_Prob, K_back, K_dn, K_CX_DT, K_DT, K_flight, K_GRID, K_Pump, K_test1, K_test2, K_test3, K_Tn, K_Vi, K_Wallelement;
 extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, K_database_Pra, K_mu, K_PartoPar;
@@ -70,7 +78,7 @@ extern int K_T_array, K_NNCs;
 extern double dt, Te_core, ne_core, NumPar_now, Tn_core, T_N, T_wall, Num_D2_pump, Num_T2_pump, coefficient_D, coefficient_T;
 extern double Num_CD4_pump, t_max, Ratio_T, Ratio_D_Coll, Ratio_T_Coll, Ratio_DT_Coll, coeff_puff;
 extern double DTmass, D2Tmass, DT2mass, HH2mass, DD2mass, TT2mass, H2H2mass, D2D2mass, T2T2mass;
-extern double Dn[38];
+extern double Dn[N_RADIAL_GRID];
 
 extern int MeshMode;
 
