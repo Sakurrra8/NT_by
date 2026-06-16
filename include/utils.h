@@ -30,6 +30,7 @@ public:
 
 namespace Tools
 {
+    inline double sqr(double x) { return x * x; }
     int orientation(Point &A, Point &B, Point &C);
 
     // 获取全局唯一的引擎引用（不直接暴露变量，更安全）

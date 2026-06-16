@@ -52,7 +52,7 @@ restart_particle:
                 {
                     if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][1][3], Grid[i][1][7], Grid[i][1][2], Grid[i][1][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
-                        InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                        InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                         InterscePoint[num_intersect++][3] = i;
                     }
                 }
@@ -85,7 +85,7 @@ restart_particle:
                 {
                     if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[i][radialLastIndex()][0], Grid[i][radialLastIndex()][4], Grid[i][radialLastIndex()][1], Grid[i][radialLastIndex()][5], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
-                        InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                        InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                         InterscePoint[num_intersect++][3] = i;
                     }
                 }
@@ -109,7 +109,7 @@ restart_particle:
                 for (int i = 24; i < 37; i++)
                     if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
-                        InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                        InterscePoint[num_intersect][0] = sqrt(Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1)));
                         InterscePoint[num_intersect++][3] = i;
                     }
                 if (num_intersect == 0)
@@ -118,12 +118,12 @@ restart_particle:
                     {
                         if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
-                            InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                            InterscePoint[num_intersect][0] = sqrt(Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1)));
                             InterscePoint[num_intersect++][3] = i;
                         }
                         if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[poloidalLastIndex()][i][1], Grid[poloidalLastIndex()][i][5], Grid[poloidalLastIndex()][i][2], Grid[poloidalLastIndex()][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
-                            InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                            InterscePoint[num_intersect][0] = sqrt(Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1)));
                             InterscePoint[num_intersect++][3] = i + N_radial;
                         }
                     }
@@ -229,7 +229,7 @@ restart_particle:
                             {
                                 if (Tools::PointandLine(Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), PP->X_new(0), PP->X_new(1)))
                                 {
-                                    InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                                    InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                                     InterscePoint[num_intersect][3] = i;
                                     InterscePoint[num_intersect++][4] = 11;
                                 }
@@ -255,7 +255,7 @@ restart_particle:
                                 if (!Tools::PointandLine(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 0), Grid1.PLasma_Grid_Boundry(i + 1, 1), PP->X_new(0), PP->X_new(1)))
                                 // if (InterscePoint[num_intersect][1] != PP->X(0) && InterscePoint[num_intersect][2] != PP->X(1))
                                 {
-                                    InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                                    InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                                     InterscePoint[num_intersect][3] = i;
                                     InterscePoint[num_intersect++][4] = 19;
                                 }
@@ -407,7 +407,7 @@ restart_particle:
                         {
                             if (InterscePoint[num_intersect][1] != PP->X(0) && InterscePoint[num_intersect][2] != PP->X(1))
                             {
-                                InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                                InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                                 InterscePoint[num_intersect++][3] = i;
                             }
                         }
@@ -557,12 +557,12 @@ restart_particle_tri:
              {
                  if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[1][i][0], Grid[1][i][4], Grid[1][i][3], Grid[1][i][7], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                  {
-                     InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                     InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                      InterscePoint[num_intersect++][3] = i;
                  }
                  if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid[poloidalLastIndex()][i][1], Grid[poloidalLastIndex()][i][5], Grid[poloidalLastIndex()][i][2], Grid[poloidalLastIndex()][i][6], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                  {
-                     InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                     InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                      InterscePoint[num_intersect++][3] = i + N_radial;
                  }
              }
@@ -576,7 +576,7 @@ restart_particle_tri:
                     {
                         if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
-                            InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - PP->X(0)), 2) + pow((InterscePoint[num_intersect][2] - PP->X(1)), 2));
+                            InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                             InterscePoint[num_intersect++][3] = i;
                         }
                     }

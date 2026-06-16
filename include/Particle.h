@@ -338,6 +338,10 @@ private:
 
 	std::vector<double> Recycled_counts_;
 	std::vector<double> Recombin_counts_;
+	std::vector<double> Recycled_cdf_;
+	std::vector<double> Recombin_cdf_;
+	double Recycled_source_sum_{0.};
+	double Recombin_source_sum_{0.};
 	std::vector<double> T_Init_;
 
 	/// @brief Contiguous storage backing the pointer views below
@@ -515,6 +519,8 @@ public:
 
 	void Particlefrom(Particle *A, double K = 1, int Charge = -100);
 	int sampleTargetPlate(const std::vector<double> &Counts);
+	int sampleRecycledTarget();
+	double RecycledSourceSum();
 	double RecombinSourceSum();
 	int sampleRecombinCell();
 	void RecycledCal(std::vector<double> &NumPar_wall);

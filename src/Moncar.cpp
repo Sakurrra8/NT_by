@@ -38,15 +38,12 @@ void Moncar()
     {
         if (K_H)
         {
-            double source_sum = 0.;
-            for (double count : NumPar_H_recyc)
-                source_sum += count;
-            if (source_sum > 0.)
+            if (H.RecycledSourceSum() > 0.)
             {
                 H.BeginDeferredFlightStats(H.NumPar_Target());
                 for (int j = 1; j <= numPar_flight_Target; j++)
                 {
-                    const int target = H.sampleTargetPlate(NumPar_H_recyc);
+                    const int target = H.sampleRecycledTarget();
                     P = &H;
                     P->Init(1, target);
                     flight(target, j);
@@ -54,15 +51,12 @@ void Moncar()
                 H.EndDeferredFlightStats();
             }
 
-            source_sum = 0.;
-            for (double count : NumPar_H2_recyc)
-                source_sum += count;
-            if (source_sum > 0.)
+            if (H2.RecycledSourceSum() > 0.)
             {
                 H2.BeginDeferredFlightStats(H2.NumPar_Target());
                 for (int j = 1; j <= numPar_flight_Target; j++)
                 {
-                    const int target = H2.sampleTargetPlate(NumPar_H2_recyc);
+                    const int target = H2.sampleRecycledTarget();
                     P = &H2;
                     P->Init(1, target);
                     flight(target, j);
@@ -72,15 +66,12 @@ void Moncar()
         }
         if (K_D)
         {
-            double source_sum = 0.;
-            for (double count : NumPar_D_recyc)
-                source_sum += count;
-            if (source_sum > 0.)
+            if (D.RecycledSourceSum() > 0.)
             {
                 D.BeginDeferredFlightStats(D.NumPar_Target());
                 for (int j = 1; j <= numPar_flight_Target; j++)
                 {
-                    const int target = D.sampleTargetPlate(NumPar_D_recyc);
+                    const int target = D.sampleRecycledTarget();
                     P = &D;
                     P->Init(1, target);
                     flight(target, j);
@@ -88,15 +79,12 @@ void Moncar()
                 D.EndDeferredFlightStats();
             }
 
-            source_sum = 0.;
-            for (double count : NumPar_D2_recyc)
-                source_sum += count;
-            if (source_sum > 0.)
+            if (D2.RecycledSourceSum() > 0.)
             {
                 D2.BeginDeferredFlightStats(D2.NumPar_Target());
                 for (int j = 1; j <= numPar_flight_Target; j++)
                 {
-                    const int target = D2.sampleTargetPlate(NumPar_D2_recyc);
+                    const int target = D2.sampleRecycledTarget();
                     P = &D2;
                     P->Init(1, target);
                     flight(target, j);
@@ -106,15 +94,12 @@ void Moncar()
         }
         if (K_T)
         {
-            double source_sum = 0.;
-            for (double count : NumPar_T_recyc)
-                source_sum += count;
-            if (source_sum > 0.)
+            if (T.RecycledSourceSum() > 0.)
             {
                 T.BeginDeferredFlightStats(T.NumPar_Target());
                 for (int j = 1; j <= numPar_flight_Target; j++)
                 {
-                    const int target = T.sampleTargetPlate(NumPar_T_recyc);
+                    const int target = T.sampleRecycledTarget();
                     P = &T;
                     P->Init(1, target);
                     flight(target, j);
@@ -122,15 +107,12 @@ void Moncar()
                 T.EndDeferredFlightStats();
             }
 
-            source_sum = 0.;
-            for (double count : NumPar_T2_recyc)
-                source_sum += count;
-            if (source_sum > 0.)
+            if (T2.RecycledSourceSum() > 0.)
             {
                 T2.BeginDeferredFlightStats(T2.NumPar_Target());
                 for (int j = 1; j <= numPar_flight_Target; j++)
                 {
-                    const int target = T2.sampleTargetPlate(NumPar_T2_recyc);
+                    const int target = T2.sampleRecycledTarget();
                     P = &T2;
                     P->Init(1, target);
                     flight(target, j);

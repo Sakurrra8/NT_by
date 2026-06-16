@@ -183,51 +183,94 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
  * @param Counts 每块靶板上的再循环粒子数
  * @return int 抽中的靶板索引 (0, 1, 2, ...)
  */
+namespace
+{
+void buildCdf(const std::vector<double> &weights, std::vector<double> &cdf, double &sum)
+{
+	cdf.resize(weights.size());
+	sum = 0.;
+	for (std::size_t i = 0; i < weights.size(); ++i)
+	{
+		if (weights[i] > 0.)
+			sum += weights[i];
+		cdf[i] = sum;
+	}
+}
+
+int sampleCdf(const std::vector<double> &cdf, double sum)
+{
+	if (cdf.empty() || sum <= 0.)
+		return 0;
+	const double r = Tools::Random() * sum;
+	auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
+	if (it == cdf.end())
+		return static_cast<int>(cdf.size() - 1);
+	return static_cast<int>(it - cdf.begin());
+}
+}
+
 int Particle::sampleTargetPlate(const std::vector<double> &Counts)
 {
-	thread_local std::mt19937 rng(std::random_device{}());
-	std::discrete_distribution<int> dist(Counts.begin(), Counts.end());
-	return dist(rng);
+	std::vector<double> cdf;
+	double sum = 0.;
+	buildCdf(Counts, cdf, sum);
+	return sampleCdf(cdf, sum);
+}
+
+int Particle::sampleRecycledTarget()
+{
+	return sampleCdf(Recycled_cdf_, Recycled_source_sum_);
+}
+
+double Particle::RecycledSourceSum()
+{
+	return Recycled_source_sum_;
 }
 
 double Particle::RecombinSourceSum()
 {
-	double sum = 0.;
-	for (double count : Recombin_counts_)
-		sum += count;
-	return sum;
+	return Recombin_source_sum_;
 }
 
 int Particle::sampleRecombinCell()
 {
-	return sampleTargetPlate(Recombin_counts_);
+	return sampleCdf(Recombin_cdf_, Recombin_source_sum_);
 }
 
 void Particle::RecycledCal(std::vector<double> &Recycled_counts)
 {
+	Recycled_counts_.clear();
+	T_Init_.clear();
 	for (int i = 0; i < Grid4.Num_Target(); i++)
 	{
 		Recycled_counts_.push_back(Recycled_counts[i]);
 		T_Init_.push_back(T_wall);
 	}
+	buildCdf(Recycled_counts_, Recycled_cdf_, Recycled_source_sum_);
 }
 
 void Particle::RecycledCal(std::vector<double> &Recycled_counts, std::vector<double> &T_Init)
 {
+	Recycled_counts_.clear();
+	T_Init_.clear();
 	for (int i = 0; i < Grid4.Num_Target(); i++)
 	{
 		Recycled_counts_.push_back(Recycled_counts[i]);
 		T_Init_.push_back(T_Init[i]);
 	}
+	buildCdf(Recycled_counts_, Recycled_cdf_, Recycled_source_sum_);
 }
 
 void Particle::RecombinCal(std::vector<double> &Recombin_counts, std::vector<double> &T_Init)
 {
+	Recombin_counts_.clear();
+	T_Init_.clear();
 	for (int i = 0; i < N_poloidal * N_radial; i++)
 	{
 		Recombin_counts_.push_back(Recombin_counts[i]);
 		T_Init_.push_back(T_Init[i]);
 	}
+	buildCdf(Recombin_counts_, Recombin_cdf_, Recombin_source_sum_);
 }
 
 void Particle::ParInit(vector<int> &K_collision, const std::vector<std::vector<int>> &Tri_B2)
@@ -487,7 +530,7 @@ void Particle::Init(int k, int z)
 			V_temp2[0] = V_temp1[1] * B[XY_[0]][XY_[1]][2] - V_temp1[2] * B[XY_[0]][XY_[1]][1];
 			V_temp2[1] = V_temp1[2] * B[XY_[0]][XY_[1]][0] - V_temp1[0] * B[XY_[0]][XY_[1]][2];
 			V_temp2[2] = V_temp1[0] * B[XY_[0]][XY_[1]][1] - V_temp1[1] * B[XY_[0]][XY_[1]][0];
-			double Module = sqrt(pow(V_temp2[0], 2) + pow(V_temp2[1], 2) + pow(V_temp2[2], 2));
+			double Module = sqrt(Tools::sqr(V_temp2[0]) + Tools::sqr(V_temp2[1]) + Tools::sqr(V_temp2[2]));
 			V_temp[0] = V_Charge_[0] + V_Charge_[7] * V_temp2[0] / Module; // * erx[XY_[0]][XY_[1]];
 			V_temp[1] = V_Charge_[1] + V_Charge_[7] * V_temp2[1] / Module; // * ery[XY_[0]][XY_[1]];
 			V_temp[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
@@ -507,7 +550,7 @@ void Particle::Init(int k, int z)
 		}
 		Vtheta = 2 * pi * Tools::Random();
 		Vphi = pi * Tools::Random();
-		Modules = sqrt(pow(V_temp[0] - V_ion[0], 2) + pow(V_temp[1] - V_ion[1], 2) + pow(V_temp[2] - V_ion[2], 2));
+		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) + Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
 		// z = 1 for particle B, z = 2 for particle A
 		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
 		V_1[1] = 1.0 / (m_A + m_B) * (m_A * V_ion[1] + m_B * V_temp[1] - m_A * Modules * sin(Vphi) * sin(Vtheta));
@@ -518,9 +561,9 @@ void Particle::Init(int k, int z)
 		if (K_test3)
 		{
 			std::cout << "2V of neu: " << V_1[0] << ", " << V_1[1] << ", " << V_1[2] << " T:"
-					  << 1. / 2. * m_B * (pow(V_1[0], 2) + pow(V_1[1], 2) + pow(V_1[2], 2)) / qe << endl;
+					  << 1. / 2. * m_B * (Tools::sqr(V_1[0]) + Tools::sqr(V_1[1]) + Tools::sqr(V_1[2])) / qe << endl;
 			std::cout << "2V of ion: " << V_2[0] << ", " << V_2[1] << ", " << V_2[2] << " T:"
-					  << 1. / 2. * m_A * (pow(V_2[0], 2) + pow(V_2[1], 2) + pow(V_2[2], 2)) / qe << endl;
+					  << 1. / 2. * m_A * (Tools::sqr(V_2[0]) + Tools::sqr(V_2[1]) + Tools::sqr(V_2[2])) / qe << endl;
 		}
 		if (z == 1)
 		{
@@ -922,14 +965,14 @@ void Particle::Init(int k, int z)
 				for (int i = 0; i < 3; i++)
 					V_temp1[i] = Tools::intersect(V_temp2, V_, i);
 				V_temp2[0] = sqrt(pow(V_temp1[0], 2) + pow(V_temp1[1], 2) + pow(V_temp1[2], 2));
-				V_temp2[1] = sqrt(pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2));
+				V_temp2[1] = sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
 				for (int i = 0; i < 3; i++)
 					V_[i] = V_[i] + V_temp1[i] / V_temp2[0] * V_temp2[1];
 				return;
 			}*/
 
 		/// Energy is conserved after a collision but momentum is not
-		vel = sqrt(pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2));
+		vel = sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
 		// std::cout << fate_[0] << '\t' << sourcePar_[0] << '\t';
 		// std::cout << Tn_ << '\t' << vel << '\t';
 		for (int i = 0; i < 3; i++)
@@ -984,7 +1027,7 @@ void Particle::Init(int k, int z)
 			V_temp2[0] = V_temp1[1] * B[XY_[0]][XY_[1]][2] - V_temp1[2] * B[XY_[0]][XY_[1]][1];
 			V_temp2[1] = V_temp1[2] * B[XY_[0]][XY_[1]][0] - V_temp1[0] * B[XY_[0]][XY_[1]][2];
 			V_temp2[2] = V_temp1[0] * B[XY_[0]][XY_[1]][1] - V_temp1[1] * B[XY_[0]][XY_[1]][0];
-			double Module = sqrt(pow(V_temp2[0], 2) + pow(V_temp2[1], 2) + pow(V_temp2[2], 2));
+			double Module = sqrt(Tools::sqr(V_temp2[0]) + Tools::sqr(V_temp2[1]) + Tools::sqr(V_temp2[2]));
 			V_temp[0] = V_Charge_[0] + V_Charge_[7] * V_temp2[0] / Module; // * erx[XY_[0]][XY_[1]];
 			V_temp[1] = V_Charge_[1] + V_Charge_[7] * V_temp2[1] / Module; // * ery[XY_[0]][XY_[1]];
 			V_temp[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
@@ -1005,14 +1048,14 @@ void Particle::Init(int k, int z)
 		if (K_test3)
 		{
 			std::cout << "1V of ion: " << V_ion[0] << ", " << V_ion[1] << ", " << V_ion[2] << " T:"
-					  << 1. / 2. * m_A * (pow(V_ion[0], 2) + pow(V_ion[1], 2) + pow(V_ion[2], 2)) / qe << endl;
+					  << 1. / 2. * m_A * (Tools::sqr(V_ion[0]) + Tools::sqr(V_ion[1]) + Tools::sqr(V_ion[2])) / qe << endl;
 			std::cout << "1V of neu: " << V_temp[0] << ", " << V_temp[1] << ", " << V_temp[2] << " T:"
-					  << 1. / 2. * m_B * (pow(V_temp[0], 2) + pow(V_temp[1], 2) + pow(V_temp[2], 2)) / qe << endl;
+					  << 1. / 2. * m_B * (Tools::sqr(V_temp[0]) + Tools::sqr(V_temp[1]) + Tools::sqr(V_temp[2])) / qe << endl;
 		}
 		Vtheta = 2 * pi * Tools::Random();
 		Vphi = pi * Tools::Random();
-		Modules = sqrt(pow(V_temp[0] - V_ion[0], 2) +
-					   pow(V_temp[1] - V_ion[1], 2) + pow(V_temp[2] - V_ion[2], 2));
+		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) +
+					   Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
 		// z = 1 for particle B, z = 2 for particle A
 		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
 		V_1[1] = 1.0 / (m_A + m_B) * (m_A * V_ion[1] + m_B * V_temp[1] - m_A * Modules * sin(Vphi) * sin(Vtheta));
@@ -1023,9 +1066,9 @@ void Particle::Init(int k, int z)
 		if (K_test3)
 		{
 			std::cout << "2V of neu: " << V_1[0] << ", " << V_1[1] << ", " << V_1[2] << " T:"
-					  << 1. / 2. * m_B * (pow(V_1[0], 2) + pow(V_1[1], 2) + pow(V_1[2], 2)) / qe << endl;
+					  << 1. / 2. * m_B * (Tools::sqr(V_1[0]) + Tools::sqr(V_1[1]) + Tools::sqr(V_1[2])) / qe << endl;
 			std::cout << "2V of ion: " << V_2[0] << ", " << V_2[1] << ", " << V_2[2] << " T:"
-					  << 1. / 2. * m_A * (pow(V_2[0], 2) + pow(V_2[1], 2) + pow(V_2[2], 2)) / qe << endl;
+					  << 1. / 2. * m_A * (Tools::sqr(V_2[0]) + Tools::sqr(V_2[1]) + Tools::sqr(V_2[2])) / qe << endl;
 		}
 		if (z == 1)
 		{
@@ -1145,7 +1188,7 @@ void Particle::Init(int k, int z)
 			V_temp2[0] = V_temp1[1] * B[XY_[0]][XY_[1]][2] - V_temp1[2] * B[XY_[0]][XY_[1]][1];
 			V_temp2[1] = V_temp1[2] * B[XY_[0]][XY_[1]][0] - V_temp1[0] * B[XY_[0]][XY_[1]][2];
 			V_temp2[2] = V_temp1[0] * B[XY_[0]][XY_[1]][1] - V_temp1[1] * B[XY_[0]][XY_[1]][0];
-			double Module = sqrt(pow(V_temp2[0], 2) + pow(V_temp2[1], 2) + pow(V_temp2[2], 2));
+			double Module = sqrt(Tools::sqr(V_temp2[0]) + Tools::sqr(V_temp2[1]) + Tools::sqr(V_temp2[2]));
 			V_temp[0] = V_Charge_[0] + V_Charge_[7] * V_temp2[0] / Module; // * erx[XY_[0]][XY_[1]];
 			V_temp[1] = V_Charge_[1] + V_Charge_[7] * V_temp2[1] / Module; // * ery[XY_[0]][XY_[1]];
 			V_temp[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
@@ -1154,13 +1197,13 @@ void Particle::Init(int k, int z)
 		if (K_test3)
 		{
 			std::cout << "1V of ion: " << V_ion[0] << ", " << V_ion[1] << ", " << V_ion[2] << " T:"
-					  << 1. / 2. * m_A * (pow(V_ion[0], 2) + pow(V_ion[1], 2) + pow(V_ion[2], 2)) / qe << endl;
+					  << 1. / 2. * m_A * (Tools::sqr(V_ion[0]) + Tools::sqr(V_ion[1]) + Tools::sqr(V_ion[2])) / qe << endl;
 			std::cout << "1V of neu: " << V_temp[0] << ", " << V_temp[1] << ", " << V_temp[2] << " T:"
-					  << 1. / 2. * m_B * (pow(V_temp[0], 2) + pow(V_temp[1], 2) + pow(V_temp[2], 2)) / qe << endl;
+					  << 1. / 2. * m_B * (Tools::sqr(V_temp[0]) + Tools::sqr(V_temp[1]) + Tools::sqr(V_temp[2])) / qe << endl;
 		}
 		Vtheta = 2 * pi * Tools::Random();
 		Vphi = pi * Tools::Random();
-		Modules = sqrt(pow(V_temp[0] - V_ion[0], 2) + pow(V_temp[1] - V_ion[1], 2) + pow(V_temp[2] - V_ion[2], 2));
+		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) + Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
 		// z = 1 for particle B, z = 2 for particle A
 		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
 		V_1[1] = 1.0 / (m_A + m_B) * (m_A * V_ion[1] + m_B * V_temp[1] - m_A * Modules * sin(Vphi) * sin(Vtheta));
@@ -1171,9 +1214,9 @@ void Particle::Init(int k, int z)
 		if (K_test3)
 		{
 			std::cout << "2V of neu: " << V_1[0] << ", " << V_1[1] << ", " << V_1[2] << " T:"
-					  << 1. / 2. * m_B * (pow(V_1[0], 2) + pow(V_1[1], 2) + pow(V_1[2], 2)) / qe << endl;
+					  << 1. / 2. * m_B * (Tools::sqr(V_1[0]) + Tools::sqr(V_1[1]) + Tools::sqr(V_1[2])) / qe << endl;
 			std::cout << "2V of ion: " << V_2[0] << ", " << V_2[1] << ", " << V_2[2] << " T:"
-					  << 1. / 2. * m_A * (pow(V_2[0], 2) + pow(V_2[1], 2) + pow(V_2[2], 2)) / qe << endl;
+					  << 1. / 2. * m_A * (Tools::sqr(V_2[0]) + Tools::sqr(V_2[1]) + Tools::sqr(V_2[2])) / qe << endl;
 		}
 		if (z == 1)
 		{
@@ -1215,7 +1258,7 @@ void Particle::CalTn()
 	V_[2]); else Tn_ = 1.0 / 2 * mass_ * (V_Charge_[3] * V_Charge_[3] +
 	V_Charge_[7] * V_Charge_[7]);*/
 	// std::cout << name_ << Charge_ << '\t' << Tn_ << '\t';
-	Tn_ = 1.0 / 3.0 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) / qe;
+	Tn_ = 1.0 / 3.0 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) / qe;
 	// std::cout << Tn_ << '\t' << fate_[0] << '\t' << sourcePar_[0] << endl;
 	/*if (Tn_ < 1e-3)
 	{
@@ -1242,7 +1285,7 @@ void Particle::VtoVcharge()
 	V_Charge_[4] = V_[0] - V_Charge_[0];
 	V_Charge_[5] = V_[1] - V_Charge_[1];
 	V_Charge_[6] = V_[2] - V_Charge_[2];
-	V_Charge_[7] = sqrt(pow(V_Charge_[4], 2) + pow(V_Charge_[5], 2) + pow(V_Charge_[6], 2));
+	V_Charge_[7] = sqrt(Tools::sqr(V_Charge_[4]) + Tools::sqr(V_Charge_[5]) + Tools::sqr(V_Charge_[6]));
 	ChargeTag_ = 1;
 }
 
@@ -1258,7 +1301,7 @@ void Particle::VchargetoV()
 	V_temp2[0] = V_temp1[1] * B[XY_[0]][XY_[1]][2] - V_temp1[2] * B[XY_[0]][XY_[1]][1];
 	V_temp2[1] = V_temp1[2] * B[XY_[0]][XY_[1]][0] - V_temp1[0] * B[XY_[0]][XY_[1]][2];
 	V_temp2[2] = V_temp1[0] * B[XY_[0]][XY_[1]][1] - V_temp1[1] * B[XY_[0]][XY_[1]][0];
-	double Module = sqrt(pow(V_temp2[0], 2) + pow(V_temp2[1], 2) + pow(V_temp2[2], 2));
+	double Module = sqrt(Tools::sqr(V_temp2[0]) + Tools::sqr(V_temp2[1]) + Tools::sqr(V_temp2[2]));
 	V_[0] = V_Charge_[0] + V_Charge_[7] * V_temp2[0] / Module; // * erx[XY_[0]][XY_[1]];
 	V_[1] = V_Charge_[1] + V_Charge_[7] * V_temp2[1] / Module; // * ery[XY_[0]][XY_[1]];
 	V_[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
@@ -1455,7 +1498,7 @@ void Particle::track()
 				{
 					if (Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid1.Core_Boundry(i, 0), Grid1.Core_Boundry(i, 1), Grid1.Core_Boundry(i + 1, 0), Grid1.Core_Boundry(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
 					{
-						InterscePoint[num_intersect][0] = sqrt(pow((InterscePoint[num_intersect][1] - X_[0]), 2) + pow((InterscePoint[num_intersect][2] - X_[1]), 2));
+						InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_[1]);
 						InterscePoint[num_intersect][3] = i;
 						InterscePoint[num_intersect++][4] = 18;
 					}
@@ -2947,7 +2990,7 @@ void Particle::Caltrace_Tri()
 						{
 							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
 							{
-								InterscePoint[num_intersect][0] = sqrt(((InterscePoint[num_intersect][1] - X_old_[0]) * (InterscePoint[num_intersect][1] - X_old_[0])) + ((InterscePoint[num_intersect][2] - X_old_[1]) * (InterscePoint[num_intersect][2] - X_old_[1])));
+								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
 								InterscePoint[num_intersect++][3] = i;
 							}
 						}
@@ -3119,7 +3162,7 @@ void Particle::Caltrace_Tri()
 						{
 							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
 							{
-								InterscePoint[num_intersect][0] = sqrt(((InterscePoint[num_intersect][1] - X_old_[0]) * (InterscePoint[num_intersect][1] - X_old_[0])) + ((InterscePoint[num_intersect][2] - X_old_[1]) * (InterscePoint[num_intersect][2] - X_old_[1])));
+								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
 								InterscePoint[num_intersect++][3] = i;
 							}
 						}
@@ -3291,7 +3334,7 @@ void Particle::Caltrace_Tri()
 						{
 							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
 							{
-								InterscePoint[num_intersect][0] = sqrt(((InterscePoint[num_intersect][1] - X_old_[0]) * (InterscePoint[num_intersect][1] - X_old_[0])) + ((InterscePoint[num_intersect][2] - X_old_[1]) * (InterscePoint[num_intersect][2] - X_old_[1])));
+								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
 								InterscePoint[num_intersect++][3] = i;
 							}
 						}
@@ -6252,17 +6295,17 @@ int Particle::H2PCollCal()
 			if (this == &H2)
 			{
 				DS_[1][0].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &D2)
 			{
 				DS_[1][0].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &T2)
 			{
 				DS_[1][0].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 		}
 		if (MeshMode == 3)
@@ -6271,17 +6314,17 @@ int Particle::H2PCollCal()
 			if (this == &H2)
 			{
 				DS_[1][0].Mu_Add(Tri_Index_, mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &D2)
 			{
 				DS_[1][0].Mu_Add(Tri_Index_, mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &T2)
 			{
 				DS_[1][0].Mu_Add(Tri_Index_, mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(Tri_Index_, 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 		}
 		if (K_test1 || K_test2)
@@ -6312,17 +6355,17 @@ int Particle::H2PCollCal()
 			if (this == &H2)
 			{
 				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &D2)
 			{
 				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &T2)
 			{
 				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 		}
 		if (MeshMode == 3)
@@ -6331,17 +6374,17 @@ int Particle::H2PCollCal()
 			if (this == &H2)
 			{
 				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &D2)
 			{
 				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &T2)
 			{
 				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 		}
 		return 1;
@@ -7451,22 +7494,22 @@ double Particle::CalAngle(int num_wall)
 {
 	// std::cout << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 	// std::cout << num_wall << '\t' << cosang[num_wall] << '\t' << sinang[num_wall] << endl;
-	// std::cout << 180 / pi * acos(abs(V_[0] * sinang[num_wall] - V_[1] * cosang[num_wall]) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)))) << endl;
+	// std::cout << 180 / pi * acos(abs(V_[0] * sinang[num_wall] - V_[1] * cosang[num_wall]) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))) << endl;
 	if (MeshMode == 1)
 	{
 		if (InterscePoint[0][4] == 11)
-			return 180 / pi * acos(abs(V_[0] * Grid4.Wall_.Sin_Wall(num_wall) - V_[1] * Grid4.Wall_.Cos_Wall(num_wall) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)))));
+			return 180 / pi * acos(abs(V_[0] * Grid4.Wall_.Sin_Wall(num_wall) - V_[1] * Grid4.Wall_.Cos_Wall(num_wall) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))));
 		else if (InterscePoint[0][4] == 1)
-			return 180 / pi * acos(abs(V_[0] * Grid1.Sin_target(num_wall) - V_[1] * Grid1.Cos_target(num_wall) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)))));
+			return 180 / pi * acos(abs(V_[0] * Grid1.Sin_target(num_wall) - V_[1] * Grid1.Cos_target(num_wall) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))));
 		else
 			throw std::logic_error("angle calculation of reflect have some problem in Calangle()");
 	}
 	else if (MeshMode == 3)
 	{
 		if (InterscePoint[0][4] == 11)
-			return 180 / pi * acos(abs(V_[0] * Grid4.Sin_trimesh(Tri_Index_, num_wall) - V_[1] * Grid4.Cos_trimesh(Tri_Index_, num_wall)) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2))));
+			return 180 / pi * acos(abs(V_[0] * Grid4.Sin_trimesh(Tri_Index_, num_wall) - V_[1] * Grid4.Cos_trimesh(Tri_Index_, num_wall)) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]))));
 		else if (InterscePoint[0][4] == 1)
-			return 180 / pi * acos(abs(V_[0] * Grid4.Sin_trimesh(Tri_Index_, num_wall) - V_[1] * Grid4.Cos_trimesh(Tri_Index_, num_wall)) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2))));
+			return 180 / pi * acos(abs(V_[0] * Grid4.Sin_trimesh(Tri_Index_, num_wall) - V_[1] * Grid4.Cos_trimesh(Tri_Index_, num_wall)) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]))));
 		else
 			throw std::logic_error("angle calculation of reflect have some problem in Calangle()");
 	}
@@ -7478,8 +7521,8 @@ double Particle::CalAngle(double Sin, double Cos)
 {
 	// std::cout << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 	// std::cout << num_wall << '\t' << cosang[num_wall] << '\t' << sinang[num_wall] << endl;
-	// std::cout << 180 / pi * acos(abs(V_[0] * sinang[num_wall] - V_[1] * cosang[num_wall]) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2)))) << endl;
-	return 180 / pi * acos(abs(V_[0] * Sin - V_[1] * Cos) / sqrt((pow(V_[0], 2) + pow(V_[1], 2) + pow(V_[2], 2))));
+	// std::cout << 180 / pi * acos(abs(V_[0] * sinang[num_wall] - V_[1] * cosang[num_wall]) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))) << endl;
+	return 180 / pi * acos(abs(V_[0] * Sin - V_[1] * Cos) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]))));
 }
 
 int Particle::MaxCharge() { return MaxCharge_; }
@@ -9043,6 +9086,9 @@ void Particle::CalWeight1(int num)
 			Weight_Grid_[i][j] = 0.;
 		}
 
+	Recombin_source_sum_ = 0.;
+	Recombin_cdf_.clear();
+
 	if (MeshMode == 1)
 	{
 		Recombin_counts_.assign(N_poloidal * N_radial, 0.);
@@ -9064,6 +9110,7 @@ void Particle::CalWeight1(int num)
 			}
 		}
 
+		buildCdf(Recombin_counts_, Recombin_cdf_, Recombin_source_sum_);
 		if (NumPar_sum_Grid_ <= 0. || num <= 0)
 			return;
 
@@ -9100,6 +9147,7 @@ void Particle::CalWeight1(int num)
 			NumPar_sum_Grid_ += count;
 		}
 
+		buildCdf(Recombin_counts_, Recombin_cdf_, Recombin_source_sum_);
 		if (NumPar_sum_Grid_ <= 0. || num <= 0)
 			return;
 

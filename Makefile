@@ -5,9 +5,21 @@ STATIC_LIBS ?=
 MPICC		=mpicc
 FFLAGS		=-fast
 CFLAGS 		=
-CPPFLAGS	=-std=c++17 -g 
+CXXSTD ?= -std=c++17
+BUILD ?= release
+ARCH_FLAGS ?=
+
+ifeq ($(BUILD),debug)
+CPPFLAGS	=$(CXXSTD) -O0 -g
+else ifeq ($(BUILD),profile)
+CPPFLAGS	=$(CXXSTD) -O3 -g -DNDEBUG -fno-omit-frame-pointer $(ARCH_FLAGS)
+LDFLAGS 	+= -fno-omit-frame-pointer
+else
+CPPFLAGS	=$(CXXSTD) -O3 -DNDEBUG $(ARCH_FLAGS)
+endif
+
 MCFLAGS		=-O2
-LDFLAGS 	=
+LDFLAGS 	+=
 NETCDFDIR	=
 INCS		=
 HDF5_DIR ?= /data/leuven/379/vsc37950/nt/opt/hdf5
@@ -35,7 +47,7 @@ all : $(BIN_DIR)/$(PRGM)
 $(BIN_DIR)/$(PRGM):$(OBJS)
 	$(LINKCC) $(addprefix $(OBJ_DIR)/, $(OBJS)) $(LIBS) -o $@
 	
-%.o:%.cpp
+%.o:%.cpp Makefile
 	$(CCOMPILE) -c $(INCS) $(INCLUDE) $< -o $(OBJ_DIR)/$@
 
 %.o: %.f90
