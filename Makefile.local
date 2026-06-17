@@ -1,0 +1,65 @@
+# Local Linux/WSL build helper. The HPC Makefile is intentionally left unchanged.
+#
+# Typical use from the repository root:
+#   make -f Makefile.local -j
+#   make -f Makefile.local BUILD=debug -j
+#
+# If your system HDF5 is installed elsewhere:
+#   make -f Makefile.local HDF5_DIR=/usr -j
+
+PRGM := edit
+CXX ?= g++
+CXXSTD ?= -std=c++17
+BUILD ?= release
+HDF5_DIR ?= ./opt/hdf5
+LOCAL_HDF5_LIB := ./.local/hdf5/lib
+SETTING ?= Inputfile/settingfile/setting_Trimesh_D_5.log
+
+SRC_DIR := ./src
+OBJ_DIR := ./obj
+BIN_DIR := ./bin
+INC_DIR := ./include
+
+SRCS := $(wildcard $(SRC_DIR)/*.cpp)
+OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+
+CPPFLAGS := $(CXXSTD) -I$(INC_DIR) -I$(HDF5_DIR)/include -fopenmp
+LDFLAGS := -fopenmp
+LDLIBS := -lm -L$(LOCAL_HDF5_LIB) -Wl,-rpath,$(abspath $(LOCAL_HDF5_LIB)) -lhdf5_cpp -lhdf5
+
+ifeq ($(BUILD),debug)
+CPPFLAGS += -O0 -g
+else ifeq ($(BUILD),profile)
+CPPFLAGS += -O3 -g -DNDEBUG -fno-omit-frame-pointer
+LDFLAGS += -fno-omit-frame-pointer
+else
+CPPFLAGS += -O3 -DNDEBUG
+endif
+
+.PHONY: all clean dirs hdf5-links run-check
+
+all: $(BIN_DIR)/$(PRGM)
+
+dirs:
+	mkdir -p $(OBJ_DIR) $(BIN_DIR) Outputfile/test/data Outputfile/test/log
+
+hdf5-links: dirs
+	mkdir -p $(LOCAL_HDF5_LIB)
+	ln -sfn ../../../opt/hdf5/lib/libhdf5.so.310.3.0 $(LOCAL_HDF5_LIB)/libhdf5.so.310.3.0
+	ln -sfn libhdf5.so.310.3.0 $(LOCAL_HDF5_LIB)/libhdf5.so.310
+	ln -sfn libhdf5.so.310 $(LOCAL_HDF5_LIB)/libhdf5.so
+	ln -sfn ../../../opt/hdf5/lib/libhdf5_cpp.so.310.0.3 $(LOCAL_HDF5_LIB)/libhdf5_cpp.so.310.0.3
+	ln -sfn libhdf5_cpp.so.310.0.3 $(LOCAL_HDF5_LIB)/libhdf5_cpp.so.310
+	ln -sfn libhdf5_cpp.so.310 $(LOCAL_HDF5_LIB)/libhdf5_cpp.so
+
+$(BIN_DIR)/$(PRGM): $(OBJS) | hdf5-links
+	$(CXX) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp Makefile.local | dirs
+	$(CXX) $(CPPFLAGS) -c $< -o $@
+
+run-check: $(BIN_DIR)/$(PRGM)
+	./$(BIN_DIR)/$(PRGM) $(SETTING)
+
+clean:
+	rm -rf $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM)

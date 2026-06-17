@@ -1,5 +1,9 @@
 Outputfile/log/
 .vscode/
+!.vscode/
+!.vscode/tasks.json
+!.vscode/launch.json
+.local/
 Outputfile/test/
 log/
 bin/
@@ -11,6 +15,9 @@ pythonbat/
 figout/
 numcheck_work/
 triangle/*
+!triangle/EAST/
+!triangle/EAST/benchmark_tri.py
+triangle/EAST/__pycache__/
 callgrind.out*
 *.h5
 doc/
