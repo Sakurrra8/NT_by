@@ -13,7 +13,6 @@ numcheck_work/
 triangle/*
 callgrind.out*
 *.h5
-*.txt
 doc/
 !CMakeLists.txt
 !README.txt
