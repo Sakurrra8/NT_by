@@ -215,12 +215,17 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
     Wall_[Wall_num_].push_back(Wall_[0][0]);
     Wall_[Wall_num_].push_back(Wall_[0][1]);
     fp.close();
+    Wall_segments_.resize(Wall_num_);
+    Wall_bounds_.resize(Wall_num_);
     for (int i = 0; i < Wall_num_; i++)
     {
+        Wall_segments_[i] = {Wall_[i][0], Wall_[i][1], Wall_[i + 1][0], Wall_[i + 1][1]};
+        Wall_bounds_[i] = {std::min(Wall_segments_[i][0], Wall_segments_[i][2]), std::max(Wall_segments_[i][0], Wall_segments_[i][2]), std::min(Wall_segments_[i][1], Wall_segments_[i][3]), std::max(Wall_segments_[i][1], Wall_segments_[i][3])};
         double Var_temp = sqrt((Wall_[i + 1][0] - Wall_[i][0]) * (Wall_[i + 1][0] - Wall_[i][0]) + (Wall_[i + 1][1] - Wall_[i][1]) * (Wall_[i + 1][1] - Wall_[i][1]));
         Cos_Wall_[i] = (Wall_[i + 1][0] - Wall_[i][0]) / Var_temp;
         Sin_Wall_[i] = (Wall_[i + 1][1] - Wall_[i][1]) / Var_temp;
     }
+    BuildWallCandidateBins();
     // std::cout << Wall_.size() - 1 << endl;
     ofstream out("doc/Wall_.txt");
     for (int i = 0; i < Wall_.size(); i++)
@@ -276,6 +281,13 @@ void GRID::GRID_Read(int N_poloidal, int N_radial, string Casepath)
         PLasma_Grid_Boundry_[count++].push_back(Plasma_Grid_[i][1].Grid_Point(0, 1));
     }
     PLasma_Grid_Boundry_num_ = PLasma_Grid_Boundry_.size() - 1;
+    Plasma_boundary_segments_.resize(PLasma_Grid_Boundry_num_);
+    Plasma_boundary_bounds_.resize(PLasma_Grid_Boundry_num_);
+    for (int i = 0; i < PLasma_Grid_Boundry_num_; i++)
+    {
+        Plasma_boundary_segments_[i] = {PLasma_Grid_Boundry_[i][0], PLasma_Grid_Boundry_[i][1], PLasma_Grid_Boundry_[i + 1][0], PLasma_Grid_Boundry_[i + 1][1]};
+        Plasma_boundary_bounds_[i] = {std::min(Plasma_boundary_segments_[i][0], Plasma_boundary_segments_[i][2]), std::max(Plasma_boundary_segments_[i][0], Plasma_boundary_segments_[i][2]), std::min(Plasma_boundary_segments_[i][1], Plasma_boundary_segments_[i][3]), std::max(Plasma_boundary_segments_[i][1], Plasma_boundary_segments_[i][3])};
+    }
     // std::cout << PLasma_Grid_Boundry_.size() << endl;
     /*out.open("doc/plasmaGridBoundry.txt");
     for (int i = 0; i < PLasma_Grid_Boundry_.size(); i++)
@@ -529,6 +541,16 @@ double GRID::PLasma_Grid_Boundry(int i, int xy)
     return PLasma_Grid_Boundry_[i][xy];
 }
 
+const std::array<double, 4> &GRID::PlasmaBoundarySegment(int num) const
+{
+    return Plasma_boundary_segments_[num];
+}
+
+const std::array<double, 4> &GRID::PlasmaBoundaryBounds(int num) const
+{
+    return Plasma_boundary_bounds_[num];
+}
+
 int GRID::Wall_num()
 {
     return Wall_num_;
@@ -542,6 +564,16 @@ int GRID::Core_Boundry_num()
 double GRID::Core_Boundry(int i, int xy)
 {
     return Core_Boundry_[i][xy];
+}
+
+const std::array<double, 4> &GRID::CoreBoundarySegment(int num) const
+{
+    return Core_boundary_segments_[num];
+}
+
+const std::array<double, 4> &GRID::CoreBoundaryBounds(int num) const
+{
+    return Core_boundary_bounds_[num];
 }
 
 void GRID::Find(double X[], int *Zone, int XY[])
@@ -728,6 +760,105 @@ double GRID::Wall(int num, int xy)
         exit(0);
     }
     return Wall_[num][xy];
+}
+
+const std::array<double, 4> &GRID::WallSegment(int num) const
+{
+    return Wall_segments_[num];
+}
+
+const std::array<double, 4> &GRID::WallBounds(int num) const
+{
+    return Wall_bounds_[num];
+}
+
+void GRID::BuildWallCandidateBins()
+{
+    Wall_bins_.clear();
+    if (Wall_bounds_.empty())
+        return;
+
+    double min_x = Wall_bounds_[0][0];
+    double max_x = Wall_bounds_[0][1];
+    double min_y = Wall_bounds_[0][2];
+    double max_y = Wall_bounds_[0][3];
+    for (const auto &bounds : Wall_bounds_)
+    {
+        min_x = std::min(min_x, bounds[0]);
+        max_x = std::max(max_x, bounds[1]);
+        min_y = std::min(min_y, bounds[2]);
+        max_y = std::max(max_y, bounds[3]);
+    }
+
+    const int bin_count = std::max(8, static_cast<int>(std::sqrt(static_cast<double>(Wall_bounds_.size()))));
+    Wall_bin_nx_ = bin_count;
+    Wall_bin_ny_ = bin_count;
+    Wall_bin_min_x_ = min_x;
+    Wall_bin_min_y_ = min_y;
+    Wall_bin_dx_ = (max_x - min_x) / Wall_bin_nx_;
+    Wall_bin_dy_ = (max_y - min_y) / Wall_bin_ny_;
+    if (Wall_bin_dx_ <= 0.0 || Wall_bin_dy_ <= 0.0)
+    {
+        Wall_bins_.clear();
+        return;
+    }
+
+    Wall_bins_.assign(Wall_bin_nx_ * Wall_bin_ny_, std::vector<int>());
+    for (int i = 0; i < Wall_num_; i++)
+    {
+        const auto &bounds = Wall_bounds_[i];
+        int ix0 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((bounds[0] - Wall_bin_min_x_) / Wall_bin_dx_)));
+        int ix1 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((bounds[1] - Wall_bin_min_x_) / Wall_bin_dx_)));
+        int iy0 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((bounds[2] - Wall_bin_min_y_) / Wall_bin_dy_)));
+        int iy1 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((bounds[3] - Wall_bin_min_y_) / Wall_bin_dy_)));
+        for (int ix = ix0; ix <= ix1; ix++)
+            for (int iy = iy0; iy <= iy1; iy++)
+                Wall_bins_[ix * Wall_bin_ny_ + iy].push_back(i);
+    }
+}
+
+void GRID::WallCandidateSegments(double min_x, double max_x, double min_y, double max_y, std::vector<int> &candidates) const
+{
+    candidates.clear();
+    if (Wall_bins_.empty() || Wall_bin_dx_ <= 0.0 || Wall_bin_dy_ <= 0.0)
+    {
+        candidates.reserve(Wall_num_);
+        for (int i = 0; i < Wall_num_; i++)
+            candidates.push_back(i);
+        return;
+    }
+
+    int ix0 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((min_x - Wall_bin_min_x_) / Wall_bin_dx_)));
+    int ix1 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((max_x - Wall_bin_min_x_) / Wall_bin_dx_)));
+    int iy0 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((min_y - Wall_bin_min_y_) / Wall_bin_dy_)));
+    int iy1 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((max_y - Wall_bin_min_y_) / Wall_bin_dy_)));
+
+    static thread_local std::vector<int> seen;
+    static thread_local int stamp = 1;
+    if (static_cast<int>(seen.size()) < Wall_num_)
+        seen.assign(Wall_num_, 0);
+    if (stamp == std::numeric_limits<int>::max())
+    {
+        std::fill(seen.begin(), seen.end(), 0);
+        stamp = 1;
+    }
+    const int current_stamp = stamp++;
+
+    for (int ix = ix0; ix <= ix1; ix++)
+    {
+        for (int iy = iy0; iy <= iy1; iy++)
+        {
+            const auto &bin = Wall_bins_[ix * Wall_bin_ny_ + iy];
+            for (int index : bin)
+            {
+                if (seen[index] != current_stamp)
+                {
+                    seen[index] = current_stamp;
+                    candidates.push_back(index);
+                }
+            }
+        }
+    }
 }
 
 int GRID::Target1_Index(int i)
@@ -2382,12 +2513,17 @@ namespace eirene
         fp.close();
         x_.push_back(x_[0]);
         y_.push_back(y_[0]);
+        segments_.resize(Wall_num_);
+        bounds_.resize(Wall_num_);
         for (int i = 0; i < Wall_num_; i++)
         {
+            segments_[i] = {x_[i], y_[i], x_[i + 1], y_[i + 1]};
+            bounds_[i] = {std::min(segments_[i][0], segments_[i][2]), std::max(segments_[i][0], segments_[i][2]), std::min(segments_[i][1], segments_[i][3]), std::max(segments_[i][1], segments_[i][3])};
             dx_.push_back(x_[i + 1] - x_[i]);
             dy_.push_back(y_[i + 1] - y_[i]);
             Length_sq_.push_back(dx_[i] * dx_[i] + dy_[i] * dy_[i]);
         }
+        BuildCandidateBins();
         CalAngleWall();
     }
 
@@ -2438,6 +2574,105 @@ namespace eirene
             return y_[num];
         else
             __throw_runtime_error("Wall xy error!\n");
+    }
+
+    const std::array<double, 4> &WALL::Segment(int num) const
+    {
+        return segments_[num];
+    }
+
+    const std::array<double, 4> &WALL::Bounds(int num) const
+    {
+        return bounds_[num];
+    }
+
+    void WALL::BuildCandidateBins()
+    {
+        Wall_bins_.clear();
+        if (bounds_.empty())
+            return;
+
+        double min_x = bounds_[0][0];
+        double max_x = bounds_[0][1];
+        double min_y = bounds_[0][2];
+        double max_y = bounds_[0][3];
+        for (const auto &bounds : bounds_)
+        {
+            min_x = std::min(min_x, bounds[0]);
+            max_x = std::max(max_x, bounds[1]);
+            min_y = std::min(min_y, bounds[2]);
+            max_y = std::max(max_y, bounds[3]);
+        }
+
+        const int bin_count = std::max(8, static_cast<int>(std::sqrt(static_cast<double>(bounds_.size()))));
+        Wall_bin_nx_ = bin_count;
+        Wall_bin_ny_ = bin_count;
+        Wall_bin_min_x_ = min_x;
+        Wall_bin_min_y_ = min_y;
+        Wall_bin_dx_ = (max_x - min_x) / Wall_bin_nx_;
+        Wall_bin_dy_ = (max_y - min_y) / Wall_bin_ny_;
+        if (Wall_bin_dx_ <= 0.0 || Wall_bin_dy_ <= 0.0)
+        {
+            Wall_bins_.clear();
+            return;
+        }
+
+        Wall_bins_.assign(Wall_bin_nx_ * Wall_bin_ny_, std::vector<int>());
+        for (int i = 0; i < Wall_num_; i++)
+        {
+            const auto &bounds = bounds_[i];
+            int ix0 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((bounds[0] - Wall_bin_min_x_) / Wall_bin_dx_)));
+            int ix1 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((bounds[1] - Wall_bin_min_x_) / Wall_bin_dx_)));
+            int iy0 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((bounds[2] - Wall_bin_min_y_) / Wall_bin_dy_)));
+            int iy1 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((bounds[3] - Wall_bin_min_y_) / Wall_bin_dy_)));
+            for (int ix = ix0; ix <= ix1; ix++)
+                for (int iy = iy0; iy <= iy1; iy++)
+                    Wall_bins_[ix * Wall_bin_ny_ + iy].push_back(i);
+        }
+    }
+
+    void WALL::CandidateSegments(double min_x, double max_x, double min_y, double max_y, std::vector<int> &candidates) const
+    {
+        candidates.clear();
+        if (Wall_bins_.empty() || Wall_bin_dx_ <= 0.0 || Wall_bin_dy_ <= 0.0)
+        {
+            candidates.reserve(Wall_num_);
+            for (int i = 0; i < Wall_num_; i++)
+                candidates.push_back(i);
+            return;
+        }
+
+        int ix0 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((min_x - Wall_bin_min_x_) / Wall_bin_dx_)));
+        int ix1 = std::max(0, std::min(Wall_bin_nx_ - 1, static_cast<int>((max_x - Wall_bin_min_x_) / Wall_bin_dx_)));
+        int iy0 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((min_y - Wall_bin_min_y_) / Wall_bin_dy_)));
+        int iy1 = std::max(0, std::min(Wall_bin_ny_ - 1, static_cast<int>((max_y - Wall_bin_min_y_) / Wall_bin_dy_)));
+
+        static thread_local std::vector<int> seen;
+        static thread_local int stamp = 1;
+        if (static_cast<int>(seen.size()) < Wall_num_)
+            seen.assign(Wall_num_, 0);
+        if (stamp == std::numeric_limits<int>::max())
+        {
+            std::fill(seen.begin(), seen.end(), 0);
+            stamp = 1;
+        }
+        const int current_stamp = stamp++;
+
+        for (int ix = ix0; ix <= ix1; ix++)
+        {
+            for (int iy = iy0; iy <= iy1; iy++)
+            {
+                const auto &bin = Wall_bins_[ix * Wall_bin_ny_ + iy];
+                for (int index : bin)
+                {
+                    if (seen[index] != current_stamp)
+                    {
+                        seen[index] = current_stamp;
+                        candidates.push_back(index);
+                    }
+                }
+            }
+        }
     }
 
     void WALL::CalAngleWall()

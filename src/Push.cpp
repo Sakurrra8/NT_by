@@ -106,12 +106,22 @@ restart_particle:
 
                 /// search if the charged particle fly to target
                 num_intersect = 0;
+                const double path_min_x_target = std::min(PP->X(0), PP->X_new(0));
+                const double path_max_x_target = std::max(PP->X(0), PP->X_new(0));
+                const double path_min_y_target = std::min(PP->X(1), PP->X_new(1));
+                const double path_max_y_target = std::max(PP->X(1), PP->X_new(1));
                 for (int i = 24; i < 37; i++)
-                    if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                {
+                    const auto &wall_bounds = Grid1.WallBounds(i);
+                    if (path_max_x_target < wall_bounds[0] || wall_bounds[1] < path_min_x_target || path_max_y_target < wall_bounds[2] || wall_bounds[3] < path_min_y_target)
+                        continue;
+                    const auto &wall = Grid1.WallSegment(i);
+                    if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), wall[0], wall[1], wall[2], wall[3], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                     {
                         InterscePoint[num_intersect][0] = sqrt(Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1)));
                         InterscePoint[num_intersect++][3] = i;
                     }
+                }
                 if (num_intersect == 0)
                 {
                     for (int i = 0; i < N_radial; i++)
@@ -223,11 +233,21 @@ restart_particle:
                         {
                             std::cout << "Find2: " << '\t';
                         }
-                        for (int i = 0; i < Grid1.Wall_num(); i++)
+                        const double path_min_x_wall = std::min(PP->X(0), PP->X_new(0));
+                        const double path_max_x_wall = std::max(PP->X(0), PP->X_new(0));
+                        const double path_min_y_wall = std::min(PP->X(1), PP->X_new(1));
+                        const double path_max_y_wall = std::max(PP->X(1), PP->X_new(1));
+                        std::vector<int> wall_candidates;
+                        Grid1.WallCandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
+                        for (int i : wall_candidates)
                         {
-                            if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                            const auto &wall_bounds = Grid1.WallBounds(i);
+                            if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
+                                continue;
+                            const auto &wall = Grid1.WallSegment(i);
+                            if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), wall[0], wall[1], wall[2], wall[3], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                             {
-                                if (Tools::PointandLine(Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), PP->X_new(0), PP->X_new(1)))
+                                if (Tools::PointandLine(wall[0], wall[1], wall[2], wall[3], PP->X_new(0), PP->X_new(1)))
                                 {
                                     InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
                                     InterscePoint[num_intersect][3] = i;
@@ -250,9 +270,10 @@ restart_particle:
                         // std::cout << PP->X(0) << '\t' << PP->X(1) << '\t' << PP->X_new(0) << '\t' << PP->X_new(1) << endl;
                         for (int i = 0; i < Grid1.PLasma_Grid_Boundry_num(); i++)
                         {
-                            if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 0), Grid1.PLasma_Grid_Boundry(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                            const auto &boundary = Grid1.PlasmaBoundarySegment(i);
+                            if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), boundary[0], boundary[1], boundary[2], boundary[3], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                             {
-                                if (!Tools::PointandLine(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 0), Grid1.PLasma_Grid_Boundry(i + 1, 1), PP->X_new(0), PP->X_new(1)))
+                                if (!Tools::PointandLine(boundary[0], boundary[1], boundary[2], boundary[3], PP->X_new(0), PP->X_new(1)))
                                 // if (InterscePoint[num_intersect][1] != PP->X(0) && InterscePoint[num_intersect][2] != PP->X(1))
                                 {
                                     InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - PP->X(0)) + Tools::sqr(InterscePoint[num_intersect][2] - PP->X(1));
@@ -401,9 +422,19 @@ restart_particle:
                     }*/
                     int num_intersect = 0;
                     // std::cout << PP->X(0) << '\t' << PP->X(1) << '\t' << PP->X_new(0) << '\t' << PP->X_new(1) << endl;
-                    for (int i = 0; i < Grid1.Wall_num(); i++)
+                    const double path_min_x_wall = std::min(PP->X(0), PP->X_new(0));
+                    const double path_max_x_wall = std::max(PP->X(0), PP->X_new(0));
+                    const double path_min_y_wall = std::min(PP->X(1), PP->X_new(1));
+                    const double path_max_y_wall = std::max(PP->X(1), PP->X_new(1));
+                    std::vector<int> wall_candidates;
+                    Grid1.WallCandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
+                    for (int i : wall_candidates)
                     {
-                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), Grid1.Wall(i, 0), Grid1.Wall(i, 1), Grid1.Wall(i + 1, 0), Grid1.Wall(i + 1, 1), &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
+                        const auto &wall_bounds = Grid1.WallBounds(i);
+                        if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
+                            continue;
+                        const auto &wall = Grid1.WallSegment(i);
+                        if (Tools::get_line_intersection(PP->X(0), PP->X(1), PP->X_new(0), PP->X_new(1), wall[0], wall[1], wall[2], wall[3], &InterscePoint[num_intersect][1], &InterscePoint[num_intersect][2]))
                         {
                             if (InterscePoint[num_intersect][1] != PP->X(0) && InterscePoint[num_intersect][2] != PP->X(1))
                             {

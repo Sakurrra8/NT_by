@@ -154,7 +154,7 @@ void Prepare()
 			Vi_D[i][j] = sqrt(3. * qe * Ti[i][j] / Dmass / 3.);
 			if (K_T)
 				Vi_T[i][j] = sqrt(3. * qe * Ti[i][j] / Tmass / 3.);
-			// std::cout << pow(B[i][j][0], 2) + pow(B[i][j][1], 2) << " ";
+			// std::cout << Tools::sqr(B[i][j][0]) + Tools::sqr(B[i][j][1]) << " ";
 			//  std::cout << erx[i][j] << '\t';
 		}
 		// std::cout << endl;
@@ -632,9 +632,9 @@ void Prepare()
 		for (int j = 1; j < N_radial - 1; j++)
 		{
 			if (K_D)
-				Ti_D_thermal[i][j] = Ti[i][j] - 0.5 * Dmass * pow(ua_D_1[i][j], 2) / qe;
+				Ti_D_thermal[i][j] = Ti[i][j] - 0.5 * Dmass * Tools::sqr(ua_D_1[i][j]) / qe;
 			if (K_T)
-				Ti_T_thermal[i][j] = Ti[i][j] - 0.5 * Tmass * pow(ua_T_1[i][j], 2) / qe;
+				Ti_T_thermal[i][j] = Ti[i][j] - 0.5 * Tmass * Tools::sqr(ua_T_1[i][j]) / qe;
 			if (Ti_D_thermal[i][j] < 0)
 				std::cerr << "error of Ti_D_thermal[i][j]" << endl;
 			// Ti_out << Ti_D_thermal[i][j] << '\t';
@@ -1542,8 +1542,8 @@ void CX_DT_Fix()
 		ave2 /= Count;
 		for (int i = 0; i < (int)Count; i++)
 		{
-			sum1 += pow(k1[i] - ave1, 2);
-			sum2 += pow(k2[i] - ave2, 2);
+			sum1 += Tools::sqr(k1[i] - ave1);
+			sum2 += Tools::sqr(k2[i] - ave2);
 		}
 		variance3 = sqrt(sum1);
 		variance4 = sqrt(sum2);

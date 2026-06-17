@@ -57,24 +57,14 @@ namespace Tools
 
     std::mt19937 &GetEngine()
     {
-        // static 保证了 rd 和 gen 只会在第一次进入函数时创建
-        // 之后每次调用都会返回同一个 gen 实例
-        static std::random_device rd;
-        static std::mt19937 gen(rd());
+        thread_local std::mt19937 gen(std::random_device{}());
         return gen;
     }
 
     double Random()
     {
-        std::uniform_real_distribution<double> dist(1e-5, 1 - 1e-5);
+        thread_local std::uniform_real_distribution<double> dist(1e-5, 1.0 - 1e-5);
         return dist(GetEngine());
-
-        /*int N = 99999999;
-        std::random_device rd;
-        std::default_random_engine eng(rd());
-        std::uniform_int_distribution<int> distr(1, N);
-        // srand((unsigned)time(NULL));
-        return (double)distr(eng) / (double)(N + 1);*/
     }
 
     double Maxwell(double E, double Mass)
@@ -163,45 +153,40 @@ namespace Tools
                               double p2_x, double p2_y, double p3_x, double p3_y,
                               double *i_x, double *i_y)
     {
-        double s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, s_numer, t_numer, denom, t;
-        s10_x = p1_x - p0_x;
-        s10_y = p1_y - p0_y;
-        s32_x = p3_x - p2_x;
-        s32_y = p3_y - p2_y;
+        if (std::max(p0_x, p1_x) < std::min(p2_x, p3_x) ||
+            std::max(p2_x, p3_x) < std::min(p0_x, p1_x) ||
+            std::max(p0_y, p1_y) < std::min(p2_y, p3_y) ||
+            std::max(p2_y, p3_y) < std::min(p0_y, p1_y))
+            return 0;
 
-        denom = s10_x * s32_y - s32_x * s10_y;
-        if (denom == 0)
+        const double s10_x = p1_x - p0_x;
+        const double s10_y = p1_y - p0_y;
+        const double s32_x = p3_x - p2_x;
+        const double s32_y = p3_y - p2_y;
+        const double denom = s10_x * s32_y - s32_x * s10_y;
+        if (denom == 0.)
             return 0; // Collinear
-        int denomPositive;
-        if (denom > 0)
-        {
-            denomPositive = 1;
-        }
-        else
-        {
-            denomPositive = 0;
-        }
 
-        s02_x = p0_x - p2_x;
-        s02_y = p0_y - p2_y;
-        s_numer = s10_x * s02_y - s10_y * s02_x;
-        t_numer = s32_x * s02_y - s32_y * s02_x;
-        t = t_numer / denom;
+        const bool denomPositive = denom > 0.;
+        const double s02_x = p0_x - p2_x;
+        const double s02_y = p0_y - p2_y;
+        const double s_numer = s10_x * s02_y - s10_y * s02_x;
+        if ((s_numer < 0.) == denomPositive)
+            return 0;
+
+        const double t_numer = s32_x * s02_y - s32_y * s02_x;
+        if ((t_numer < 0.) == denomPositive)
+            return 0;
+
+        const double abs_denom = std::abs(denom);
+        if (std::abs(s_numer) > abs_denom || std::abs(t_numer) > abs_denom)
+            return 0;
+
+        const double t = t_numer / denom;
         if (i_x != NULL)
-            *i_x = p0_x + (t * s10_x);
+            *i_x = p0_x + t * s10_x;
         if (i_y != NULL)
-            *i_y = p0_y + (t * s10_y);
-
-        if ((s_numer < 0) == denomPositive)
-            return 0; // No collision
-
-        if ((t_numer < 0) == denomPositive)
-            return 0; // No collision
-
-        if (fabs(s_numer) > fabs(denom) || fabs(t_numer) > fabs(denom))
-            return 0; // No collision
-                      // Collision detected
-
+            *i_y = p0_y + t * s10_y;
         return 1;
     }
 

@@ -964,7 +964,7 @@ void Particle::Init(int k, int z)
 				double V_temp1[3], V_temp2[3] = {Tools::Random(), Tools::Random(), Tools::Random()};
 				for (int i = 0; i < 3; i++)
 					V_temp1[i] = Tools::intersect(V_temp2, V_, i);
-				V_temp2[0] = sqrt(pow(V_temp1[0], 2) + pow(V_temp1[1], 2) + pow(V_temp1[2], 2));
+				V_temp2[0] = sqrt(Tools::sqr(V_temp1[0]) + Tools::sqr(V_temp1[1]) + Tools::sqr(V_temp1[2]));
 				V_temp2[1] = sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
 				for (int i = 0; i < 3; i++)
 					V_[i] = V_[i] + V_temp1[i] / V_temp2[0] * V_temp2[1];
@@ -1545,7 +1545,7 @@ void Particle::track()
 					Charge_ = 1;
 					if (!K_D2Flight)
 					{
-						Sum_n_[XY_[0]][XY_[1]][Charge_] += Weight_ * NumPar_now;
+						addDensityStatGrid(XY_[0], XY_[1], Charge_, collisionStatWeight());
 						Weight_ = 0;
 						return;
 					}
@@ -1968,8 +1968,8 @@ void Particle::CalLambda()
 				Ion_[0].Setcs_now(Ion_[0].cs(XY_[0], XY_[1]));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(XY_[0], XY_[1]));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
-				CX_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * HH2mass * (pow(V_[0] - V_H_1_now[0], 2) + pow(V_[1] - V_H_1_now[1], 2) + pow(V_[2] - V_H_1_now[2], 2)) / qe, Ti[XY_[0]][XY_[1]]));
-				Ela_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(1. / 2. * HH2mass * (pow(V_[0] - V_H_1_now[0], 2) + pow(V_[1] - V_H_1_now[1], 2) + pow(V_[2] - V_H_1_now[2], 2)) / qe, Ti[XY_[0]][XY_[1]]));
+				CX_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * HH2mass * (Tools::sqr(V_[0] - V_H_1_now[0]) + Tools::sqr(V_[1] - V_H_1_now[1]) + Tools::sqr(V_[2] - V_H_1_now[2])) / qe, Ti[XY_[0]][XY_[1]]));
+				Ela_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(1. / 2. * HH2mass * (Tools::sqr(V_[0] - V_H_1_now[0]) + Tools::sqr(V_[1] - V_H_1_now[1]) + Tools::sqr(V_[2] - V_H_1_now[2])) / qe, Ti[XY_[0]][XY_[1]]));
 				lambda_now_ = 1. / (Ion_[0].cs_now() + Diss1_[0].cs_now() + Diss2_[0].cs_now() + CX_[0].cs_now() + Ela_[0].cs_now());
 			}
 			else if (this == &D2)
@@ -1987,15 +1987,15 @@ void Particle::CalLambda()
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
 				if (K_Vi == 1)
 				{
-					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * DD2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * DD2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
 					if (K_DT)
 					{
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2Tmass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2Tmass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
 					}
 				}
@@ -2031,15 +2031,15 @@ void Particle::CalLambda()
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
 				if (K_Vi == 1)
 				{
-					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * TT2mass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * TT2mass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																		   Ti[XY_[0]][XY_[1]]));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * TT2mass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * TT2mass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																		   Ti[XY_[0]][XY_[1]]));
 					if (K_DT)
 					{
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * DT2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * DT2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																				  Ti[XY_[0]][XY_[1]]));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * DT2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * DT2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																				  Ti[XY_[0]][XY_[1]]));
 					}
 				}
@@ -2091,7 +2091,7 @@ void Particle::CalLambda()
 					if (Zone_ < 6)
 					{
 						Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * 0.5 * Hmass * (pow(V_[0] - V_H_1_now[0], 2) + pow(V_[1] - V_H_1_now[1], 2) + pow(V_[2] - V_H_1_now[2], 2)) / qe, Ti[XY_[0]][XY_[1]]));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * 0.5 * Hmass * (Tools::sqr(V_[0] - V_H_1_now[0]) + Tools::sqr(V_[1] - V_H_1_now[1]) + Tools::sqr(V_[2] - V_H_1_now[2])) / qe, Ti[XY_[0]][XY_[1]]));
 						CX_DT_[0].Setcs_now(CS_Vacuum);
 					}
 					else
@@ -2138,10 +2138,10 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 4. * Dmass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 4. * Dmass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																				   Ti[XY_[0]][XY_[1]] / 2));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 4. * DTmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 4. * DTmass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																						  Ti[XY_[0]][XY_[1]] / 2));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
@@ -2205,10 +2205,10 @@ void Particle::CalLambda()
 					{
 						if (K_Vi == 1)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * Tmass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																				   Ti[XY_[0]][XY_[1]] / coefficient_T));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * Tmass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(1. / 2. * Tmass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																						  Ti[XY_[0]][XY_[1]] / coefficient_D));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
@@ -2292,15 +2292,15 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 4. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 4. * DD2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																			   Ti[XY_[0]][XY_[1]] / 2.));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 4. * DD2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 4. * DD2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																			   Ti[XY_[0]][XY_[1]] / 2.));
 						if (K_DT)
 						{
-							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2Tmass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
-							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2Tmass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2Tmass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
 						}
 					}
@@ -2356,13 +2356,13 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2mass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																			   Ti[XY_[0]][XY_[1]] / coefficient_T));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_T_1_now[0], 2) + pow(V_[1] - V_T_1_now[1], 2) + pow(V_[2] - V_T_1_now[2], 2)) / qe,
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2mass * (Tools::sqr(V_[0] - V_T_1_now[0]) + Tools::sqr(V_[1] - V_T_1_now[1]) + Tools::sqr(V_[2] - V_T_1_now[2])) / qe,
 																			   Ti[XY_[0]][XY_[1]] / coefficient_T));
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(1. / 2. * D2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_D));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2mass * (pow(V_[0] - V_D_1_now[0], 2) + pow(V_[1] - V_D_1_now[1], 2) + pow(V_[2] - V_D_1_now[2], 2)) / qe,
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(1. / 2. * D2mass * (Tools::sqr(V_[0] - V_D_1_now[0]) + Tools::sqr(V_[1] - V_D_1_now[1]) + Tools::sqr(V_[2] - V_D_1_now[2])) / qe,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_D));
 					}
 					if (K_Vi == 2)
@@ -2470,7 +2470,8 @@ void Particle::Caltrace()
 					IfColl_ = 0;
 					for (int i = 0; i < Grid1.PLasma_Grid_Boundry_num(); i++)
 					{
-						if (X_[0] >= min(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i + 1, 0)) && X_[0] <= max(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i + 1, 0)) && X_[1] >= min(Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 1)) && X_[1] <= max(Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 1)))
+						const auto &bounds = Grid1.PlasmaBoundaryBounds(i);
+						if (X_[0] >= bounds[0] && X_[0] <= bounds[1] && X_[1] >= bounds[2] && X_[1] <= bounds[3])
 						{
 							AddPlasmaBoundaryEro(i);
 							break;
@@ -2485,7 +2486,8 @@ void Particle::Caltrace()
 					InterscePoint[0][2] = X_[1];
 					for (int i = 0; i < Grid1.Core_Boundry_num(); i++)
 					{
-						if (X_[0] >= min(Grid1.Core_Boundry(i, 0), Grid1.Core_Boundry(i + 1, 0)) && X_[0] <= max(Grid1.Core_Boundry(i, 0), Grid1.Core_Boundry(i + 1, 0)) && X_[1] >= min(Grid1.Core_Boundry(i, 1), Grid1.Core_Boundry(i + 1, 1)) && X_[1] <= max(Grid1.Core_Boundry(i, 1), Grid1.Core_Boundry(i + 1, 1)))
+						const auto &bounds = Grid1.CoreBoundaryBounds(i);
+						if (X_[0] >= bounds[0] && X_[0] <= bounds[1] && X_[1] >= bounds[2] && X_[1] <= bounds[3])
 						{
 							InterscePoint[0][3] = i;
 							break;
@@ -2716,7 +2718,8 @@ void Particle::Caltrace()
 				IfColl_ = 0;
 				for (int i = 0; i < Grid1.PLasma_Grid_Boundry_num(); i++)
 				{
-					if (X_[0] >= min(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i + 1, 0)) && X_[0] <= max(Grid1.PLasma_Grid_Boundry(i, 0), Grid1.PLasma_Grid_Boundry(i + 1, 0)) && X_[1] >= min(Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 1)) && X_[1] <= max(Grid1.PLasma_Grid_Boundry(i, 1), Grid1.PLasma_Grid_Boundry(i + 1, 1)))
+					const auto &bounds = Grid1.PlasmaBoundaryBounds(i);
+					if (X_[0] >= bounds[0] && X_[0] <= bounds[1] && X_[1] >= bounds[2] && X_[1] <= bounds[3])
 					{
 						AddPlasmaBoundaryEro(i);
 						break;
@@ -2986,9 +2989,19 @@ void Particle::Caltrace_Tri()
 						NeutralFluxStatistics(2, 1);
 
 						int num_intersect = 0;
-						for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
+						const double path_min_x_wall = std::min(X_old_[0], X_[0]);
+						const double path_max_x_wall = std::max(X_old_[0], X_[0]);
+						const double path_min_y_wall = std::min(X_old_[1], X_[1]);
+						const double path_max_y_wall = std::max(X_old_[1], X_[1]);
+						std::vector<int> wall_candidates;
+						Grid4.Wall_.CandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
+						for (int i : wall_candidates)
 						{
-							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
+							const auto &wall_bounds = Grid4.Wall_.Bounds(i);
+							if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
+								continue;
+							const auto &wall = Grid4.Wall_.Segment(i);
+							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], wall[0], wall[1], wall[2], wall[3], InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
 							{
 								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
 								InterscePoint[num_intersect++][3] = i;
@@ -3158,9 +3171,19 @@ void Particle::Caltrace_Tri()
 						NeutralFluxStatistics(2, 1);
 
 						int num_intersect = 0;
-						for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
+						const double path_min_x_wall = std::min(X_old_[0], X_[0]);
+						const double path_max_x_wall = std::max(X_old_[0], X_[0]);
+						const double path_min_y_wall = std::min(X_old_[1], X_[1]);
+						const double path_max_y_wall = std::max(X_old_[1], X_[1]);
+						std::vector<int> wall_candidates;
+						Grid4.Wall_.CandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
+						for (int i : wall_candidates)
 						{
-							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
+							const auto &wall_bounds = Grid4.Wall_.Bounds(i);
+							if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
+								continue;
+							const auto &wall = Grid4.Wall_.Segment(i);
+							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], wall[0], wall[1], wall[2], wall[3], InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
 							{
 								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
 								InterscePoint[num_intersect++][3] = i;
@@ -3330,9 +3353,19 @@ void Particle::Caltrace_Tri()
 						boundary_start_ = 0;
 
 						int num_intersect = 0;
-						for (int i = 0; i < Grid4.Wall_.Wall_num(); i++)
+						const double path_min_x_wall = std::min(X_old_[0], X_[0]);
+						const double path_max_x_wall = std::max(X_old_[0], X_[0]);
+						const double path_min_y_wall = std::min(X_old_[1], X_[1]);
+						const double path_max_y_wall = std::max(X_old_[1], X_[1]);
+						std::vector<int> wall_candidates;
+						Grid4.Wall_.CandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
+						for (int i : wall_candidates)
 						{
-							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], Grid4.Wall_.P(i, 0), Grid4.Wall_.P(i, 1), Grid4.Wall_.P(i + 1, 0), Grid4.Wall_.P(i + 1, 1), InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
+							const auto &wall_bounds = Grid4.Wall_.Bounds(i);
+							if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
+								continue;
+							const auto &wall = Grid4.Wall_.Segment(i);
+							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], wall[0], wall[1], wall[2], wall[3], InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
 							{
 								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
 								InterscePoint[num_intersect++][3] = i;
@@ -4369,7 +4402,7 @@ void Particle::Coll()
 					else if (K_mu == 1)
 					{
 						Ion_[Charge_].Mu_Add(XY_, mass_ * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-						Ion_[Charge_].E_Add(XY_, (1.5 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+						Ion_[Charge_].E_Add(XY_, (1.5 * Tn_ * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 					}
 				}
 				else if (MeshMode == 3)
@@ -4383,7 +4416,7 @@ void Particle::Coll()
 					else if (K_mu == 1)
 					{
 						Ion_[Charge_].Mu_Add(XY_, mass_ * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-						Ion_[Charge_].E_Add(XY_, (1.5 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+						Ion_[Charge_].E_Add(XY_, (1.5 * Tn_ * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 					}
 
 					Ion_[Charge_].n_Add(Tri_Index_, collisionStatWeight());
@@ -4395,7 +4428,7 @@ void Particle::Coll()
 					else if (K_mu == 1)
 					{
 						Ion_[Charge_].Mu_Add(Tri_Index_, mass_ * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-						Ion_[Charge_].E_Add(Tri_Index_, (1.5 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+						Ion_[Charge_].E_Add(Tri_Index_, (1.5 * Tn_ * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 					}
 				}
 
@@ -4421,12 +4454,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							CX_[Charge_].Mu_Add(XY_, (-Dmass * ua_D_1[XY_[0]][XY_[1]]) * collisionStatWeight());
-							CX_[Charge_].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							CX_[Charge_].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2)
 						{
 							CX_[Charge_].Mu_Add(XY_, -Dmass * V_temp1 * collisionStatWeight());
-							CX_[Charge_].E_Add(XY_, (-1.5 * Ti[XY_[0]][XY_[1]] * qe - 0.5 * Dmass * pow(V_temp1, 2)) * collisionStatWeight());
+							CX_[Charge_].E_Add(XY_, (-1.5 * Ti[XY_[0]][XY_[1]] * qe - 0.5 * Dmass * Tools::sqr(V_temp1)) * collisionStatWeight());
 						}
 					}
 					if (this == &T)
@@ -4434,12 +4467,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							CX_[Charge_].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							CX_[Charge_].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							CX_[Charge_].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Tmass * Tools::sqr(ua_T_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2)
 						{
 							CX_[Charge_].Mu_Add(XY_, -Tmass * V_temp3 * collisionStatWeight());
-							CX_[Charge_].E_Add(XY_, (-1.5 * Ti[XY_[0]][XY_[1]] * qe + -0.5 * Tmass * pow(V_temp3, 2)) * collisionStatWeight());
+							CX_[Charge_].E_Add(XY_, (-1.5 * Ti[XY_[0]][XY_[1]] * qe + -0.5 * Tmass * Tools::sqr(V_temp3)) * collisionStatWeight());
 						}
 					}
 					// std::cout << Index_ << endl;
@@ -4450,7 +4483,7 @@ void Particle::Coll()
 					{
 						V_temp2 = B[XY_[0]][XY_[1]][0] * V_1[0] + B[XY_[0]][XY_[1]][1] * V_1[1] + B[XY_[0]][XY_[1]][2] * V_1[2];
 						CX_[Charge_].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
-						CX_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+						CX_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 					}
 					if (K_mu == 3)
 					{
@@ -4465,11 +4498,11 @@ void Particle::Coll()
 						CX_[Charge_].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
 						if (V_temp2 < 0)
 						{
-							CX_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+							CX_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 						else if (V_temp2 >= 0)
 						{
-							CX_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+							CX_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 					}
 				}
@@ -4522,12 +4555,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							CX_DT_[Charge_].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							CX_DT_[Charge_].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							CX_DT_[Charge_].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(ua_T_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2)
 						{
 							CX_DT_[Charge_].Mu_Add(XY_, -Tmass * V_temp3 * collisionStatWeight());
-							CX_DT_[Charge_].E_Add(XY_, (-3. / 2 * Ti[XY_[0]][XY_[1]] * qe - 1. / 2 * Tmass * pow(V_temp3, 2)) * collisionStatWeight());
+							CX_DT_[Charge_].E_Add(XY_, (-3. / 2 * Ti[XY_[0]][XY_[1]] * qe - 1. / 2 * Tmass * Tools::sqr(V_temp3)) * collisionStatWeight());
 						}
 						// std::cout << Index_ << endl;
 						setfate(0, 1, 15); // CX with T
@@ -4538,18 +4571,18 @@ void Particle::Coll()
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_1[0] + B[XY_[0]][XY_[1]][1] * V_1[1] + B[XY_[0]][XY_[1]][2] * V_1[2];
 							CX_DT_[Charge_].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
 							if (V_temp2 < 0)
-								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							else
-								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 						if (K_mu == 3)
 						{
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_1[0] + B[XY_[0]][XY_[1]][1] * V_1[1] + B[XY_[0]][XY_[1]][2] * V_1[2] - ua_T_1[XY_[0]][XY_[1]];
 							CX_DT_[Charge_].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
 							if (V_temp2 < 0)
-								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							else
-								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 						P = &T;
 						P->Particlefrom(this, 1, 0);
@@ -4564,12 +4597,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							CX_DT_[Charge_].Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							CX_DT_[Charge_].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							CX_DT_[Charge_].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2)
 						{
 							CX_DT_[Charge_].Mu_Add(XY_, -Dmass * V_temp1 * collisionStatWeight());
-							CX_DT_[Charge_].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * collisionStatWeight());
+							CX_DT_[Charge_].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(V_temp1)) * collisionStatWeight());
 						}
 						// std::cout << Index_ << endl;
 						setfate(0, 1, 3); // CX with D
@@ -4580,18 +4613,18 @@ void Particle::Coll()
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_1[0] + B[XY_[0]][XY_[1]][1] * V_1[1] + B[XY_[0]][XY_[1]][2] * V_1[2];
 							CX_DT_[Charge_].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
 							if (V_temp2 < 0)
-								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							else
-								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 						else if (K_mu == 3)
 						{
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_1[0] + B[XY_[0]][XY_[1]][1] * V_1[1] + B[XY_[0]][XY_[1]][2] * V_1[2] - V_temp1;
 							CX_DT_[Charge_].Mu_Add(XY_, mass_ * V_temp2 * collisionStatWeight());
 							if (V_temp2 < 0)
-								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, -(1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							else
-								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+								CX_DT_[Charge_].E_Add(XY_, (1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 						P = &D;
 						P->Particlefrom(this, 1, 0);
@@ -5026,12 +5059,12 @@ void Particle::Coll()
 							if (K_mu == 1 || K_Vi == 2)
 							{
 								CX_[0].Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 							}
 							else if (K_mu == 2 || K_mu == 3)
 							{
 								CX_[0].Mu_Add(XY_, -Dmass * V_temp1 * collisionStatWeight());
-								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * collisionStatWeight());
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(V_temp1)) * collisionStatWeight());
 							}
 						}
 						else if (this == &T2)
@@ -5039,12 +5072,12 @@ void Particle::Coll()
 							if (K_mu == 1 || K_Vi == 2)
 							{
 								CX_[0].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(ua_T_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 							}
 							else if (K_mu == 2 || K_mu == 3)
 							{
 								CX_[0].Mu_Add(XY_, -Tmass * V_temp3 * collisionStatWeight());
-								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * collisionStatWeight());
+								CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(V_temp3)) * collisionStatWeight());
 							}
 						}
 					}
@@ -5054,24 +5087,24 @@ void Particle::Coll()
 						if (this == &D2)
 						{
 							CX_[0].Mu_Add(XY_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
-							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * collisionStatWeight());
+							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (Tools::sqr(V_D_1_now[0]) + Tools::sqr(V_D_1_now[1]) + Tools::sqr(V_D_1_now[2]))) * collisionStatWeight());
 						}
 						else if (this == &T2)
 						{
 							CX_[0].Mu_Add(XY_, -Tmass * (V_T_1_now[0] * B[XY_[0]][XY_[1]][0] + V_T_1_now[1] * B[XY_[0]][XY_[1]][1] + V_T_1_now[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
-							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_T_1_now[0], 2) + pow(V_T_1_now[1], 2) + pow(V_T_1_now[2], 2))) * collisionStatWeight());
+							CX_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (Tools::sqr(V_T_1_now[0]) + Tools::sqr(V_T_1_now[1]) + Tools::sqr(V_T_1_now[2]))) * collisionStatWeight());
 						}
 
 						CX_[0].n_Add(Tri_Index_, collisionStatWeight());
 						if (this == &D2)
 						{
 							CX_[0].Mu_Add(Tri_Index_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
-							CX_[0].E_Add(Tri_Index_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * collisionStatWeight());
+							CX_[0].E_Add(Tri_Index_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (Tools::sqr(V_D_1_now[0]) + Tools::sqr(V_D_1_now[1]) + Tools::sqr(V_D_1_now[2]))) * collisionStatWeight());
 						}
 						else if (this == &T2)
 						{
 							CX_[0].Mu_Add(Tri_Index_, -Tmass * (V_T_1_now[0] * B[XY_[0]][XY_[1]][0] + V_T_1_now[1] * B[XY_[0]][XY_[1]][1] + V_T_1_now[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
-							CX_[0].E_Add(Tri_Index_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (pow(V_T_1_now[0], 2) + pow(V_T_1_now[1], 2) + pow(V_T_1_now[2], 2))) * collisionStatWeight());
+							CX_[0].E_Add(Tri_Index_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * (Tools::sqr(V_T_1_now[0]) + Tools::sqr(V_T_1_now[1]) + Tools::sqr(V_T_1_now[2]))) * collisionStatWeight());
 						}
 					}
 					setfate(0, 1, Index_);
@@ -5158,12 +5191,12 @@ void Particle::Coll()
 							if (K_mu == 1 || K_Vi == 2)
 							{
 								Ela_[0].Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 							}
 							else if (K_mu == 2)
 							{
 								Ela_[0].Mu_Add(XY_, -Dmass * V_temp1 * collisionStatWeight());
-								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * collisionStatWeight());
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(V_temp1)) * collisionStatWeight());
 							}
 						}
 						else if (this == &T2)
@@ -5171,12 +5204,12 @@ void Particle::Coll()
 							if (K_mu == 1 || K_Vi == 2)
 							{
 								Ela_[0].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(ua_T_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 							}
 							else if (K_mu == 2)
 							{
 								Ela_[0].Mu_Add(XY_, -Tmass * V_temp3 * collisionStatWeight());
-								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * collisionStatWeight());
+								Ela_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(V_temp3)) * collisionStatWeight());
 							}
 						}
 						setfate(0, 9, Index_);
@@ -5189,17 +5222,17 @@ void Particle::Coll()
 							{
 								Ela_[0].Mu_Add(XY_, Dmass * V_temp2 * collisionStatWeight());
 								if (V_temp2 < 0)
-									Ela_[0].E_Add(XY_, -(1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, -(1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 								else
-									Ela_[0].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, (1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							}
 							else if (this == &T2)
 							{
 								Ela_[0].Mu_Add(XY_, Tmass * V_temp2 * collisionStatWeight());
 								if (V_temp2 < 0)
-									Ela_[0].E_Add(XY_, -(1. / 2 * Tmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, -(1. / 2 * Tmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 								else
-									Ela_[0].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, (1. / 2 * Tmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							}
 						}
 						else if (K_mu == 3)
@@ -5209,18 +5242,18 @@ void Particle::Coll()
 								V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp1;
 								Ela_[0].Mu_Add(XY_, Dmass * V_temp2 * collisionStatWeight());
 								if (V_temp2 * ua_D_1[XY_[0]][XY_[1]] < 0)
-									Ela_[0].E_Add(XY_, -(1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, -(1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 								else
-									Ela_[0].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, (1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							}
 							else if (this == &T2)
 							{
 								V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp3;
 								Ela_[0].Mu_Add(XY_, Tmass * V_temp2 * collisionStatWeight());
 								if (V_temp2 * ua_T_1[XY_[0]][XY_[1]] < 0)
-									Ela_[0].E_Add(XY_, -(1. / 2 * Tmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, -(1. / 2 * Tmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 								else
-									Ela_[0].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * collisionStatWeight());
+									Ela_[0].E_Add(XY_, (1. / 2 * Tmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							}
 						}
 					}
@@ -5228,11 +5261,11 @@ void Particle::Coll()
 					{
 						Ela_[0].n_Add(XY_, collisionStatWeight());
 						Ela_[0].Mu_Add(XY_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
-						Ela_[0].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * collisionStatWeight());
+						Ela_[0].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (Tools::sqr(V_D_1_now[0]) + Tools::sqr(V_D_1_now[1]) + Tools::sqr(V_D_1_now[2]))) * collisionStatWeight());
 
 						Ela_[0].n_Add(Tri_Index_, collisionStatWeight());
 						Ela_[0].Mu_Add(Tri_Index_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
-						Ela_[0].E_Add(Tri_Index_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (pow(V_D_1_now[0], 2) + pow(V_D_1_now[1], 2) + pow(V_D_1_now[2], 2))) * collisionStatWeight());
+						Ela_[0].E_Add(Tri_Index_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (Tools::sqr(V_D_1_now[0]) + Tools::sqr(V_D_1_now[1]) + Tools::sqr(V_D_1_now[2]))) * collisionStatWeight());
 
 						setfate(0, 9, Index_);
 						Init(2, 1);
@@ -5259,12 +5292,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							CX_DT_[0].Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(ua_T_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2 || K_mu == 3)
 						{
 							CX_DT_[0].Mu_Add(XY_, -Tmass * V_temp3 * collisionStatWeight());
-							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * collisionStatWeight());
+							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(V_temp3)) * collisionStatWeight());
 						}
 					}
 					else if (this == &T2)
@@ -5272,12 +5305,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							CX_DT_[0].Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2 || K_mu == 3)
 						{
 							CX_DT_[0].Mu_Add(XY_, -Dmass * V_temp1 * collisionStatWeight());
-							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * collisionStatWeight());
+							CX_DT_[0].E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(V_temp1)) * collisionStatWeight());
 						}
 					}
 					// std::cout << name_ + " before CX_DT V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
@@ -5310,12 +5343,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							Ela_DT_.begin()->Mu_Add(XY_, -Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(ua_T_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(ua_T_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2)
 						{
 							Ela_DT_.begin()->Mu_Add(XY_, -Tmass * V_temp3 * collisionStatWeight());
-							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * pow(V_temp3, 2)) * collisionStatWeight());
+							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Tmass * Tools::sqr(V_temp3)) * collisionStatWeight());
 						}
 					}
 					else if (this == &T2)
@@ -5323,12 +5356,12 @@ void Particle::Coll()
 						if (K_mu == 1 || K_Vi == 2)
 						{
 							Ela_DT_.begin()->Mu_Add(XY_, -Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						else if (K_mu == 2)
 						{
 							Ela_DT_.begin()->Mu_Add(XY_, -Dmass * V_temp1 * collisionStatWeight());
-							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * pow(V_temp1, 2)) * collisionStatWeight());
+							Ela_DT_.begin()->E_Add(XY_, -(3. / 2 * Ti[XY_[0]][XY_[1]] * qe + 1. / 2 * Dmass * Tools::sqr(V_temp1)) * collisionStatWeight());
 						}
 					}
 					setfate(0, 9, Index_);
@@ -5340,12 +5373,12 @@ void Particle::Coll()
 						if (this == &D2)
 						{
 							Ela_DT_[Charge_].Mu_Add(XY_, Tmass * V_temp2 * collisionStatWeight());
-							Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * collisionStatWeight());
+							Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Tmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 						else if (this == &T2)
 						{
 							Ela_DT_[Charge_].Mu_Add(XY_, Dmass * V_temp2 * collisionStatWeight());
-							Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+							Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 					}
 					if (K_mu == 3)
@@ -5355,18 +5388,18 @@ void Particle::Coll()
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp3;
 							Ela_DT_[Charge_].Mu_Add(XY_, Tmass * V_temp2 * collisionStatWeight());
 							if (V_temp2 * ua_T_1[XY_[0]][XY_[1]] < 0)
-								Ela_DT_[Charge_].E_Add(XY_, -(1. / 2 * Tmass * (pow(V_temp2, 2))) * collisionStatWeight());
+								Ela_DT_[Charge_].E_Add(XY_, -(1. / 2 * Tmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							else
-								Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Tmass * (pow(V_temp2, 2))) * collisionStatWeight());
+								Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Tmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 						else if (this == &T2)
 						{
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2] - V_temp1;
 							Ela_DT_[Charge_].Mu_Add(XY_, Dmass * V_temp2 * collisionStatWeight());
 							if (V_temp2 * ua_D_1[XY_[0]][XY_[1]] < 0)
-								Ela_DT_[Charge_].E_Add(XY_, -(1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+								Ela_DT_[Charge_].E_Add(XY_, -(1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							else
-								Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+								Ela_DT_[Charge_].E_Add(XY_, (1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 						}
 					}
 					// std::cout << name_ + " after Ela_DT V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
@@ -5466,18 +5499,18 @@ void Particle::Coll()
 						if (this == &D2)
 						{
 							DS_[1][0].Mu_Add(XY_, 2. * Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 						if (this == &T2)
 						{
 							DS_[1][0].Mu_Add(XY_, 2. * Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+							DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 						}
 					}
 					else if (K_mu == 2 || K_mu == 3)
 					{
 						DS_[1][0].Mu_Add(XY_, 2. * Dmass * V_temp2 * collisionStatWeight());
-						DS_[1][0].E_Add(XY_, 2 * (3. / 2 * Tn_ * qe + 1. / 2 * mass_ * (pow(V_temp2, 2))) * collisionStatWeight());
+						DS_[1][0].E_Add(XY_, 2 * (3. / 2 * Tn_ * qe + 1. / 2 * mass_ * (Tools::sqr(V_temp2))) * collisionStatWeight());
 					}
 					Charge_ = 0;
 					Weight_ = 0;
@@ -5495,31 +5528,31 @@ void Particle::Coll()
 						if (this == &D2)
 						{
 							DS_[1][1].Mu_Add(XY_, Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(ua_D_1[XY_[0]][XY_[1]], 2))) * collisionStatWeight());
+							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_D_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 						}
 						if (this == &T2)
 						{
 							DS_[1][1].Mu_Add(XY_, Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(ua_T_1[XY_[0]][XY_[1]], 2))) * collisionStatWeight());
+							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_T_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 						}
 					}
 					else if (K_mu == 2 || K_mu == 3)
 						if (this == &H2)
 						{
 							DS_[1][1].Mu_Add(XY_, Hmass * V_temp2 * collisionStatWeight());
-							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							P = &H;
 						}
 						else if (this == &D2)
 						{
 							DS_[1][1].Mu_Add(XY_, Dmass * V_temp2 * collisionStatWeight());
-							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							P = &D;
 						}
 						else if (this == &T2)
 						{
 							DS_[1][1].Mu_Add(XY_, Tmass * V_temp2 * collisionStatWeight());
-							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(V_temp2, 2))) * collisionStatWeight());
+							DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(V_temp2))) * collisionStatWeight());
 							P = &T;
 						}
 					P->Particlefrom(this, 1, 0);
@@ -6282,12 +6315,12 @@ int Particle::H2PCollCal()
 			if (this == &D2)
 			{
 				DS_[1][0].Mu_Add(XY_, 2. * Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 			}
 			if (this == &T2)
 			{
 				DS_[1][0].Mu_Add(XY_, 2. * Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * pow(ua_D_1[XY_[0]][XY_[1]], 2)) * collisionStatWeight());
+				DS_[1][0].E_Add(XY_, 2. * (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * Tools::sqr(ua_D_1[XY_[0]][XY_[1]])) * collisionStatWeight());
 			}
 		}
 		else if (K_mu == 2 || K_mu == 3)
@@ -6342,12 +6375,12 @@ int Particle::H2PCollCal()
 			if (this == &D2)
 			{
 				DS_[1][1].Mu_Add(XY_, Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(ua_D_1[XY_[0]][XY_[1]], 2))) * collisionStatWeight());
+				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_D_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 			}
 			if (this == &T2)
 			{
 				DS_[1][1].Mu_Add(XY_, Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(ua_T_1[XY_[0]][XY_[1]], 2))) * collisionStatWeight());
+				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_T_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 			}
 		}
 		else if (K_mu == 2 || K_mu == 3)
@@ -6397,12 +6430,12 @@ int Particle::H2PCollCal()
 			if (this == &D2)
 			{
 				DS_[1][1].Mu_Add(XY_, Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(ua_D_1[XY_[0]][XY_[1]], 2))) * collisionStatWeight());
+				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_D_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 			}
 			if (this == &T2)
 			{
 				DS_[1][1].Mu_Add(XY_, Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (pow(ua_T_1[XY_[0]][XY_[1]], 2))) * collisionStatWeight());
+				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_T_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 			}
 		}
 		else if (K_mu == 2 || K_mu == 3)
@@ -6451,7 +6484,7 @@ void Particle::Stat(int n)
 						V_D_1_[i][j][m][0] = Sum_V_D_1_[i][j][m][0] / Num_V_D_1_[i][j][0];
 					}
 					E_[i][j][0] = Sum_E_[i][j][0] / Sum_n_[i][j][0];
-					T_[i][j][0] = 2. / 3. * (E_[i][j][0] - 0.5 * mass_ * (pow(V_Grid_[i][j][0][0], 2) + pow(V_Grid_[i][j][1][0], 2) + pow(V_Grid_[i][j][2][0], 2)) / 1.6e-19);
+					T_[i][j][0] = 2. / 3. * (E_[i][j][0] - 0.5 * mass_ * (Tools::sqr(V_Grid_[i][j][0][0]) + Tools::sqr(V_Grid_[i][j][1][0]) + Tools::sqr(V_Grid_[i][j][2][0])) / 1.6e-19);
 				}
 				n_[i][j][0] = Sum_n_[i][j][0] / Volume[i][j];
 				for (int m = 0; m < 4; m++)
@@ -6469,7 +6502,7 @@ void Particle::Stat(int n)
 							V_Grid_[i][j][m][k] = Sum_V_[i][j][m][k] / Sum_n_[i][j][k];
 						}
 						E_[i][j][k] = Sum_E_[i][j][k] / Sum_n_[i][j][k];
-						T_[i][j][k] = 2. / 3. * (E_[i][j][k] - 0.5 * mass_ * (pow(V_Grid_[i][j][0][k], 2) + pow(V_Grid_[i][j][1][k], 2) + pow(V_Grid_[i][j][2][k], 2)) / 1.6e-19);
+						T_[i][j][k] = 2. / 3. * (E_[i][j][k] - 0.5 * mass_ * (Tools::sqr(V_Grid_[i][j][0][k]) + Tools::sqr(V_Grid_[i][j][1][k]) + Tools::sqr(V_Grid_[i][j][2][k])) / 1.6e-19);
 					}
 					n_[i][j][k] = Sum_n_[i][j][k] / Volume[i][j];
 					for (int m = 0; m < Num_array_ + 1; m++)
@@ -6542,9 +6575,18 @@ void Particle::Stat(int n)
 				{
 					for (int b = 1; b < N_radial - 1; b++)
 					{
-						n_[a][b][1] = (D2.Ion_[0].Sn(a, b) + D2.CX_[0].Sn(a, b)) / ne[a][b] / (R2_2_11_H4.cal(ne[a][b], Te[a][b]) + R2_2_12_H4.cal(ne[a][b], Te[a][b]) + R2_2_14_H4.cal(ne[a][b], Te[a][b]));
+						const double loss_rate = R2_2_11_H4.cal(ne[a][b], Te[a][b]) + R2_2_12_H4.cal(ne[a][b], Te[a][b]) + R2_2_14_H4.cal(ne[a][b], Te[a][b]);
+						double production_rate = Ion_[0].Sn(a, b) + CX_[0].Sn(a, b);
+						if (K_DT && K_CX_DT)
+							production_rate += CX_DT_[0].Sn(a, b);
+						// Molecular-ion density is closed by local steady-state balance.
+						// Collision counters are cell-integrated rates, so divide by cell volume to get volumetric production.
+						if (ne[a][b] > 0. && loss_rate > 0. && Volume[a][b] > 0.)
+							n_[a][b][1] = (production_rate / Volume[a][b]) / (ne[a][b] * loss_rate);
+						else
+							n_[a][b][1] = 0.;
 						double Var_temp = R2_2_14_H2.cal(ne[a][b], Te[a][b]);
-						DS_[1][2].SetPra(a, b, ne[a][a] * n_[a][b][1] * R2_2_14_H8.cal(ne[a][b], Te[a][b], &Var_temp));
+						DS_[1][2].SetPra(a, b, ne[a][b] * n_[a][b][1] * R2_2_14_H8.cal(ne[a][b], Te[a][b], &Var_temp));
 					}
 				}
 			}
@@ -6704,7 +6746,7 @@ void Particle::Stat_Tri(int n)
 					Tri_V_Grid_[i][m][0] = Tri_Sum_V_[i][m][0] / Tri_Sum_n_[i][0];
 				}
 				Tri_E_[i][0] = Tri_Sum_E_[i][0] / Tri_Sum_n_[i][0];
-				Tri_T_[i][0] = 2. / 3. * (Tri_E_[i][0] - 0.5 * mass_ * (pow(Tri_V_Grid_[i][0][0], 2) + pow(Tri_V_Grid_[i][1][0], 2) + pow(Tri_V_Grid_[i][2][0], 2)) / 1.602e-19);
+				Tri_T_[i][0] = 2. / 3. * (Tri_E_[i][0] - 0.5 * mass_ * (Tools::sqr(Tri_V_Grid_[i][0][0]) + Tools::sqr(Tri_V_Grid_[i][1][0]) + Tools::sqr(Tri_V_Grid_[i][2][0])) / 1.602e-19);
 			}
 			Tri_n_[i][0] = Tri_Sum_n_[i][0] / Grid4.triVolume(i);
 		}
@@ -6719,7 +6761,7 @@ void Particle::Stat_Tri(int n)
 						Tri_V_Grid_[i][m][k] = Tri_Sum_V_[i][m][k] / Tri_Sum_n_[i][k];
 					}
 					Tri_E_[i][k] = Tri_Sum_E_[i][k] / Tri_Sum_n_[i][k];
-					Tri_T_[i][k] = 2. / 3. * (Tri_E_[i][k] - 0.5 * mass_ * (pow(Tri_V_Grid_[i][0][k], 2) + pow(Tri_V_Grid_[i][1][k], 2) + pow(Tri_V_Grid_[i][2][k], 2)) / 1.602e-19);
+					Tri_T_[i][k] = 2. / 3. * (Tri_E_[i][k] - 0.5 * mass_ * (Tools::sqr(Tri_V_Grid_[i][0][k]) + Tools::sqr(Tri_V_Grid_[i][1][k]) + Tools::sqr(Tri_V_Grid_[i][2][k])) / 1.602e-19);
 				}
 				Tri_n_[i][k] = Tri_Sum_n_[i][k] / Grid4.triVolume(i);
 			}
@@ -6774,12 +6816,45 @@ void Particle::Stat_Tri(int n)
 	{
 		Ion_[0].Stat_Tri(0, Tri_n_, NULL);
 		CX_[0].Stat_Tri(0, Tri_n_, NULL);
+		if (K_DT && K_CX_DT)
+		{
+			CX_DT_[0].Stat_Tri(0, Tri_n_, NULL);
+		}
 		Ela_[0].Stat_Tri(0, Tri_n_, NULL);
 		MAR_[0].Stat_Tri(0, Tri_n_, NULL);
 		Diss1_[0].Stat_Tri(0, Tri_n_, NULL);
 		Diss2_[0].Stat_Tri(0, Tri_n_, NULL);
 		R_with_H_[0].Stat_Tri(0, Tri_n_, NULL);
 		R_with_H2_[0].Stat_Tri(0, Tri_n_, NULL);
+		for (int i = 0; i < Grid4.num_tris(); i++)
+		{
+			if (Grid4.if_in_plasmagrid(i))
+			{
+				const int a = Grid4.b2_index(i, 0);
+				const int b = Grid4.b2_index(i, 1);
+				const double loss_rate = R2_2_11_H4.cal(ne[a][b], Te[a][b])
+					+ R2_2_12_H4.cal(ne[a][b], Te[a][b])
+					+ R2_2_14_H4.cal(ne[a][b], Te[a][b]);
+				double production_rate = Ion_[0].Sn(i) + CX_[0].Sn(i);
+				if (K_DT && K_CX_DT)
+				{
+					production_rate += CX_DT_[0].Sn(i);
+				}
+				const double volume = Grid4.triVolume(i);
+				if (ne[a][b] > 0. && loss_rate > 0. && volume > 0.)
+				{
+					Tri_n_[i][1] = (production_rate / volume) / (ne[a][b] * loss_rate);
+				}
+				else
+				{
+					Tri_n_[i][1] = 0.;
+				}
+			}
+			else
+			{
+				Tri_n_[i][1] = 0.;
+			}
+		}
 		for (int i = 0; i < 3; i++)
 		{
 			DS_[1][i].Stat_Tri(1, Tri_n_, NULL);
@@ -6788,8 +6863,10 @@ void Particle::Stat_Tri(int n)
 		{
 			if (Grid4.if_in_plasmagrid(i))
 			{
-				double Var_temp = R2_2_14_H2.cal(ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)]);
-				DS_[1][2].SetPra_Tri(i, ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)] * Tri_n_[i][1] * R2_2_14_H8.cal(ne[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], Te[Grid4.b2_index(i, 0)][Grid4.b2_index(i, 1)], &Var_temp));
+				const int a = Grid4.b2_index(i, 0);
+				const int b = Grid4.b2_index(i, 1);
+				double Var_temp = R2_2_14_H2.cal(ne[a][b], Te[a][b]);
+				DS_[1][2].SetPra_Tri(i, ne[a][b] * Tri_n_[i][1] * R2_2_14_H8.cal(ne[a][b], Te[a][b], &Var_temp));
 			}
 		}
 	}
@@ -10323,7 +10400,7 @@ void ParCollCar::Set_V_relative(double Vi0, double Vi1, double Vi2, double Vn0, 
 	V_relative_[1] = Vi1 - Vn1;
 	V_relative_[2] = Vi2 - Vn2;
 	V_relative_2_ = V_relative_[0] * V_relative_[0] + V_relative_[1] * V_relative_[1] + V_relative_[2] * V_relative_[2];
-	V_2_relative_ = pow(Vi0, 2) + pow(Vi1, 2) + pow(Vi2, 2) - (pow(Vn0, 2) + pow(Vn1, 2) + pow(Vn2, 2));
+	V_2_relative_ = Tools::sqr(Vi0) + Tools::sqr(Vi1) + Tools::sqr(Vi2) - (Tools::sqr(Vn0) + Tools::sqr(Vn1) + Tools::sqr(Vn2));
 }
 
 /// @brief Difference of speed between ion and neutral particle

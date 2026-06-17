@@ -1,4 +1,5 @@
 #include <iostream>
+#include <array>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -59,11 +60,25 @@ private:
 
     int Wall_num_;
     vector<vector<double>> Wall_;
+    std::vector<std::array<double, 4>> Wall_segments_;
+    std::vector<std::array<double, 4>> Wall_bounds_;
+    int Wall_bin_nx_;
+    int Wall_bin_ny_;
+    double Wall_bin_min_x_;
+    double Wall_bin_min_y_;
+    double Wall_bin_dx_;
+    double Wall_bin_dy_;
+    std::vector<std::vector<int>> Wall_bins_;
+    void BuildWallCandidateBins();
 
     vector<vector<double>> PLasma_Grid_Boundry_;
+    std::vector<std::array<double, 4>> Plasma_boundary_segments_;
+    std::vector<std::array<double, 4>> Plasma_boundary_bounds_;
     int Target1_Index_[2];
     int Target2_Index_[2];
     vector<vector<double>> Core_Boundry_;
+    std::vector<std::array<double, 4>> Core_boundary_segments_;
+    std::vector<std::array<double, 4>> Core_boundary_bounds_;
 
     vector<int> Rectangular_num_;
     vector<int> Plasma_num_;
@@ -89,15 +104,22 @@ public:
     int IfinCore(double x, double y);
     int PLasma_Grid_Boundry_num();
     double PLasma_Grid_Boundry(int i, int xy);
+    const std::array<double, 4> &PlasmaBoundarySegment(int num) const;
+    const std::array<double, 4> &PlasmaBoundaryBounds(int num) const;
     int Wall_num();
     int Core_Boundry_num();
     double Core_Boundry(int i, int xy);
+    const std::array<double, 4> &CoreBoundarySegment(int num) const;
+    const std::array<double, 4> &CoreBoundaryBounds(int num) const;
     void RectangularGridGeneration();
     void Find(double X[], int *Zone, int XY[]);
     double Rectangular_Start(int i);
     double Rectangular_Step(int i);
     double Rectangular_End(int i);
     double Wall(int num, int xy);
+    const std::array<double, 4> &WallSegment(int num) const;
+    const std::array<double, 4> &WallBounds(int num) const;
+    void WallCandidateSegments(double min_x, double max_x, double min_y, double max_y, std::vector<int> &candidates) const;
     int Target1_Index(int i);
     int Target2_Index(int i);
     void CalAngleTarget();
@@ -250,6 +272,16 @@ namespace eirene
         vector<double> dx_;
         vector<double> dy_;
         vector<double> Length_sq_;
+        std::vector<std::array<double, 4>> segments_;
+        std::vector<std::array<double, 4>> bounds_;
+        int Wall_bin_nx_;
+        int Wall_bin_ny_;
+        double Wall_bin_min_x_;
+        double Wall_bin_min_y_;
+        double Wall_bin_dx_;
+        double Wall_bin_dy_;
+        std::vector<std::vector<int>> Wall_bins_;
+        void BuildCandidateBins();
 
     public:
         WALL();
@@ -260,6 +292,9 @@ namespace eirene
         int IfinWall(double x, double y);
         int Wall_num();
         double P(int num, int xy);
+        const std::array<double, 4> &Segment(int num) const;
+        const std::array<double, 4> &Bounds(int num) const;
+        void CandidateSegments(double min_x, double max_x, double min_y, double max_y, std::vector<int> &candidates) const;
         void CalAngleWall();
         double Sin_Wall(int i);
         double Cos_Wall(int i);
