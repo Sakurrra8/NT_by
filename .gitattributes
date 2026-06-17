@@ -1,0 +1,34 @@
+* text=auto eol=lf
+
+# Source and scripts are run mostly on Linux/HPC/WSL.
+*.cpp text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.c text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+Makefile* text eol=lf
+
+# Project input and configuration files should also stay stable in WSL.
+*.log text eol=lf
+*.txt text eol=lf
+*.dat text eol=lf
+*.data text eol=lf
+*.tex text eol=lf
+*.re text eol=lf
+*.rn text eol=lf
+*.cmd text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Binary data and generated figures.
+*.h5 binary
+*.hdf5 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.exe binary
+*.o binary
+*.a binary
+*.so binary
