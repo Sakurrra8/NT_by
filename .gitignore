@@ -25,3 +25,9 @@ doc/
 !README.txt
 !README.md
 SOLPS_1D.tar.gz
+triangle/EAST/fig/
+triangle/EAST/ori/
+triangle/EAST/tri/
+opt/hdf5/share/hdf5_examples/
+case_input/externCase_2MW3.2e19/configuration/*.txt
+case_input/externCase_2MW3.2e19/plasma/*.txt
