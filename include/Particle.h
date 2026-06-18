@@ -450,6 +450,24 @@ private:
 	double D2p_sum_segment_length_{0.};
 	double D2p_min_charge_speed_{0.};
 	double D2p_max_charge_speed_{0.};
+	unsigned long long D2p_initial_velocity_events_[2]{0, 0};
+	double D2p_initial_velocity_weight_[2]{0., 0.};
+	double D2p_initial_sum_weight_neutral_speed_[2]{0., 0.};
+	double D2p_initial_sum_weight_charge_speed_[2]{0., 0.};
+	double D2p_initial_sum_weight_abs_v_parallel_[2]{0., 0.};
+	double D2p_initial_sum_weight_v_perp_[2]{0., 0.};
+	double D2p_initial_sum_weight_neutral_energy_[2]{0., 0.};
+	double D2p_initial_sum_weight_charge_energy_[2]{0., 0.};
+	double D2p_initial_min_charge_speed_[2]{0., 0.};
+	double D2p_initial_max_charge_speed_[2]{0., 0.};
+	double D2p_sum_weight_length_over_neutral_speed_{0.};
+	double D2p_sum_weight_length_over_charge_speed_{0.};
+	double D2p_sum_weight_length_over_ion_thermal_speed_{0.};
+	double D2p_CX_sum_weight_length_over_neutral_speed_{0.};
+	double D2p_CX_sum_weight_length_over_ion_thermal_speed_{0.};
+	unsigned long long D2p_low_charge_speed_count_[4]{0, 0, 0, 0};
+	double D2p_low_charge_speed_weight_dt_[4]{0., 0., 0., 0.};
+	bool D2p_current_created_by_cx_{false};
 	static constexpr unsigned long long MaxD2pFlightSteps = 100000;
 
 	double *V_Grid_CX_Ion_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
@@ -519,6 +537,7 @@ public:
 		double d_flight;
 		double Rand_flight;
 		unsigned long long D2p_current_flight_steps;
+		bool D2p_current_created_by_cx;
 		std::vector<double> V;
 	};
 

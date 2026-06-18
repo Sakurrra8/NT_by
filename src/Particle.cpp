@@ -1391,15 +1391,50 @@ void Particle::markD2pJustCreated(bool created_by_cx)
 	D2p_current_flight_steps_ = 0;
 	if (this != &D2)
 		return;
+	D2p_current_created_by_cx_ = created_by_cx;
+	const int source = created_by_cx ? 1 : 0;
+	const double represented_weight = diagnosticEventWeight();
+	const double neutral_speed = std::sqrt(
+		V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]);
+	const double v_parallel =
+		B[XY_[0]][XY_[1]][0] * V_[0] +
+		B[XY_[0]][XY_[1]][1] * V_[1] +
+		B[XY_[0]][XY_[1]][2] * V_[2];
+	const double v_perp = std::sqrt(std::max(
+		0., neutral_speed * neutral_speed - v_parallel * v_parallel));
+	const double charge_speed = std::sqrt(
+		V_Charge_[0] * V_Charge_[0] +
+		V_Charge_[1] * V_Charge_[1] +
+		V_Charge_[2] * V_Charge_[2]);
+	const double neutral_energy =
+		0.5 * mass_ * neutral_speed * neutral_speed / qe;
+	const double charge_energy =
+		0.5 * mass_ * charge_speed * charge_speed / qe;
+	++D2p_initial_velocity_events_[source];
+	D2p_initial_velocity_weight_[source] += represented_weight;
+	D2p_initial_sum_weight_neutral_speed_[source] += represented_weight * neutral_speed;
+	D2p_initial_sum_weight_charge_speed_[source] += represented_weight * charge_speed;
+	D2p_initial_sum_weight_abs_v_parallel_[source] +=
+		represented_weight * std::abs(v_parallel);
+	D2p_initial_sum_weight_v_perp_[source] += represented_weight * v_perp;
+	D2p_initial_sum_weight_neutral_energy_[source] += represented_weight * neutral_energy;
+	D2p_initial_sum_weight_charge_energy_[source] += represented_weight * charge_energy;
+	if (D2p_initial_velocity_events_[source] == 1)
+		D2p_initial_min_charge_speed_[source] = charge_speed;
+	else
+		D2p_initial_min_charge_speed_[source] =
+			std::min(D2p_initial_min_charge_speed_[source], charge_speed);
+	D2p_initial_max_charge_speed_[source] =
+		std::max(D2p_initial_max_charge_speed_[source], charge_speed);
 	if (created_by_cx)
 	{
 		++D2p_created_by_cx_;
-		D2p_created_by_cx_weight_ += diagnosticEventWeight();
+		D2p_created_by_cx_weight_ += represented_weight;
 	}
 	else
 	{
 		++D2p_created_by_ion_;
-		D2p_created_by_ion_weight_ += diagnosticEventWeight();
+		D2p_created_by_ion_weight_ += represented_weight;
 	}
 }
 
@@ -1861,14 +1896,46 @@ void Particle::track()
 				const double dy = X_[1] - x_before[1];
 				const double dz = X_[2] - x_before[2];
 				const double segment_length = std::sqrt(dx * dx + dy * dy + dz * dz);
+				const double ion_thermal_speed =
+					Ti[start_i][start_j] > 0.
+						? std::sqrt(3. * qe * Ti[start_i][start_j] / mass_)
+						: 0.;
 				Tri_D2p_track_time_[start_tri] += represented_weight * segment_dt;
 				D2p_sum_weight_segment_dt_ += represented_weight * segment_dt;
 				D2p_sum_weight_segment_length_ += represented_weight * segment_length;
 				D2p_sum_weight_charge_speed_ += represented_weight * charge_speed;
 				D2p_sum_weight_neutral_speed_ += represented_weight * neutral_speed;
+				const double low_speed_thresholds[4] = {1., 10., 100., 1000.};
+				for (int threshold = 0; threshold < 4; ++threshold)
+				{
+					if (charge_speed < low_speed_thresholds[threshold])
+					{
+						++D2p_low_charge_speed_count_[threshold];
+						D2p_low_charge_speed_weight_dt_[threshold] +=
+							represented_weight * segment_dt;
+					}
+				}
 				if (segment_dt > 0.)
 					D2p_sum_weight_segment_speed_ +=
 						represented_weight * segment_length / segment_dt;
+				if (neutral_speed > 0.)
+					D2p_sum_weight_length_over_neutral_speed_ +=
+						represented_weight * segment_length / neutral_speed;
+				if (charge_speed > 0.)
+					D2p_sum_weight_length_over_charge_speed_ +=
+						represented_weight * segment_length / charge_speed;
+				if (ion_thermal_speed > 0.)
+					D2p_sum_weight_length_over_ion_thermal_speed_ +=
+						represented_weight * segment_length / ion_thermal_speed;
+				if (D2p_current_created_by_cx_)
+				{
+					if (neutral_speed > 0.)
+						D2p_CX_sum_weight_length_over_neutral_speed_ +=
+							represented_weight * segment_length / neutral_speed;
+					if (ion_thermal_speed > 0.)
+						D2p_CX_sum_weight_length_over_ion_thermal_speed_ +=
+							represented_weight * segment_length / ion_thermal_speed;
+				}
 				D2p_sum_segment_dt_ += segment_dt;
 				D2p_sum_segment_length_ += segment_length;
 				if (D2p_track_steps_ == 0)
@@ -3810,6 +3877,7 @@ Particle::State Particle::SaveState() const
 	state.d_flight = d_flight_;
 	state.Rand_flight = Rand_flight_;
 	state.D2p_current_flight_steps = D2p_current_flight_steps_;
+	state.D2p_current_created_by_cx = D2p_current_created_by_cx_;
 	state.V = V_;
 	for (int i = 0; i < 3; ++i)
 	{
@@ -3853,6 +3921,7 @@ void Particle::RestoreState(const State &state)
 	d_flight_ = state.d_flight;
 	Rand_flight_ = state.Rand_flight;
 	D2p_current_flight_steps_ = state.D2p_current_flight_steps;
+	D2p_current_created_by_cx_ = state.D2p_current_created_by_cx;
 	V_ = state.V;
 	for (int i = 0; i < 3; ++i)
 	{
@@ -5137,6 +5206,8 @@ void Particle::Coll()
 					else
 					{
 						Charge_ = 1;
+						// Diagnostic audit: Ion_D2 preserves the pre-ionization D2
+						// neutral velocity in V_ and projects it into V_Charge_.
 						VtoVcharge();
 						markD2pJustCreated(false);
 						return;
@@ -5410,6 +5481,9 @@ void Particle::Coll()
 					else
 					{
 						Charge_ = 1;
+						// Diagnostic audit: CX_D2 currently also preserves the
+						// pre-CX D2 neutral velocity in V_; it does not replace it
+						// with V_D_1_now before projecting into V_Charge_.
 						VtoVcharge();
 						markD2pJustCreated(true);
 						// std::cout << name_ + " after CX V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
@@ -7461,6 +7535,13 @@ void Particle::DumpD2pTrackLengthTri()
 		D2p_track_steps_ > 0 ? D2p_sum_segment_dt_ / D2p_track_steps_ : 0.;
 	const double mean_segment_length =
 		D2p_track_steps_ > 0 ? D2p_sum_segment_length_ / D2p_track_steps_ : 0.;
+	double low_speed_weight_dt_fraction[4]{0., 0., 0., 0.};
+	for (int threshold = 0; threshold < 4; ++threshold)
+		low_speed_weight_dt_fraction[threshold] =
+			D2p_sum_weight_segment_dt_ > 0.
+				? D2p_low_charge_speed_weight_dt_[threshold] /
+					  D2p_sum_weight_segment_dt_
+				: 0.;
 
 	ofstream summary(Outputpath + "D2p_track_length_summary.csv");
 	summary << std::setprecision(17);
@@ -7480,7 +7561,15 @@ void Particle::DumpD2pTrackLengthTri()
 			   "sum_represented_weight_abs_V_neutral_before,"
 			   "sum_represented_weight_segment_length_over_dt,"
 			   "fallback_to_neutral_velocity_count,fallback_to_neutral_velocity_weight,"
-			   "mean_segment_dt,mean_segment_length,min_abs_V_charge,max_abs_V_charge\n";
+			   "mean_segment_dt,mean_segment_length,min_abs_V_charge,max_abs_V_charge,"
+			   "count_abs_V_charge_lt_1,sum_weight_dt_abs_V_charge_lt_1,"
+			   "count_abs_V_charge_lt_10,sum_weight_dt_abs_V_charge_lt_10,"
+			   "count_abs_V_charge_lt_100,sum_weight_dt_abs_V_charge_lt_100,"
+			   "count_abs_V_charge_lt_1000,sum_weight_dt_abs_V_charge_lt_1000,"
+			   "fraction_weight_dt_abs_V_charge_lt_1,"
+			   "fraction_weight_dt_abs_V_charge_lt_10,"
+			   "fraction_weight_dt_abs_V_charge_lt_100,"
+			   "fraction_weight_dt_abs_V_charge_lt_1000\n";
 	summary << local_integral << ',' << track_integral << ',' << global_ratio << ','
 			<< D2p_created_by_ion_ << ',' << D2p_created_by_cx_ << ',' << D2p_track_steps_ << ','
 			<< D2p_DS_events_[0] << ',' << D2p_DS_events_[1] << ',' << D2p_DS_events_[2] << ','
@@ -7498,7 +7587,19 @@ void Particle::DumpD2pTrackLengthTri()
 			<< D2p_fallback_to_neutral_velocity_count_ << ','
 			<< D2p_fallback_to_neutral_velocity_weight_ << ','
 			<< mean_segment_dt << ',' << mean_segment_length << ','
-			<< D2p_min_charge_speed_ << ',' << D2p_max_charge_speed_ << '\n';
+			<< D2p_min_charge_speed_ << ',' << D2p_max_charge_speed_ << ','
+			<< D2p_low_charge_speed_count_[0] << ','
+			<< D2p_low_charge_speed_weight_dt_[0] << ','
+			<< D2p_low_charge_speed_count_[1] << ','
+			<< D2p_low_charge_speed_weight_dt_[1] << ','
+			<< D2p_low_charge_speed_count_[2] << ','
+			<< D2p_low_charge_speed_weight_dt_[2] << ','
+			<< D2p_low_charge_speed_count_[3] << ','
+			<< D2p_low_charge_speed_weight_dt_[3] << ','
+			<< low_speed_weight_dt_fraction[0] << ','
+			<< low_speed_weight_dt_fraction[1] << ','
+			<< low_speed_weight_dt_fraction[2] << ','
+			<< low_speed_weight_dt_fraction[3] << '\n';
 
 	ofstream fate(Outputpath + "D2p_mesh3_tracking_fate_summary.csv");
 	fate << std::setprecision(17);
@@ -7514,6 +7615,49 @@ void Particle::DumpD2pTrackLengthTri()
 		 << D2p_boundary_loss_ << '\n'
 		 << "D2p_max_steps_loss," << D2p_max_steps_loss_weight_ << ','
 		 << D2p_max_steps_loss_ << '\n';
+
+	ofstream initial_velocity(Outputpath + "D2p_initial_velocity_audit.csv");
+	initial_velocity << std::setprecision(17);
+	initial_velocity
+		<< "source_channel,raw_events,weighted_value_s-1,"
+		   "mean_abs_V_neutral_before,mean_abs_V_charge_initial,"
+		   "mean_abs_v_parallel,mean_abs_v_perp,"
+		   "mean_E_neutral_before_eV,mean_E_charge_initial_eV,"
+		   "min_abs_V_charge_initial,max_abs_V_charge_initial,"
+		   "current_velocity_model\n";
+	for (int source = 0; source < 2; ++source)
+	{
+		const double weight = D2p_initial_velocity_weight_[source];
+		initial_velocity
+			<< (source == 0 ? "Ion_D2" : "CX_D2") << ','
+			<< D2p_initial_velocity_events_[source] << ',' << weight << ','
+			<< (weight > 0. ? D2p_initial_sum_weight_neutral_speed_[source] / weight : 0.) << ','
+			<< (weight > 0. ? D2p_initial_sum_weight_charge_speed_[source] / weight : 0.) << ','
+			<< (weight > 0. ? D2p_initial_sum_weight_abs_v_parallel_[source] / weight : 0.) << ','
+			<< (weight > 0. ? D2p_initial_sum_weight_v_perp_[source] / weight : 0.) << ','
+			<< (weight > 0. ? D2p_initial_sum_weight_neutral_energy_[source] / weight : 0.) << ','
+			<< (weight > 0. ? D2p_initial_sum_weight_charge_energy_[source] / weight : 0.) << ','
+			<< D2p_initial_min_charge_speed_[source] << ','
+			<< D2p_initial_max_charge_speed_[source] << ','
+			<< "charged_parallel_projection_of_D2_neutral_velocity\n";
+	}
+
+	ofstream velocity_counterfactual(
+		Outputpath + "D2p_velocity_counterfactual_summary.csv");
+	velocity_counterfactual << std::setprecision(17);
+	velocity_counterfactual
+		<< "volume_integral_n_track_current,"
+		   "volume_integral_n_track_using_neutral_speed_for_dt,"
+		   "volume_integral_n_track_using_charge_speed_for_dt,"
+		   "volume_integral_n_track_using_fixed_ion_thermal_speed,"
+		   "CX_D2_if_inherit_neutral,CX_D2_if_sample_ion_thermal\n";
+	velocity_counterfactual
+		<< track_integral << ','
+		<< D2p_sum_weight_length_over_neutral_speed_ << ','
+		<< D2p_sum_weight_length_over_charge_speed_ << ','
+		<< D2p_sum_weight_length_over_ion_thermal_speed_ << ','
+		<< D2p_CX_sum_weight_length_over_neutral_speed_ << ','
+		<< D2p_CX_sum_weight_length_over_ion_thermal_speed_ << '\n';
 
 	ofstream production_summary(Outputpath + "D2p_production_capability_summary.csv");
 	production_summary << std::setprecision(17);
@@ -7599,6 +7743,30 @@ void Particle::Clear(int n)
 		D2p_sum_segment_length_ = 0.;
 		D2p_min_charge_speed_ = 0.;
 		D2p_max_charge_speed_ = 0.;
+		for (int source = 0; source < 2; ++source)
+		{
+			D2p_initial_velocity_events_[source] = 0;
+			D2p_initial_velocity_weight_[source] = 0.;
+			D2p_initial_sum_weight_neutral_speed_[source] = 0.;
+			D2p_initial_sum_weight_charge_speed_[source] = 0.;
+			D2p_initial_sum_weight_abs_v_parallel_[source] = 0.;
+			D2p_initial_sum_weight_v_perp_[source] = 0.;
+			D2p_initial_sum_weight_neutral_energy_[source] = 0.;
+			D2p_initial_sum_weight_charge_energy_[source] = 0.;
+			D2p_initial_min_charge_speed_[source] = 0.;
+			D2p_initial_max_charge_speed_[source] = 0.;
+		}
+		D2p_sum_weight_length_over_neutral_speed_ = 0.;
+		D2p_sum_weight_length_over_charge_speed_ = 0.;
+		D2p_sum_weight_length_over_ion_thermal_speed_ = 0.;
+		D2p_CX_sum_weight_length_over_neutral_speed_ = 0.;
+		D2p_CX_sum_weight_length_over_ion_thermal_speed_ = 0.;
+		for (int threshold = 0; threshold < 4; ++threshold)
+		{
+			D2p_low_charge_speed_count_[threshold] = 0;
+			D2p_low_charge_speed_weight_dt_[threshold] = 0.;
+		}
+		D2p_current_created_by_cx_ = false;
 		source_stratum_ = SourceStratum::Unknown;
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)
