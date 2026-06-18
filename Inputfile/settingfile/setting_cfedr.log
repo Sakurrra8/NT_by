@@ -54,3 +54,5 @@ Num_CD4_pump        1e19    # sum of test flight for CD4 seeding
 coeff_recyc_target  1       # recycling coefficient of target
 coeff_ercyc_wall    1       # recycling coefficient of wall
 coeff_puff          0.99       # recycling coefficient of puff location
+
+K_H5Output          0       # option: write HDF5 output files

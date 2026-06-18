@@ -74,6 +74,7 @@ int K_PartoPar = 0; // OP: if the PartoPar is working
 int K_NNCs = 0;
 int K_Roulette = 0;
 int K_Splitting = 0;
+int K_H5Output = 1;
 double W_RouletteMin = 0.05;
 double W_RouletteTarget = 0.2;
 double W_SplitMax = 5.0;

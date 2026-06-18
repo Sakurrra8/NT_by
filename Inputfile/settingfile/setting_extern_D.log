@@ -58,7 +58,9 @@ coeff_puff          0.99    # coefficient: recycling coefficient of puff locatio
 ExternmeshMode      2       # option: externmesh mode
 nx                  20      # number: The number of x indices for the rectangular grid
 ny                  20      # number: The number of y indices for the rectangular grid
-nCv                 4265    # number: 
-nVx                 4043    # number: 
-nFc                 8027    # number: 
-nCmxVx              16380   # number: 
+nCv                 4265    # number:
+nVx                 4043    # number:
+nFc                 8027    # number:
+nCmxVx              16380   # number:
+
+K_H5Output          0       # option: write HDF5 output files

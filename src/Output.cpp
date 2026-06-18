@@ -3,6 +3,7 @@
 
 void HydrogenOutput(Particle *OutPar1, Particle *OutPar2);
 void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2);
+void SourceStratumSummaryOutput();
 
 string n = "n", E = "E", Tn = "T", Sn = "Sn", SE = "SE", SE_n = "SE_n", Smu = "Smu", Smu1 = "Smu1", Smu2 = "Smu2", Pra = "Pra";
 string Ion = "Ion", Rec = "Rec", CX = "CX", Diss1 = "Diss1", Diss2 = "Diss2", Diss3 = "Diss3", Mar = "Mar", Ela = "Ela", CXDT = "CXDT", R_with_H = "R_with_H", R_with_H2 = "R_with_H2";
@@ -36,6 +37,9 @@ void Output()
         HydrogenOutput(&D, &D2);
         if (MeshMode == 3)
             HydrogenOutput_Tri(&D, &D2);
+        D2.DumpD2pBalance_B2();
+        D2.DumpD2pBalance_Tri();
+        D2.DumpD2pPhysicsDecomposition_B2();
 
         Out_temp.open(Outputpath + "recycling_D.txt");
         for (int i = 0; i < 76; i++)
@@ -57,7 +61,9 @@ void Output()
         }
         Out_temp.close();
     }
-    D_W_sputtered.writeH5(Outputpath + "D_W_stats.h5", "/D_W");
+    SourceStratumSummaryOutput();
+    if (K_H5Output)
+        D_W_sputtered.writeH5(Outputpath + "D_W_stats.h5", "/D_W");
 
     Out_temp.open(Outputpath + "Bx");
     for (int i = 0; i < N_poloidal; i++)
@@ -225,6 +231,45 @@ void Output()
     }
     Dump_2D_Global(Var_temp, "n_D2_1");*/
     // Dump_2D_Global(D.Ion_rate, "Ion_rate_D");
+}
+
+void SourceStratumSummaryOutput()
+{
+    ofstream out(Outputpath + "source_stratum_summary.csv");
+    out << std::setprecision(17);
+    out << "species,charge,source_stratum,launched_weight_s-1,launched_events\n";
+    if (K_H)
+    {
+        H.AppendSourceStratumSummary(out);
+        H2.AppendSourceStratumSummary(out);
+    }
+    if (K_D)
+    {
+        D.AppendSourceStratumSummary(out);
+        D2.AppendSourceStratumSummary(out);
+    }
+    if (K_T)
+    {
+        T.AppendSourceStratumSummary(out);
+        T2.AppendSourceStratumSummary(out);
+    }
+    if (K_Methane)
+    {
+        CD4.AppendSourceStratumSummary(out);
+        CD3.AppendSourceStratumSummary(out);
+        CD2.AppendSourceStratumSummary(out);
+        CD1.AppendSourceStratumSummary(out);
+    }
+    if (K_C || K_Methane)
+        C.AppendSourceStratumSummary(out);
+    if (K_Ar)
+        Ar.AppendSourceStratumSummary(out);
+
+    ofstream readme(Outputpath + "source_stratum_readme.txt");
+    readme << "source_stratum_summary.csv only reports launched/re-emitted particle weights and launched event counts.\n"
+           << "It is not a source-term decomposition.\n"
+           << "Do not compare these rows directly against EIRENE_IT, EIRENE_OT, or EIRENE_MCW source terms.\n"
+           << "A source-term comparison requires Sn_by_stratum / Tri_Sn_by_stratum diagnostics.\n";
 }
 
 void Dump_2D_Global(double Var[N_POLOIDAL_GRID][N_RADIAL_GRID], string name)
@@ -524,20 +569,23 @@ void HydrogenOutput(Particle *OutPar1, Particle *OutPar2)
     }
     out.close();
 
-    OutPar1->OutWallEro(1);
-    if (K_Rec)
-        OutPar1->OutWallEro(4);
-    OutPar1->OutWallEro(-1);
+    if (K_H5Output)
+    {
+        OutPar1->OutWallEro(1);
+        if (K_Rec)
+            OutPar1->OutWallEro(4);
+        OutPar1->OutWallEro(-1);
 
-    OutPar1->OutTargetEro(1);
-    if (K_Rec)
-        OutPar1->OutTargetEro(4);
-    OutPar1->OutTargetEro(-1);
+        OutPar1->OutTargetEro(1);
+        if (K_Rec)
+            OutPar1->OutTargetEro(4);
+        OutPar1->OutTargetEro(-1);
 
-    OutPar1->OutPlasmaBoundaryEro(1);
-    if (K_Rec)
-        OutPar1->OutPlasmaBoundaryEro(4);
-    OutPar1->OutPlasmaBoundaryEro(-1);
+        OutPar1->OutPlasmaBoundaryEro(1);
+        if (K_Rec)
+            OutPar1->OutPlasmaBoundaryEro(4);
+        OutPar1->OutPlasmaBoundaryEro(-1);
+    }
 }
 
 void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)

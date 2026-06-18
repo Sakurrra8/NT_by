@@ -55,4 +55,5 @@ coeff_recyc_target  1       # recycling coefficient of target
 coeff_ercyc_wall    1       # recycling coefficient of wall
 coeff_puff          0.99    # recycling coefficient of puff location
 
+K_H5Output          0       # option: write HDF5 output files
 MeshMode            3       # option: externmesh mode

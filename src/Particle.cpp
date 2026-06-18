@@ -1,5 +1,34 @@
 #include "Particle.h"
 
+string sourceStratumName(SourceStratum source)
+{
+	switch (source)
+	{
+	case SourceStratum::IT:
+		return "IT";
+	case SourceStratum::OT:
+		return "OT";
+	case SourceStratum::MCW:
+		return "MCW";
+	case SourceStratum::Recombination:
+		return "Recombination";
+	case SourceStratum::Puff:
+		return "Puff";
+	case SourceStratum::Methane:
+		return "Methane";
+	case SourceStratum::Carbon:
+		return "Carbon";
+	case SourceStratum::Argon:
+		return "Argon";
+	case SourceStratum::PlasmaBoundary:
+		return "PlasmaBoundary";
+	case SourceStratum::Core:
+		return "Core";
+	default:
+		return "Unknown";
+	}
+}
+
 Particle::Particle()
 {
 	V_.resize(3, 0.0);
@@ -40,6 +69,8 @@ void Particle::allocateStorage()
 	n_Flux_Grid_.assign(fluxCells, 0.0);
 	T_Flux_Grid_.assign(fluxCells, 0.0);
 	const std::size_t chargeStates = static_cast<std::size_t>(MaxCharge_ + 1);
+	launchedWeightByStratum_.assign(chargeStates, {});
+	launchedEventsByStratum_.assign(chargeStates, {});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -166,6 +197,7 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 	Tri_Index_ = A->Tri_Index();
 
 	Tn_ = A->Tn();
+	source_stratum_ = A->sourceStratum();
 
 	// XY_new_[0] = A->XY_new(0);
 	// XY_new_[1] = A->XY_new(1);
@@ -430,6 +462,7 @@ void Particle::Init(int k, int z)
 {
 	double vel = 0.;
 	double deltaX, deltaY, deltaL, cosCX, sinCX;
+	bool record_source_launch = false;
 	if (k == 1) // neutral particle from recycling
 	{
 		fate_[0] = 2;
@@ -443,12 +476,16 @@ void Particle::Init(int k, int z)
 
 		if (z < N_radial)
 		{
+			// IT/OT must be checked against the final SOLPS/EIRENE target-side
+			// geometry. If reversed, only these two labels need to be swapped.
+			source_stratum_ = SourceStratum::IT;
 			XY_[0] = 1;
 			XY_[1] = z;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
 		}
 		else
 		{
+			source_stratum_ = SourceStratum::OT;
 			XY_[0] = poloidalLastIndex();
 			XY_[1] = z - N_radial;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
@@ -485,6 +522,7 @@ void Particle::Init(int k, int z)
 		}
 		Weight_ = Weight_Target_;
 		NumPar_now = NumPar_Target_;
+		record_source_launch = true;
 	}
 	else if (k == 2) // neutral particle after CX for D or T
 	{
@@ -520,9 +558,8 @@ void Particle::Init(int k, int z)
 		else // if the calculate is needful
 		{
 			pause();
-			double Rand_temp1, Rand_temp2;
-			Rand_temp1 = 2 * pi * Tools::Random();
-			Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp2 = 2.0 * pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 			V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -580,6 +617,20 @@ void Particle::Init(int k, int z)
 	}
 	else if (k == 3) // neutral particle from Wall, z = 1 for
 	{
+		if (InterscePoint[0][4] == 11)
+		{
+			source_stratum_ = SourceStratum::MCW;
+			record_source_launch = true;
+		}
+		else if (InterscePoint[0][4] == 1)
+		{
+			const int target_index = static_cast<int>(InterscePoint[0][3]);
+			source_stratum_ =
+				target_index < N_radial ? SourceStratum::IT : SourceStratum::OT;
+			// This counts a launched/re-emitted surface event, not a source-term
+			// contribution. IT/OT follows the same target-index split as k == 1.
+			record_source_launch = true;
+		}
 		if (MeshMode == 1)
 		{
 			if (K_Wallelement == 1)
@@ -755,6 +806,8 @@ void Particle::Init(int k, int z)
 	}
 	else if (k == 4) // neutral particle from Recombination
 	{
+		source_stratum_ = SourceStratum::Recombination;
+		record_source_launch = true;
 		Charge_ = 0;
 		fate_[0] = 4;
 		sourcePar_[0] = 12;
@@ -928,6 +981,15 @@ void Particle::Init(int k, int z)
 	}
 	else if (k == 5) // CD4 seeding
 	{
+		if (this == &CD4 || this == &CD3 || this == &CD2 || this == &CD1)
+			source_stratum_ = SourceStratum::Methane;
+		else if (this == &C)
+			source_stratum_ = SourceStratum::Carbon;
+		else if (this == &Ar)
+			source_stratum_ = SourceStratum::Argon;
+		else
+			source_stratum_ = SourceStratum::Puff;
+		record_source_launch = true;
 		Charge_ = 0;
 		ChargeTag_ = 0;
 		fate_[0] = 3;
@@ -1017,9 +1079,8 @@ void Particle::Init(int k, int z)
 		else
 		{
 			pause();
-			double Rand_temp1, Rand_temp2;
-			Rand_temp1 = 2 * pi * Tools::Random();
-			Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp2 = 2.0 * pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 			V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -1085,6 +1146,8 @@ void Particle::Init(int k, int z)
 	}
 	else if (k == 8)
 	{
+		source_stratum_ = SourceStratum::Puff;
+		record_source_launch = true;
 		double Cos_temp = 0, Sin_temp = 1;
 		Charge_ = 0;
 		ChargeTag_ = 0;
@@ -1178,9 +1241,8 @@ void Particle::Init(int k, int z)
 		{
 			std::cout << "The Cahrge_ is wrong!" << endl;
 			pause();
-			double Rand_temp1, Rand_temp2;
-			Rand_temp1 = 2 * pi * Tools::Random();
-			Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp2 = 2.0 * pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 			V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -1233,6 +1295,8 @@ void Particle::Init(int k, int z)
 	}
 	for (int i = 0; i < 3; i++)
 		V_[i] *= vel;
+	if (record_source_launch)
+		recordSourceLaunch();
 	// std::cout << V_[0] << V_[1] << V_[2] << endl;
 }
 
@@ -1291,9 +1355,8 @@ void Particle::VtoVcharge()
 
 void Particle::VchargetoV()
 {
-	double Rand_temp1, Rand_temp2;
-	Rand_temp1 = 2 * pi * Tools::Random();
-	Rand_temp1 = pi * Tools::Random();
+	const double Rand_temp1 = pi * Tools::Random();
+	const double Rand_temp2 = 2.0 * pi * Tools::Random();
 	double V_temp1[3], V_temp2[3];
 	V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
 	V_temp1[1] = sin(Rand_temp1) * cos(Rand_temp2);
@@ -3527,6 +3590,19 @@ double Particle::collisionStatWeight() const
 	return Weight_ * (defer_flight_stats_ ? 1.0 : NumPar_now);
 }
 
+void Particle::recordSourceLaunch()
+{
+	if (Charge_ < 0 || Charge_ > MaxCharge_)
+		return;
+	const std::size_t stratum = static_cast<std::size_t>(source_stratum_);
+	if (stratum >= static_cast<std::size_t>(SourceStratum::Count))
+		return;
+	const double represented_weight =
+		Weight_ * (defer_flight_stats_ ? deferred_flight_stat_scale_ : NumPar_now);
+	launchedWeightByStratum_[Charge_][stratum] += represented_weight;
+	launchedEventsByStratum_[Charge_][stratum] += 1;
+}
+
 void Particle::ApplyRussianRoulette()
 {
 	if (!K_Roulette || Weight_ <= 0.)
@@ -3567,6 +3643,7 @@ Particle::State Particle::SaveState() const
 	state.dt_trace = dt_trace_;
 	state.Tn = Tn_;
 	state.Weight = Weight_;
+	state.sourceStratum = source_stratum_;
 	state.lambda_now = lambda_now_;
 	state.d_flight = d_flight_;
 	state.Rand_flight = Rand_flight_;
@@ -3608,6 +3685,7 @@ void Particle::RestoreState(const State &state)
 	dt_trace_ = state.dt_trace;
 	Tn_ = state.Tn;
 	Weight_ = state.Weight;
+	source_stratum_ = state.sourceStratum;
 	lambda_now_ = state.lambda_now;
 	d_flight_ = state.d_flight;
 	Rand_flight_ = state.Rand_flight;
@@ -4883,7 +4961,7 @@ void Particle::Coll()
 						else if (this == &T2)
 							P = &T;
 
-						Vector3 v_H2(V_[0], V_[0], V_[0]);
+						Vector3 v_H2(V_[0], V_[1], V_[2]);
 						double E_FrankCondon = 3.0;											// 3 eV
 						Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
 						V_[0] = v_H.x;
@@ -4938,7 +5016,7 @@ void Particle::Coll()
 					else if (this == &T2)
 						P = &T;
 
-					Vector3 v_H2(V_[0], V_[0], V_[0]);									// 假设分子沿 X 轴运动
+					Vector3 v_H2(V_[0], V_[1], V_[2]);									// 假设分子沿 X 轴运动
 					double E_FrankCondon = 3.0;											// 3 eV
 					Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
 					V_[0] = v_H.x;
@@ -4990,7 +5068,7 @@ void Particle::Coll()
 					}
 					if (MeshMode == 3)
 					{
-						Vector3 v_H2(V_[0], V_[0], V_[0]);
+						Vector3 v_H2(V_[0], V_[1], V_[2]);
 						double E_FrankCondon = 3.0;											// 3 eV
 						Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
 						V_[0] = v_H.x;
@@ -5149,7 +5227,7 @@ void Particle::Coll()
 						}
 						else
 						{
-							Vector3 v_H2(V_[0], V_[0], V_[0]);									// 假设分子沿 X 轴运动
+							Vector3 v_H2(V_[0], V_[1], V_[2]);
 							double E_FrankCondon = 3.0;											// 3 eV
 							Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
 							V_[0] = v_H.x;
@@ -6871,6 +6949,226 @@ void Particle::Stat_Tri(int n)
 		}
 	}
 }
+
+void Particle::DumpD2pBalance_B2()
+{
+	if (this != &D2)
+		return;
+
+	ofstream out(Outputpath + "D2p_balance_B2.csv");
+	out << std::setprecision(17);
+	out << "i,j,Volume_m3,ne_m3,Te_eV,"
+		   "P_Ion_D2_s-1,P_CX_D2_s-1,P_CXDT_D2_s-1,P_total_s-1,"
+		   "k_DS1_m3s,k_DS2_m3s,k_DS3_m3s,k_loss_total_m3s,"
+		   "nu_loss_s-1,n_D2p_m-3,L_DS1_s-1,L_DS2_s-1,L_DS3_s-1,"
+		   "L_total_s-1,closure_relerr\n";
+
+	for (int i = 1; i < N_poloidal - 1; ++i)
+	{
+		for (int j = 1; j < N_radial - 1; ++j)
+		{
+			const double volume = Volume[i][j];
+			const double electron_density = ne[i][j];
+			const double electron_temperature = Te[i][j];
+			const double p_ion = Ion_[0].Sn(i, j);
+			const double p_cx = CX_[0].Sn(i, j);
+			const double p_cxdt = (K_DT && K_CX_DT) ? CX_DT_[0].Sn(i, j) : 0.0;
+			const double p_total = p_ion + p_cx + p_cxdt;
+			const double k_ds1 = R2_2_11_H4.cal(electron_density, electron_temperature);
+			const double k_ds2 = R2_2_12_H4.cal(electron_density, electron_temperature);
+			const double k_ds3 = R2_2_14_H4.cal(electron_density, electron_temperature);
+			const double k_loss = k_ds1 + k_ds2 + k_ds3;
+			const double nu_loss = electron_density > 0.0 ? electron_density * k_loss : 0.0;
+			const bool valid = electron_density > 0.0 && volume > 0.0 && k_loss > 0.0;
+			const double density = valid ? n_[i][j][1] : 0.0;
+			const double l_ds1 = valid ? electron_density * density * k_ds1 * volume : 0.0;
+			const double l_ds2 = valid ? electron_density * density * k_ds2 * volume : 0.0;
+			const double l_ds3 = valid ? electron_density * density * k_ds3 * volume : 0.0;
+			const double l_total = l_ds1 + l_ds2 + l_ds3;
+			const double closure = valid
+									   ? (l_total - p_total) / std::max(std::abs(p_total), 1e-300)
+									   : 0.0;
+
+			out << i << ',' << j << ',' << volume << ',' << electron_density << ','
+				<< electron_temperature << ',' << p_ion << ',' << p_cx << ',' << p_cxdt << ','
+				<< p_total << ',' << k_ds1 << ',' << k_ds2 << ',' << k_ds3 << ',' << k_loss << ','
+				<< nu_loss << ',' << density << ',' << l_ds1 << ',' << l_ds2 << ',' << l_ds3 << ','
+				<< l_total << ',' << closure << '\n';
+		}
+	}
+}
+
+void Particle::DumpD2pBalance_Tri()
+{
+	if (this != &D2 || MeshMode != 3)
+		return;
+
+	ofstream out(Outputpath + "D2p_balance_Tri.csv");
+	out << std::setprecision(17);
+	out << "tri,b2_i,b2_j,triVolume_m3,ne_m3,Te_eV,"
+		   "P_Ion_D2_s-1,P_CX_D2_s-1,P_CXDT_D2_s-1,P_total_s-1,"
+		   "k_DS1_m3s,k_DS2_m3s,k_DS3_m3s,k_loss_total_m3s,"
+		   "nu_loss_s-1,n_D2p_m-3,L_DS1_s-1,L_DS2_s-1,L_DS3_s-1,"
+		   "L_total_s-1,closure_relerr\n";
+
+	for (int tri = 0; tri < Grid4.num_tris(); ++tri)
+	{
+		if (!Grid4.if_in_plasmagrid(tri))
+			continue;
+		const int i = Grid4.b2_index(tri, 0);
+		const int j = Grid4.b2_index(tri, 1);
+		const double volume = Grid4.triVolume(tri);
+		const double electron_density = ne[i][j];
+		const double electron_temperature = Te[i][j];
+		const double p_ion = Ion_[0].Sn(tri);
+		const double p_cx = CX_[0].Sn(tri);
+		const double p_cxdt = (K_DT && K_CX_DT) ? CX_DT_[0].Sn(tri) : 0.0;
+		const double p_total = p_ion + p_cx + p_cxdt;
+		const double k_ds1 = R2_2_11_H4.cal(electron_density, electron_temperature);
+		const double k_ds2 = R2_2_12_H4.cal(electron_density, electron_temperature);
+		const double k_ds3 = R2_2_14_H4.cal(electron_density, electron_temperature);
+		const double k_loss = k_ds1 + k_ds2 + k_ds3;
+		const double nu_loss = electron_density > 0.0 ? electron_density * k_loss : 0.0;
+		const bool valid = electron_density > 0.0 && volume > 0.0 && k_loss > 0.0;
+		const double density = valid ? Tri_n_[tri][1] : 0.0;
+		const double l_ds1 = valid ? electron_density * density * k_ds1 * volume : 0.0;
+		const double l_ds2 = valid ? electron_density * density * k_ds2 * volume : 0.0;
+		const double l_ds3 = valid ? electron_density * density * k_ds3 * volume : 0.0;
+		const double l_total = l_ds1 + l_ds2 + l_ds3;
+		const double closure = valid
+								   ? (l_total - p_total) / std::max(std::abs(p_total), 1e-300)
+								   : 0.0;
+
+		out << tri << ',' << i << ',' << j << ',' << volume << ',' << electron_density << ','
+			<< electron_temperature << ',' << p_ion << ',' << p_cx << ',' << p_cxdt << ','
+			<< p_total << ',' << k_ds1 << ',' << k_ds2 << ',' << k_ds3 << ',' << k_loss << ','
+			<< nu_loss << ',' << density << ',' << l_ds1 << ',' << l_ds2 << ',' << l_ds3 << ','
+			<< l_total << ',' << closure << '\n';
+	}
+}
+
+void Particle::DumpD2pPhysicsDecomposition_B2()
+{
+	if (this != &D2)
+		return;
+
+	double sum_p_ion = 0.0;
+	double sum_p_cx = 0.0;
+	double sum_p_total = 0.0;
+	double sum_l_ds1 = 0.0;
+	double sum_l_ds2 = 0.0;
+	double sum_l_ds3 = 0.0;
+	double volume_integral_density = 0.0;
+	double p_weighted_te_sum = 0.0;
+	double p_weighted_ne_sum = 0.0;
+	double p_weighted_tau_sum = 0.0;
+
+	for (int i = 1; i < N_poloidal - 1; ++i)
+	{
+		for (int j = 1; j < N_radial - 1; ++j)
+		{
+			const double volume = Volume[i][j];
+			const double electron_density = ne[i][j];
+			const double electron_temperature = Te[i][j];
+			const double p_ion = Ion_[0].Sn(i, j);
+			const double p_cx = CX_[0].Sn(i, j);
+			const double p_total = p_ion + p_cx;
+			const double k_ds1 = R2_2_11_H4.cal(electron_density, electron_temperature);
+			const double k_ds2 = R2_2_12_H4.cal(electron_density, electron_temperature);
+			const double k_ds3 = R2_2_14_H4.cal(electron_density, electron_temperature);
+			const double k_loss = k_ds1 + k_ds2 + k_ds3;
+			const double nu_loss = electron_density > 0.0 ? electron_density * k_loss : 0.0;
+			const bool valid = electron_density > 0.0 && volume > 0.0 && k_loss > 0.0;
+			const double density = valid ? n_[i][j][1] : 0.0;
+			const double tau = nu_loss > 0.0 ? 1.0 / nu_loss : 0.0;
+
+			sum_p_ion += p_ion;
+			sum_p_cx += p_cx;
+			sum_p_total += p_total;
+			if (valid)
+			{
+				sum_l_ds1 += electron_density * density * k_ds1 * volume;
+				sum_l_ds2 += electron_density * density * k_ds2 * volume;
+				sum_l_ds3 += electron_density * density * k_ds3 * volume;
+				volume_integral_density += density * volume;
+			}
+			p_weighted_te_sum += p_total * electron_temperature;
+			p_weighted_ne_sum += p_total * electron_density;
+			p_weighted_tau_sum += p_total * tau;
+		}
+	}
+
+	ofstream out(Outputpath + "D2p_physics_decomposition_B2.csv");
+	out << std::setprecision(17);
+	out << "i,j,Volume_m3,ne_m3,Te_eV,n_D2_m-3,n_D2p_m-3,"
+		   "P_Ion_D2_s-1,P_CX_D2_s-1,P_total_s-1,"
+		   "k_DS1_m3s,k_DS2_m3s,k_DS3_m3s,"
+		   "frac_DS1,frac_DS2,frac_DS3,nu_loss_s-1,tau_D2p_s,"
+		   "source_weighted_Te_eV,source_weighted_ne_m-3\n";
+
+	for (int i = 1; i < N_poloidal - 1; ++i)
+	{
+		for (int j = 1; j < N_radial - 1; ++j)
+		{
+			const double volume = Volume[i][j];
+			const double electron_density = ne[i][j];
+			const double electron_temperature = Te[i][j];
+			const double density_d2 = volume > 0.0 ? n_[i][j][0] : 0.0;
+			const double p_ion = Ion_[0].Sn(i, j);
+			const double p_cx = CX_[0].Sn(i, j);
+			const double p_total = p_ion + p_cx;
+			const double k_ds1 = R2_2_11_H4.cal(electron_density, electron_temperature);
+			const double k_ds2 = R2_2_12_H4.cal(electron_density, electron_temperature);
+			const double k_ds3 = R2_2_14_H4.cal(electron_density, electron_temperature);
+			const double k_loss = k_ds1 + k_ds2 + k_ds3;
+			const double frac_ds1 = k_loss > 0.0 ? k_ds1 / k_loss : 0.0;
+			const double frac_ds2 = k_loss > 0.0 ? k_ds2 / k_loss : 0.0;
+			const double frac_ds3 = k_loss > 0.0 ? k_ds3 / k_loss : 0.0;
+			const double nu_loss = electron_density > 0.0 ? electron_density * k_loss : 0.0;
+			const double tau = nu_loss > 0.0 ? 1.0 / nu_loss : 0.0;
+			const bool valid = electron_density > 0.0 && volume > 0.0 && k_loss > 0.0;
+			const double density_d2p = valid ? n_[i][j][1] : 0.0;
+			const double weighted_te =
+				sum_p_total > 0.0 ? p_total * electron_temperature / sum_p_total : 0.0;
+			const double weighted_ne =
+				sum_p_total > 0.0 ? p_total * electron_density / sum_p_total : 0.0;
+
+			out << i << ',' << j << ',' << volume << ',' << electron_density << ','
+				<< electron_temperature << ',' << density_d2 << ',' << density_d2p << ','
+				<< p_ion << ',' << p_cx << ',' << p_total << ',' << k_ds1 << ',' << k_ds2 << ','
+				<< k_ds3 << ',' << frac_ds1 << ',' << frac_ds2 << ',' << frac_ds3 << ','
+				<< nu_loss << ',' << tau << ',' << weighted_te << ',' << weighted_ne << '\n';
+		}
+	}
+
+	ofstream summary(Outputpath + "D2p_physics_decomposition_summary.csv");
+	summary << std::setprecision(17);
+	summary << "sum_P_Ion_D2_s-1,sum_P_CX_D2_s-1,sum_P_total_s-1,"
+			   "sum_L_DS1_s-1,sum_L_DS2_s-1,sum_L_DS3_s-1,"
+			   "volume_integral_n_D2p,P_weighted_average_Te_eV,"
+			   "P_weighted_average_ne_m-3,P_weighted_average_tau_D2p_s\n";
+	summary << sum_p_ion << ',' << sum_p_cx << ',' << sum_p_total << ','
+			<< sum_l_ds1 << ',' << sum_l_ds2 << ',' << sum_l_ds3 << ','
+			<< volume_integral_density << ','
+			<< (sum_p_total > 0.0 ? p_weighted_te_sum / sum_p_total : 0.0) << ','
+			<< (sum_p_total > 0.0 ? p_weighted_ne_sum / sum_p_total : 0.0) << ','
+			<< (sum_p_total > 0.0 ? p_weighted_tau_sum / sum_p_total : 0.0) << '\n';
+}
+
+void Particle::AppendSourceStratumSummary(std::ostream &out) const
+{
+	for (int charge = 0; charge <= MaxCharge_; ++charge)
+	{
+		for (std::size_t source = 0; source < static_cast<std::size_t>(SourceStratum::Count); ++source)
+		{
+			out << name_ << ',' << charge << ','
+				<< sourceStratumName(static_cast<SourceStratum>(source)) << ','
+				<< launchedWeightByStratum_[charge][source] << ','
+				<< launchedEventsByStratum_[charge][source] << '\n';
+		}
+	}
+}
+
 int Particle::NowZone()
 {
 	double X_Temp[3] = {X_new_[0], X_new_[1], X_new_[2]};
@@ -6892,6 +7190,11 @@ void Particle::Clear(int n)
 {
 	if (n == 0)
 	{
+		for (auto &weights : launchedWeightByStratum_)
+			weights.fill(0.0);
+		for (auto &events : launchedEventsByStratum_)
+			events.fill(0);
+		source_stratum_ = SourceStratum::Unknown;
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)
 				for (int k = 0; k < MaxCharge_ + 1; k++)
@@ -7716,6 +8019,10 @@ void Particle::setname(string particle_name) { name_ = particle_name; }
 
 void Particle::SetChargeTag(int i) { ChargeTag_ = i; }
 
+SourceStratum Particle::sourceStratum() const { return source_stratum_; }
+
+void Particle::setSourceStratum(SourceStratum source) { source_stratum_ = source; }
+
 void Particle::setPar(string particle_name, double mass, int Charge)
 {
 	name_ = particle_name;
@@ -7791,7 +8098,8 @@ void Particle::Dump_Flux()
 		out << EneFlux_Target_r[i][0] << '\t' << EneFlux_Target_r[i][1] << endl;
 	out.close();*/
 	FluxOutput();
-	FT_.write_H5(Outputpath + name_ + "_FluxZone.h5");
+	if (K_H5Output)
+		FT_.write_H5(Outputpath + name_ + "_FluxZone.h5");
 }
 
 double Particle::sourceWall(int i) { return sourceWall_[i]; }

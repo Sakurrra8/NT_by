@@ -235,8 +235,7 @@ void Initialize(int Input, char *settingfile[]) {
   In >> Inputstring >> coeff_puff;
   // std::cout << coeff_puff << endl;
 
-  // Optional variance-reduction switches. Old setting files can omit these
-  // lines.
+  // Optional switches. Old setting files can omit these lines.
   bool mesh_mode_read = false;
   while (std::getline(In, line)) {
     if (line.empty())
@@ -253,6 +252,8 @@ void Initialize(int Input, char *settingfile[]) {
       iss >> K_Roulette;
     else if (Inputstring == "K_Splitting")
       iss >> K_Splitting;
+    else if (Inputstring == "K_H5Output")
+      iss >> K_H5Output;
     else if (Inputstring == "W_RouletteMin")
       iss >> W_RouletteMin;
     else if (Inputstring == "W_RouletteTarget")

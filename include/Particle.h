@@ -22,6 +22,24 @@ int ZonefromXY(int X, int Y);
 string fatename(int i);
 string sourcename(int i);
 
+enum class SourceStratum
+{
+	Unknown = 0,
+	IT,
+	OT,
+	MCW,
+	Recombination,
+	Puff,
+	Methane,
+	Carbon,
+	Argon,
+	PlasmaBoundary,
+	Core,
+	Count
+};
+
+string sourceStratumName(SourceStratum source);
+
 class ParCollCar
 {
 private:
@@ -44,6 +62,11 @@ private:
 	double cs_[N_POLOIDAL_GRID][N_RADIAL_GRID];
 	double SE_n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
 	double Num_E_n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
+	// The launch summary is not Sn_by_stratum. A future source-resolved
+	// diagnostic must add B2 and triangle counters keyed by SourceStratum
+	// without replacing the existing aggregate Sn_ / Tri_Sn_ values. It must
+	// separately cover Ion_D, Diss2_D2, DS1_D2p, DS2_D2p, DS3_D2p, Ion_D2,
+	// and CX_D2 before comparing with EIRENE IT/OT/MCW source terms.
 
 	double Cor_cs_;
 	double cs_now_;
@@ -308,6 +331,7 @@ private:
 	int Zone_;				// Particle Zone in Tokamak
 	double Tn_;				// Particle Temperture
 	double Weight_;			// Particle weight
+	SourceStratum source_stratum_{SourceStratum::Unknown};
 	int XY_[3];				// Particle position Grid Index in Tokamak
 	int GridIndex_;			// the mesh Index
 
@@ -359,6 +383,8 @@ private:
 	std::vector<double> pendingTriN_, pendingTriE_, pendingTriV_;
 	std::vector<double> pendingCxIonBefore_, pendingCxIonAfter_;
 	std::vector<double> pendingCxNeutralBefore_, pendingCxNeutralAfter_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> launchedWeightByStratum_;
+	std::vector<std::array<unsigned long long, static_cast<std::size_t>(SourceStratum::Count)>> launchedEventsByStratum_;
 	std::size_t gridScalarIndex(int i, int j, int charge) const;
 	std::size_t gridVectorIndex(int i, int j, int component, int charge) const;
 	std::size_t triScalarIndex(int tri, int charge) const;
@@ -369,6 +395,7 @@ private:
 	void addCxVelocityBeforeGrid(int i, int j, int component, int charge, double ion, double neutral, double n);
 	void addCxVelocityAfterGrid(int i, int j, int component, int charge, double ion, double neutral, double n);
 	double collisionStatWeight() const;
+	void recordSourceLaunch();
 	void beginDeferredCollisionStats(double scale);
 	void endDeferredCollisionStats();
 
@@ -458,6 +485,7 @@ public:
 		double dt_trace;
 		double Tn;
 		double Weight;
+		SourceStratum sourceStratum;
 		double sourceWall[4];
 		double lambda_now;
 		double d_flight;
@@ -566,6 +594,10 @@ public:
 	double Pump(int i);
 	void Stat(int n);
 	void Stat_Tri(int n);
+	void DumpD2pBalance_B2();
+	void DumpD2pBalance_Tri();
+	void DumpD2pPhysicsDecomposition_B2();
+	void AppendSourceStratumSummary(std::ostream &out) const;
 	// void FluxCal_Grid();
 	void FluxCal_Target();
 	void FluxOutput();
@@ -618,6 +650,8 @@ public:
 	int Charge();
 	int ChargeTag();
 	void SetChargeTag(int i);
+	SourceStratum sourceStratum() const;
+	void setSourceStratum(SourceStratum source);
 	double Weight();
 	void setname(string particle_name);
 	void setPar(string particle_name, double mass, int Charge);
