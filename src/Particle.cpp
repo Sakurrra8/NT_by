@@ -1829,7 +1829,14 @@ void Particle::track()
 			const std::vector<double> neutral_velocity = V_;
 			for (int i = 0; i < 3; ++i)
 				V_[i] = V_Charge_[i];
-			if (std::abs(V_[0]) < 1e-20)
+			const double charge_speed = std::sqrt(
+				V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]);
+			const double neutral_speed = std::sqrt(
+				neutral_velocity[0] * neutral_velocity[0] +
+				neutral_velocity[1] * neutral_velocity[1] +
+				neutral_velocity[2] * neutral_velocity[2]);
+			const bool fallback_to_neutral_velocity = std::abs(V_[0]) < 1e-20;
+			if (fallback_to_neutral_velocity)
 				V_ = neutral_velocity;
 
 			dt_ = dt;
@@ -1849,9 +1856,31 @@ void Particle::track()
 				(std::isfinite(dt_trace_) && dt_trace_ > 0.) ? std::min(dt_trace_, dt_) : dt_;
 			if (this == &D2 && start_tri >= 0 && start_tri < num_trimesh_)
 			{
-				const double represented_weight =
-					Weight_ * (defer_flight_stats_ ? deferred_flight_stat_scale_ : NumPar_now);
+				const double represented_weight = diagnosticEventWeight();
+				const double dx = X_[0] - x_before[0];
+				const double dy = X_[1] - x_before[1];
+				const double dz = X_[2] - x_before[2];
+				const double segment_length = std::sqrt(dx * dx + dy * dy + dz * dz);
 				Tri_D2p_track_time_[start_tri] += represented_weight * segment_dt;
+				D2p_sum_weight_segment_dt_ += represented_weight * segment_dt;
+				D2p_sum_weight_segment_length_ += represented_weight * segment_length;
+				D2p_sum_weight_charge_speed_ += represented_weight * charge_speed;
+				D2p_sum_weight_neutral_speed_ += represented_weight * neutral_speed;
+				if (segment_dt > 0.)
+					D2p_sum_weight_segment_speed_ +=
+						represented_weight * segment_length / segment_dt;
+				D2p_sum_segment_dt_ += segment_dt;
+				D2p_sum_segment_length_ += segment_length;
+				if (D2p_track_steps_ == 0)
+					D2p_min_charge_speed_ = charge_speed;
+				else
+					D2p_min_charge_speed_ = std::min(D2p_min_charge_speed_, charge_speed);
+				D2p_max_charge_speed_ = std::max(D2p_max_charge_speed_, charge_speed);
+				if (fallback_to_neutral_velocity)
+				{
+					++D2p_fallback_to_neutral_velocity_count_;
+					D2p_fallback_to_neutral_velocity_weight_ += represented_weight;
+				}
 				++D2p_track_steps_;
 			}
 
@@ -7428,6 +7457,10 @@ void Particle::DumpD2pTrackLengthTri()
 		total_fate_weight > 0. ? D2p_DS_weight_[2] / total_fate_weight : 0.;
 	const double frac_boundary_weight =
 		total_fate_weight > 0. ? D2p_boundary_loss_weight_ / total_fate_weight : 0.;
+	const double mean_segment_dt =
+		D2p_track_steps_ > 0 ? D2p_sum_segment_dt_ / D2p_track_steps_ : 0.;
+	const double mean_segment_length =
+		D2p_track_steps_ > 0 ? D2p_sum_segment_length_ / D2p_track_steps_ : 0.;
 
 	ofstream summary(Outputpath + "D2p_track_length_summary.csv");
 	summary << std::setprecision(17);
@@ -7440,7 +7473,14 @@ void Particle::DumpD2pTrackLengthTri()
 			   "D2p_created_by_ion_weight,D2p_created_by_cx_weight,D2p_created_total_weight,"
 			   "D2p_DS1_weight,D2p_DS2_weight,D2p_DS3_weight,"
 			   "D2p_boundary_loss_weight,D2p_total_fate_weight,"
-			   "frac_DS1_weight,frac_DS2_weight,frac_DS3_weight,frac_boundary_weight\n";
+			   "frac_DS1_weight,frac_DS2_weight,frac_DS3_weight,frac_boundary_weight,"
+			   "D2p_segment_count,sum_represented_weight_segment_dt,"
+			   "sum_represented_weight_segment_length,"
+			   "sum_represented_weight_abs_V_charge,"
+			   "sum_represented_weight_abs_V_neutral_before,"
+			   "sum_represented_weight_segment_length_over_dt,"
+			   "fallback_to_neutral_velocity_count,fallback_to_neutral_velocity_weight,"
+			   "mean_segment_dt,mean_segment_length,min_abs_V_charge,max_abs_V_charge\n";
 	summary << local_integral << ',' << track_integral << ',' << global_ratio << ','
 			<< D2p_created_by_ion_ << ',' << D2p_created_by_cx_ << ',' << D2p_track_steps_ << ','
 			<< D2p_DS_events_[0] << ',' << D2p_DS_events_[1] << ',' << D2p_DS_events_[2] << ','
@@ -7451,7 +7491,14 @@ void Particle::DumpD2pTrackLengthTri()
 			<< D2p_DS_weight_[0] << ',' << D2p_DS_weight_[1] << ',' << D2p_DS_weight_[2] << ','
 			<< D2p_boundary_loss_weight_ << ',' << total_fate_weight << ','
 			<< frac_ds1_weight << ',' << frac_ds2_weight << ',' << frac_ds3_weight << ','
-			<< frac_boundary_weight << '\n';
+			<< frac_boundary_weight << ',' << D2p_track_steps_ << ','
+			<< D2p_sum_weight_segment_dt_ << ',' << D2p_sum_weight_segment_length_ << ','
+			<< D2p_sum_weight_charge_speed_ << ',' << D2p_sum_weight_neutral_speed_ << ','
+			<< D2p_sum_weight_segment_speed_ << ','
+			<< D2p_fallback_to_neutral_velocity_count_ << ','
+			<< D2p_fallback_to_neutral_velocity_weight_ << ','
+			<< mean_segment_dt << ',' << mean_segment_length << ','
+			<< D2p_min_charge_speed_ << ',' << D2p_max_charge_speed_ << '\n';
 
 	ofstream fate(Outputpath + "D2p_mesh3_tracking_fate_summary.csv");
 	fate << std::setprecision(17);
@@ -7541,6 +7588,17 @@ void Particle::Clear(int n)
 		D2p_DS_weight_[2] = 0.;
 		D2p_boundary_loss_weight_ = 0.;
 		D2p_max_steps_loss_weight_ = 0.;
+		D2p_sum_weight_segment_dt_ = 0.;
+		D2p_sum_weight_segment_length_ = 0.;
+		D2p_sum_weight_charge_speed_ = 0.;
+		D2p_sum_weight_neutral_speed_ = 0.;
+		D2p_sum_weight_segment_speed_ = 0.;
+		D2p_fallback_to_neutral_velocity_count_ = 0;
+		D2p_fallback_to_neutral_velocity_weight_ = 0.;
+		D2p_sum_segment_dt_ = 0.;
+		D2p_sum_segment_length_ = 0.;
+		D2p_min_charge_speed_ = 0.;
+		D2p_max_charge_speed_ = 0.;
 		source_stratum_ = SourceStratum::Unknown;
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)

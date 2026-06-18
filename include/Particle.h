@@ -439,6 +439,17 @@ private:
 	double D2p_DS_weight_[3]{0., 0., 0.};
 	double D2p_boundary_loss_weight_{0.};
 	double D2p_max_steps_loss_weight_{0.};
+	double D2p_sum_weight_segment_dt_{0.};
+	double D2p_sum_weight_segment_length_{0.};
+	double D2p_sum_weight_charge_speed_{0.};
+	double D2p_sum_weight_neutral_speed_{0.};
+	double D2p_sum_weight_segment_speed_{0.};
+	unsigned long long D2p_fallback_to_neutral_velocity_count_{0};
+	double D2p_fallback_to_neutral_velocity_weight_{0.};
+	double D2p_sum_segment_dt_{0.};
+	double D2p_sum_segment_length_{0.};
+	double D2p_min_charge_speed_{0.};
+	double D2p_max_charge_speed_{0.};
 	static constexpr unsigned long long MaxD2pFlightSteps = 100000;
 
 	double *V_Grid_CX_Ion_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
