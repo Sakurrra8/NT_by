@@ -395,6 +395,7 @@ private:
 	void addCxVelocityBeforeGrid(int i, int j, int component, int charge, double ion, double neutral, double n);
 	void addCxVelocityAfterGrid(int i, int j, int component, int charge, double ion, double neutral, double n);
 	double collisionStatWeight() const;
+	double diagnosticEventWeight() const;
 	void recordSourceLaunch();
 	void beginDeferredCollisionStats(double scale);
 	void endDeferredCollisionStats();
@@ -431,6 +432,11 @@ private:
 	unsigned long long D2p_boundary_loss_{0};
 	unsigned long long D2p_max_steps_loss_{0};
 	unsigned long long D2p_current_flight_steps_{0};
+	double D2p_created_by_ion_weight_{0.};
+	double D2p_created_by_cx_weight_{0.};
+	double D2p_DS_weight_[3]{0., 0., 0.};
+	double D2p_boundary_loss_weight_{0.};
+	double D2p_max_steps_loss_weight_{0.};
 	static constexpr unsigned long long MaxD2pFlightSteps = 100000;
 
 	double *V_Grid_CX_Ion_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
