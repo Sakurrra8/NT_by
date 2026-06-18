@@ -425,6 +425,8 @@ private:
 	std::vector<std::vector<std::vector<double>>> Tri_Sum_V_D_1_;
 	std::vector<double> Tri_NumPar_Grid_;
 	std::vector<double> Tri_D2p_track_time_;
+	std::vector<std::array<double, 3>> Tri_D2p_DS_weight_;
+	std::vector<double> Tri_D2p_boundary_loss_weight_;
 	unsigned long long D2p_created_by_ion_{0};
 	unsigned long long D2p_created_by_cx_{0};
 	unsigned long long D2p_track_steps_{0};

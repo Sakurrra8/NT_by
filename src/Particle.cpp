@@ -325,6 +325,8 @@ void Particle::ParInit(vector<int> &K_collision, const std::vector<std::vector<i
 	Tri_Sum_V_D_1_.resize(num_trimesh_);
 	Tri_NumPar_Grid_.resize(num_trimesh_);
 	Tri_D2p_track_time_.assign(num_trimesh_, 0.0);
+	Tri_D2p_DS_weight_.assign(num_trimesh_, {0.0, 0.0, 0.0});
+	Tri_D2p_boundary_loss_weight_.assign(num_trimesh_, 0.0);
 
 	for (int i = 0; i < num_trimesh_; i++)
 	{
@@ -1857,8 +1859,10 @@ void Particle::track()
 			{
 				if (this == &D2)
 				{
+					const double event_weight = diagnosticEventWeight();
 					++D2p_boundary_loss_;
-					D2p_boundary_loss_weight_ += diagnosticEventWeight();
+					D2p_boundary_loss_weight_ += event_weight;
+					Tri_D2p_boundary_loss_weight_[start_tri] += event_weight;
 				}
 				Weight_ = 0.;
 				IfColl_ = 0;
@@ -1882,8 +1886,10 @@ void Particle::track()
 				const int channel = H2PCollCal();
 				if (this == &D2 && channel >= 0 && channel < 3)
 				{
+					const double event_weight = diagnosticEventWeight();
 					++D2p_DS_events_[channel];
-					D2p_DS_weight_[channel] += diagnosticEventWeight();
+					D2p_DS_weight_[channel] += event_weight;
+					Tri_D2p_DS_weight_[start_tri][channel] += event_weight;
 				}
 				Weight_ = 0.;
 			}
@@ -7338,6 +7344,8 @@ void Particle::DumpD2pTrackLengthTri()
 	production << "tri,b2_i,b2_j,triVolume_m3,ne_m3,Te_eV,n_D2_m-3,"
 				  "n_D2p_local_balance_m-3,n_D2p_track_length_m-3,"
 				  "P_Ion_D2_s-1,P_CX_D2_s-1,P_CXDT_D2_s-1,P_total_D2p_s-1,"
+				  "D2p_DS1_weight,D2p_DS2_weight,D2p_DS3_weight,"
+				  "D2p_boundary_loss_weight,D2p_total_fate_weight,frac_DS2_weight,"
 				  "nu_Ion_D2_effective_s-1,nu_CX_D2_effective_s-1,Te_ge_5_flag,"
 				  "P_Ion_D2_per_m3_s-1,P_CX_D2_per_m3_s-1,P_CXDT_D2_per_m3_s-1\n";
 	for (int tri = 0; tri < Grid4.num_tris(); ++tri)
@@ -7360,6 +7368,14 @@ void Particle::DumpD2pTrackLengthTri()
 		const double p_cx = CX_[0].Sn(tri);
 		const double p_cxdt = (K_DT && K_CX_DT) ? CX_DT_[0].Sn(tri) : 0.;
 		const double p_total = p_ion + p_cx + p_cxdt;
+		const double tri_ds1_weight = Tri_D2p_DS_weight_[tri][0];
+		const double tri_ds2_weight = Tri_D2p_DS_weight_[tri][1];
+		const double tri_ds3_weight = Tri_D2p_DS_weight_[tri][2];
+		const double tri_boundary_weight = Tri_D2p_boundary_loss_weight_[tri];
+		const double tri_total_fate_weight =
+			tri_ds1_weight + tri_ds2_weight + tri_ds3_weight + tri_boundary_weight;
+		const double tri_frac_ds2_weight =
+			tri_total_fate_weight > 0. ? tri_ds2_weight / tri_total_fate_weight : 0.;
 		const double p_ion_per_volume = volume > 0. ? p_ion / volume : 0.;
 		const double p_cx_per_volume = volume > 0. ? p_cx / volume : 0.;
 		const double p_cxdt_per_volume = volume > 0. ? p_cxdt / volume : 0.;
@@ -7389,6 +7405,9 @@ void Particle::DumpD2pTrackLengthTri()
 				   << electron_density << ',' << electron_temperature << ',' << d2_density << ','
 				   << local_density << ',' << track_density << ','
 				   << p_ion << ',' << p_cx << ',' << p_cxdt << ',' << p_total << ','
+				   << tri_ds1_weight << ',' << tri_ds2_weight << ',' << tri_ds3_weight << ','
+				   << tri_boundary_weight << ',' << tri_total_fate_weight << ','
+				   << tri_frac_ds2_weight << ','
 				   << nu_ion_effective << ',' << nu_cx_effective << ',' << te_ge_5 << ','
 				   << p_ion_per_volume << ',' << p_cx_per_volume << ','
 				   << p_cxdt_per_volume << '\n';
@@ -7502,6 +7521,10 @@ void Particle::Clear(int n)
 		for (auto &events : launchedEventsByStratum_)
 			events.fill(0);
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
+		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),
+				  std::array<double, 3>{0.0, 0.0, 0.0});
+		std::fill(Tri_D2p_boundary_loss_weight_.begin(),
+				  Tri_D2p_boundary_loss_weight_.end(), 0.0);
 		D2p_created_by_ion_ = 0;
 		D2p_created_by_cx_ = 0;
 		D2p_track_steps_ = 0;
