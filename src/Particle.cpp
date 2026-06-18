@@ -324,6 +324,7 @@ void Particle::ParInit(vector<int> &K_collision, const std::vector<std::vector<i
 	Tri_Sum_V_.resize(num_trimesh_);
 	Tri_Sum_V_D_1_.resize(num_trimesh_);
 	Tri_NumPar_Grid_.resize(num_trimesh_);
+	Tri_D2p_track_time_.assign(num_trimesh_, 0.0);
 
 	for (int i = 0; i < num_trimesh_; i++)
 	{
@@ -1378,6 +1379,22 @@ void Particle::Vchargefix()
 	V_Charge_[2] = V_Charge_[3] * B[XY_[0]][XY_[1]][2];
 }
 
+bool Particle::isHydrogenMoleculeIon() const
+{
+	return Charge_ == 1 && (name_ == "H2" || name_ == "D2" || name_ == "T2");
+}
+
+void Particle::markD2pJustCreated(bool created_by_cx)
+{
+	D2p_current_flight_steps_ = 0;
+	if (this != &D2)
+		return;
+	if (created_by_cx)
+		++D2p_created_by_cx_;
+	else
+		++D2p_created_by_ion_;
+}
+
 void Particle::track()
 {
 	if (this == &D)
@@ -1767,6 +1784,93 @@ void Particle::track()
 					}
 				}
 			}
+		}
+		else if (K_D2Flight && isHydrogenMoleculeIon())
+		{
+			if (Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_ || Zone_ >= 7)
+			{
+				if (this == &D2)
+					++D2p_boundary_loss_;
+				Weight_ = 0.;
+				IfColl_ = 0;
+				return;
+			}
+			if (++D2p_current_flight_steps_ > MaxD2pFlightSteps)
+			{
+				if (this == &D2)
+					++D2p_max_steps_loss_;
+				Weight_ = 0.;
+				IfColl_ = 0;
+				return;
+			}
+
+			if (ChargeTag_ == 0)
+				VtoVcharge();
+			Vchargefix();
+
+			const int start_tri = Tri_Index_;
+			const int start_i = XY_[0];
+			const int start_j = XY_[1];
+			const double x_before[3] = {X_[0], X_[1], X_[2]};
+			const std::vector<double> neutral_velocity = V_;
+			for (int i = 0; i < 3; ++i)
+				V_[i] = V_Charge_[i];
+			if (std::abs(V_[0]) < 1e-20)
+				V_ = neutral_velocity;
+
+			dt_ = dt;
+			d_flight_ = 1.;
+			Rand_flight_ = 0.;
+			IfColl_ = 0;
+			for (int i = 0; i < 3; ++i)
+				X_new_[i] = X_[i] + V_[i] * dt_;
+			Caltrace_Tri();
+
+			const bool position_was_advanced =
+				X_[0] != x_before[0] || X_[1] != x_before[1] || X_[2] != x_before[2];
+			if (!position_was_advanced && Zone_ < 7)
+				NumParStat();
+
+			const double segment_dt =
+				(std::isfinite(dt_trace_) && dt_trace_ > 0.) ? std::min(dt_trace_, dt_) : dt_;
+			if (this == &D2 && start_tri >= 0 && start_tri < num_trimesh_)
+			{
+				const double represented_weight =
+					Weight_ * (defer_flight_stats_ ? deferred_flight_stat_scale_ : NumPar_now);
+				Tri_D2p_track_time_[start_tri] += represented_weight * segment_dt;
+				++D2p_track_steps_;
+			}
+
+			if (Zone_ >= 6 || Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_)
+			{
+				if (this == &D2)
+					++D2p_boundary_loss_;
+				Weight_ = 0.;
+				IfColl_ = 0;
+				return;
+			}
+
+			const double nu1 = DS_[1][0].cs(start_tri);
+			const double nu2 = DS_[1][1].cs(start_tri);
+			const double nu3 = DS_[1][2].cs(start_tri);
+			const double nu_total = nu1 + nu2 + nu3;
+			const double collision_probability =
+				nu_total > 0. ? 1. - std::exp(-nu_total * segment_dt) : 0.;
+			if (Tools::Random() < collision_probability)
+			{
+				DS_factor[0] = nu1;
+				DS_factor[1] = nu2;
+				DS_factor[2] = nu3;
+				Tri_Index_ = start_tri;
+				XY_[0] = start_i;
+				XY_[1] = start_j;
+				const int channel = H2PCollCal();
+				if (this == &D2 && channel >= 0 && channel < 3)
+					++D2p_DS_events_[channel];
+				Weight_ = 0.;
+			}
+			IfColl_ = 0;
+			return;
 		}
 	}
 }
@@ -3647,6 +3751,7 @@ Particle::State Particle::SaveState() const
 	state.lambda_now = lambda_now_;
 	state.d_flight = d_flight_;
 	state.Rand_flight = Rand_flight_;
+	state.D2p_current_flight_steps = D2p_current_flight_steps_;
 	state.V = V_;
 	for (int i = 0; i < 3; ++i)
 	{
@@ -3689,6 +3794,7 @@ void Particle::RestoreState(const State &state)
 	lambda_now_ = state.lambda_now;
 	d_flight_ = state.d_flight;
 	Rand_flight_ = state.Rand_flight;
+	D2p_current_flight_steps_ = state.D2p_current_flight_steps;
 	V_ = state.V;
 	for (int i = 0; i < 3; ++i)
 	{
@@ -4971,7 +5077,12 @@ void Particle::Coll()
 						return;
 					}
 					else
+					{
 						Charge_ = 1;
+						VtoVcharge();
+						markD2pJustCreated(false);
+						return;
+					}
 
 					if (K_test1 || K_test2)
 					{
@@ -5241,6 +5352,8 @@ void Particle::Coll()
 					else
 					{
 						Charge_ = 1;
+						VtoVcharge();
+						markD2pJustCreated(true);
 						// std::cout << name_ + " after CX V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
 						if (K_test1 || K_test2)
 						{
@@ -5257,6 +5370,7 @@ void Particle::Coll()
 						{
 							std::cout << "coll_5 CX" << endl;
 						}
+						return;
 					}
 				}
 				else if (rand_one < Sum_factor[5] / Sum_factor[Num_Collision_D2 - 1])
@@ -6465,18 +6579,18 @@ int Particle::H2PCollCal()
 		{
 			if (this == &H2)
 			{
-				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
+				DS_[1][1].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
+				DS_[1][1].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &D2)
 			{
-				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
+				DS_[1][1].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
+				DS_[1][1].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &T2)
 			{
-				DS_[1][0].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
+				DS_[1][1].Mu_Add(XY_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
+				DS_[1][1].E_Add(XY_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 		}
 		if (MeshMode == 3)
@@ -6484,18 +6598,18 @@ int Particle::H2PCollCal()
 			DS_[1][1].n_Add(Tri_Index_, collisionStatWeight());
 			if (this == &H2)
 			{
-				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
+				DS_[1][1].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
+				DS_[1][1].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &D2)
 			{
-				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
+				DS_[1][1].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
+				DS_[1][1].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 			else if (this == &T2)
 			{
-				DS_[1][0].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
-				DS_[1][0].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
+				DS_[1][1].Mu_Add(Tri_Index_, 0.5 * mass_ * V_temp2 * collisionStatWeight());
+				DS_[1][1].E_Add(Tri_Index_, 0.5 * 1. / 2 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * collisionStatWeight());
 			}
 		}
 		return 1;
@@ -6507,13 +6621,13 @@ int Particle::H2PCollCal()
 		{
 			if (this == &D2)
 			{
-				DS_[1][1].Mu_Add(XY_, Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_D_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
+				DS_[1][2].Mu_Add(XY_, Dmass * ua_D_1[XY_[0]][XY_[1]] * collisionStatWeight());
+				DS_[1][2].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_D_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 			}
 			if (this == &T2)
 			{
-				DS_[1][1].Mu_Add(XY_, Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
-				DS_[1][1].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_T_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
+				DS_[1][2].Mu_Add(XY_, Tmass * ua_T_1[XY_[0]][XY_[1]] * collisionStatWeight());
+				DS_[1][2].E_Add(XY_, (3. / 2 * Tn_ * qe + 1. / 2 * Dmass * (Tools::sqr(ua_T_1[XY_[0]][XY_[1]]))) * collisionStatWeight());
 			}
 		}
 		else if (K_mu == 2 || K_mu == 3)
@@ -6959,8 +7073,9 @@ void Particle::DumpD2pBalance_B2()
 	out << std::setprecision(17);
 	out << "i,j,Volume_m3,ne_m3,Te_eV,"
 		   "P_Ion_D2_s-1,P_CX_D2_s-1,P_CXDT_D2_s-1,P_total_s-1,"
-		   "k_DS1_m3s,k_DS2_m3s,k_DS3_m3s,k_loss_total_m3s,"
-		   "nu_loss_s-1,n_D2p_m-3,L_DS1_s-1,L_DS2_s-1,L_DS3_s-1,"
+		   "k_2p2p11_H4_m3s,k_2p2p12_H4_m3s,k_2p2p14_H4_m3s,k_loss_total_m3s,"
+		   "frac_2p2p11_H4,frac_2p2p12_H4,frac_2p2p14_H4,"
+		   "nu_loss_s-1,n_D2p_m-3,L_2p2p11_H4_s-1,L_2p2p12_H4_s-1,L_2p2p14_H4_s-1,"
 		   "L_total_s-1,closure_relerr\n";
 
 	for (int i = 1; i < N_poloidal - 1; ++i)
@@ -6978,6 +7093,9 @@ void Particle::DumpD2pBalance_B2()
 			const double k_ds2 = R2_2_12_H4.cal(electron_density, electron_temperature);
 			const double k_ds3 = R2_2_14_H4.cal(electron_density, electron_temperature);
 			const double k_loss = k_ds1 + k_ds2 + k_ds3;
+			const double frac_ds1 = k_loss > 0.0 ? k_ds1 / k_loss : 0.0;
+			const double frac_ds2 = k_loss > 0.0 ? k_ds2 / k_loss : 0.0;
+			const double frac_ds3 = k_loss > 0.0 ? k_ds3 / k_loss : 0.0;
 			const double nu_loss = electron_density > 0.0 ? electron_density * k_loss : 0.0;
 			const bool valid = electron_density > 0.0 && volume > 0.0 && k_loss > 0.0;
 			const double density = valid ? n_[i][j][1] : 0.0;
@@ -6992,6 +7110,7 @@ void Particle::DumpD2pBalance_B2()
 			out << i << ',' << j << ',' << volume << ',' << electron_density << ','
 				<< electron_temperature << ',' << p_ion << ',' << p_cx << ',' << p_cxdt << ','
 				<< p_total << ',' << k_ds1 << ',' << k_ds2 << ',' << k_ds3 << ',' << k_loss << ','
+				<< frac_ds1 << ',' << frac_ds2 << ',' << frac_ds3 << ','
 				<< nu_loss << ',' << density << ',' << l_ds1 << ',' << l_ds2 << ',' << l_ds3 << ','
 				<< l_total << ',' << closure << '\n';
 		}
@@ -7007,8 +7126,9 @@ void Particle::DumpD2pBalance_Tri()
 	out << std::setprecision(17);
 	out << "tri,b2_i,b2_j,triVolume_m3,ne_m3,Te_eV,"
 		   "P_Ion_D2_s-1,P_CX_D2_s-1,P_CXDT_D2_s-1,P_total_s-1,"
-		   "k_DS1_m3s,k_DS2_m3s,k_DS3_m3s,k_loss_total_m3s,"
-		   "nu_loss_s-1,n_D2p_m-3,L_DS1_s-1,L_DS2_s-1,L_DS3_s-1,"
+		   "k_2p2p11_H4_m3s,k_2p2p12_H4_m3s,k_2p2p14_H4_m3s,k_loss_total_m3s,"
+		   "frac_2p2p11_H4,frac_2p2p12_H4,frac_2p2p14_H4,"
+		   "nu_loss_s-1,n_D2p_m-3,L_2p2p11_H4_s-1,L_2p2p12_H4_s-1,L_2p2p14_H4_s-1,"
 		   "L_total_s-1,closure_relerr\n";
 
 	for (int tri = 0; tri < Grid4.num_tris(); ++tri)
@@ -7028,6 +7148,9 @@ void Particle::DumpD2pBalance_Tri()
 		const double k_ds2 = R2_2_12_H4.cal(electron_density, electron_temperature);
 		const double k_ds3 = R2_2_14_H4.cal(electron_density, electron_temperature);
 		const double k_loss = k_ds1 + k_ds2 + k_ds3;
+		const double frac_ds1 = k_loss > 0.0 ? k_ds1 / k_loss : 0.0;
+		const double frac_ds2 = k_loss > 0.0 ? k_ds2 / k_loss : 0.0;
+		const double frac_ds3 = k_loss > 0.0 ? k_ds3 / k_loss : 0.0;
 		const double nu_loss = electron_density > 0.0 ? electron_density * k_loss : 0.0;
 		const bool valid = electron_density > 0.0 && volume > 0.0 && k_loss > 0.0;
 		const double density = valid ? Tri_n_[tri][1] : 0.0;
@@ -7042,6 +7165,7 @@ void Particle::DumpD2pBalance_Tri()
 		out << tri << ',' << i << ',' << j << ',' << volume << ',' << electron_density << ','
 			<< electron_temperature << ',' << p_ion << ',' << p_cx << ',' << p_cxdt << ','
 			<< p_total << ',' << k_ds1 << ',' << k_ds2 << ',' << k_ds3 << ',' << k_loss << ','
+			<< frac_ds1 << ',' << frac_ds2 << ',' << frac_ds3 << ','
 			<< nu_loss << ',' << density << ',' << l_ds1 << ',' << l_ds2 << ',' << l_ds3 << ','
 			<< l_total << ',' << closure << '\n';
 	}
@@ -7102,8 +7226,9 @@ void Particle::DumpD2pPhysicsDecomposition_B2()
 	out << std::setprecision(17);
 	out << "i,j,Volume_m3,ne_m3,Te_eV,n_D2_m-3,n_D2p_m-3,"
 		   "P_Ion_D2_s-1,P_CX_D2_s-1,P_total_s-1,"
-		   "k_DS1_m3s,k_DS2_m3s,k_DS3_m3s,"
-		   "frac_DS1,frac_DS2,frac_DS3,nu_loss_s-1,tau_D2p_s,"
+		   "k_2p2p11_H4_m3s,k_2p2p12_H4_m3s,k_2p2p14_H4_m3s,"
+		   "L_2p2p11_H4_s-1,L_2p2p12_H4_s-1,L_2p2p14_H4_s-1,"
+		   "frac_2p2p11_H4,frac_2p2p12_H4,frac_2p2p14_H4,nu_loss_s-1,tau_D2p_s,"
 		   "source_weighted_Te_eV,source_weighted_ne_m-3\n";
 
 	for (int i = 1; i < N_poloidal - 1; ++i)
@@ -7128,6 +7253,9 @@ void Particle::DumpD2pPhysicsDecomposition_B2()
 			const double tau = nu_loss > 0.0 ? 1.0 / nu_loss : 0.0;
 			const bool valid = electron_density > 0.0 && volume > 0.0 && k_loss > 0.0;
 			const double density_d2p = valid ? n_[i][j][1] : 0.0;
+			const double l_ds1 = valid ? electron_density * density_d2p * k_ds1 * volume : 0.0;
+			const double l_ds2 = valid ? electron_density * density_d2p * k_ds2 * volume : 0.0;
+			const double l_ds3 = valid ? electron_density * density_d2p * k_ds3 * volume : 0.0;
 			const double weighted_te =
 				sum_p_total > 0.0 ? p_total * electron_temperature / sum_p_total : 0.0;
 			const double weighted_ne =
@@ -7136,7 +7264,8 @@ void Particle::DumpD2pPhysicsDecomposition_B2()
 			out << i << ',' << j << ',' << volume << ',' << electron_density << ','
 				<< electron_temperature << ',' << density_d2 << ',' << density_d2p << ','
 				<< p_ion << ',' << p_cx << ',' << p_total << ',' << k_ds1 << ',' << k_ds2 << ','
-				<< k_ds3 << ',' << frac_ds1 << ',' << frac_ds2 << ',' << frac_ds3 << ','
+				<< k_ds3 << ',' << l_ds1 << ',' << l_ds2 << ',' << l_ds3 << ','
+				<< frac_ds1 << ',' << frac_ds2 << ',' << frac_ds3 << ','
 				<< nu_loss << ',' << tau << ',' << weighted_te << ',' << weighted_ne << '\n';
 		}
 	}
@@ -7144,15 +7273,76 @@ void Particle::DumpD2pPhysicsDecomposition_B2()
 	ofstream summary(Outputpath + "D2p_physics_decomposition_summary.csv");
 	summary << std::setprecision(17);
 	summary << "sum_P_Ion_D2_s-1,sum_P_CX_D2_s-1,sum_P_total_s-1,"
-			   "sum_L_DS1_s-1,sum_L_DS2_s-1,sum_L_DS3_s-1,"
+			   "sum_L_2p2p11_H4_s-1,sum_L_2p2p12_H4_s-1,sum_L_2p2p14_H4_s-1,"
 			   "volume_integral_n_D2p,P_weighted_average_Te_eV,"
-			   "P_weighted_average_ne_m-3,P_weighted_average_tau_D2p_s\n";
+			   "P_weighted_average_ne_m-3,P_weighted_average_tau_D2p_s,"
+			   "code_L_2p2p12_H4_s-1,code_frac_2p2p12_H4,"
+			   "eirene_reaction13_L_s-1,ratio_code_to_eirene_reaction13,comparison_note\n";
+	const double sum_l_total = sum_l_ds1 + sum_l_ds2 + sum_l_ds3;
+	const double code_frac_2p2p12 = sum_l_total > 0.0 ? sum_l_ds2 / sum_l_total : 0.0;
 	summary << sum_p_ion << ',' << sum_p_cx << ',' << sum_p_total << ','
 			<< sum_l_ds1 << ',' << sum_l_ds2 << ',' << sum_l_ds3 << ','
 			<< volume_integral_density << ','
 			<< (sum_p_total > 0.0 ? p_weighted_te_sum / sum_p_total : 0.0) << ','
 			<< (sum_p_total > 0.0 ? p_weighted_ne_sum / sum_p_total : 0.0) << ','
-			<< (sum_p_total > 0.0 ? p_weighted_tau_sum / sum_p_total : 0.0) << '\n';
+			<< (sum_p_total > 0.0 ? p_weighted_tau_sum / sum_p_total : 0.0) << ','
+			<< sum_l_ds2 << ',' << code_frac_2p2p12 << ','
+			<< 0.0 << ',' << 0.0 << ','
+			<< "Need EIRENE reaction-13 tally to complete this comparison.\n";
+}
+
+void Particle::DumpD2pTrackLengthTri()
+{
+	if (this != &D2 || MeshMode != 3)
+		return;
+
+	double local_integral = 0.;
+	double track_integral = 0.;
+	ofstream out(Outputpath + "D2p_track_length_Tri.csv");
+	out << std::setprecision(17);
+	out << "tri,b2_i,b2_j,triVolume_m3,n_D2p_local_balance_m-3,"
+		   "n_D2p_track_length_m-3,ratio_track_to_local\n";
+	for (int tri = 0; tri < Grid4.num_tris(); ++tri)
+	{
+		if (!Grid4.if_in_plasmagrid(tri))
+			continue;
+		const int i = Grid4.b2_index(tri, 0);
+		const int j = Grid4.b2_index(tri, 1);
+		const double volume = Grid4.triVolume(tri);
+		const double local_density = volume > 0. ? Tri_n_[tri][1] : 0.;
+		const double track_density =
+			volume > 0. && tri < static_cast<int>(Tri_D2p_track_time_.size())
+				? Tri_D2p_track_time_[tri] / volume
+				: 0.;
+		const double ratio = local_density > 0. ? track_density / local_density : 0.;
+		local_integral += local_density * volume;
+		track_integral += track_density * volume;
+		out << tri << ',' << i << ',' << j << ',' << volume << ',' << local_density << ','
+			<< track_density << ',' << ratio << '\n';
+	}
+
+	const double global_ratio = local_integral > 0. ? track_integral / local_integral : 0.;
+	ofstream summary(Outputpath + "D2p_track_length_summary.csv");
+	summary << std::setprecision(17);
+	summary << "volume_integral_n_D2p_local_balance,"
+			   "volume_integral_n_D2p_track_length,ratio_track_to_local_global,"
+			   "D2p_created_by_ion,D2p_created_by_cx,D2p_track_steps,"
+			   "D2p_DS1_events,D2p_DS2_events,D2p_DS3_events,"
+			   "D2p_boundary_loss,D2p_max_steps_loss\n";
+	summary << local_integral << ',' << track_integral << ',' << global_ratio << ','
+			<< D2p_created_by_ion_ << ',' << D2p_created_by_cx_ << ',' << D2p_track_steps_ << ','
+			<< D2p_DS_events_[0] << ',' << D2p_DS_events_[1] << ',' << D2p_DS_events_[2] << ','
+			<< D2p_boundary_loss_ << ',' << D2p_max_steps_loss_ << '\n';
+
+	ofstream fate(Outputpath + "D2p_mesh3_tracking_fate_summary.csv");
+	fate << "fate,event_count\n"
+		 << "D2p_created_by_ion," << D2p_created_by_ion_ << '\n'
+		 << "D2p_created_by_cx," << D2p_created_by_cx_ << '\n'
+		 << "D2p_DS1_events," << D2p_DS_events_[0] << '\n'
+		 << "D2p_DS2_events," << D2p_DS_events_[1] << '\n'
+		 << "D2p_DS3_events," << D2p_DS_events_[2] << '\n'
+		 << "D2p_boundary_loss," << D2p_boundary_loss_ << '\n'
+		 << "D2p_max_steps_loss," << D2p_max_steps_loss_ << '\n';
 }
 
 void Particle::AppendSourceStratumSummary(std::ostream &out) const
@@ -7194,6 +7384,16 @@ void Particle::Clear(int n)
 			weights.fill(0.0);
 		for (auto &events : launchedEventsByStratum_)
 			events.fill(0);
+		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
+		D2p_created_by_ion_ = 0;
+		D2p_created_by_cx_ = 0;
+		D2p_track_steps_ = 0;
+		D2p_DS_events_[0] = 0;
+		D2p_DS_events_[1] = 0;
+		D2p_DS_events_[2] = 0;
+		D2p_boundary_loss_ = 0;
+		D2p_max_steps_loss_ = 0;
+		D2p_current_flight_steps_ = 0;
 		source_stratum_ = SourceStratum::Unknown;
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)

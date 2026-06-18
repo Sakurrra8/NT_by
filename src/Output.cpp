@@ -1,9 +1,13 @@
 #include "Global.h"
 #include "Particle.h"
+#include <map>
+#include <set>
 
 void HydrogenOutput(Particle *OutPar1, Particle *OutPar2);
 void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2);
 void SourceStratumSummaryOutput();
+void EireneD2pReactionAuditOutput();
+void D2pMesh3FlightAuditOutput();
 
 string n = "n", E = "E", Tn = "T", Sn = "Sn", SE = "SE", SE_n = "SE_n", Smu = "Smu", Smu1 = "Smu1", Smu2 = "Smu2", Pra = "Pra";
 string Ion = "Ion", Rec = "Rec", CX = "CX", Diss1 = "Diss1", Diss2 = "Diss2", Diss3 = "Diss3", Mar = "Mar", Ela = "Ela", CXDT = "CXDT", R_with_H = "R_with_H", R_with_H2 = "R_with_H2";
@@ -40,6 +44,9 @@ void Output()
         D2.DumpD2pBalance_B2();
         D2.DumpD2pBalance_Tri();
         D2.DumpD2pPhysicsDecomposition_B2();
+        D2.DumpD2pTrackLengthTri();
+        EireneD2pReactionAuditOutput();
+        D2pMesh3FlightAuditOutput();
 
         Out_temp.open(Outputpath + "recycling_D.txt");
         for (int i = 0; i < 76; i++)
@@ -231,6 +238,175 @@ void Output()
     }
     Dump_2D_Global(Var_temp, "n_D2_1");*/
     // Dump_2D_Global(D.Ion_rate, "Ion_rate_D");
+}
+
+namespace
+{
+struct EireneReactionAuditRow
+{
+    int reaction_id = 0;
+    string database;
+    string table;
+    string reaction_number;
+    string eirene_type;
+};
+
+bool ParseEireneD2pReactionAudit(const string &path,
+                                std::map<int, EireneReactionAuditRow> &reactions,
+                                std::set<int> &d2p_reaction_ids)
+{
+    ifstream input(path);
+    if (!input.is_open())
+        return false;
+
+    bool in_reaction_list = false;
+    bool in_d2p_species = false;
+    string line;
+    while (std::getline(input, line))
+    {
+        if (line.find("**  Reactions") != string::npos)
+        {
+            in_reaction_list = true;
+            continue;
+        }
+        if (in_reaction_list && line.find("** 4a.") != string::npos)
+        {
+            in_reaction_list = false;
+            continue;
+        }
+        if (line.find("D2+") != string::npos && line.find("**") == string::npos)
+        {
+            in_d2p_species = true;
+            continue;
+        }
+        if (in_d2p_species && line.find("*** 5.") != string::npos)
+        {
+            in_d2p_species = false;
+            continue;
+        }
+
+        if (in_reaction_list)
+        {
+            EireneReactionAuditRow row;
+            std::istringstream fields(line);
+            if (fields >> row.reaction_id >> row.database >> row.table >>
+                    row.reaction_number >> row.eirene_type)
+            {
+                reactions[row.reaction_id] = row;
+            }
+        }
+        else if (in_d2p_species)
+        {
+            int reaction_id = 0;
+            int code1 = 0;
+            int code2 = 0;
+            std::istringstream fields(line);
+            if (fields >> reaction_id >> code1 >> code2)
+                d2p_reaction_ids.insert(reaction_id);
+        }
+    }
+    return true;
+}
+}
+
+void EireneD2pReactionAuditOutput()
+{
+    const std::vector<string> candidates = {
+        Casepath + "input.dat",
+        Casepath + "solps_output/input.dat",
+        Outputpath + "input.dat",
+        "input.dat"};
+
+    std::map<int, EireneReactionAuditRow> reactions;
+    std::set<int> d2p_reaction_ids;
+    string input_path;
+    for (const string &candidate : candidates)
+    {
+        reactions.clear();
+        d2p_reaction_ids.clear();
+        if (ParseEireneD2pReactionAudit(candidate, reactions, d2p_reaction_ids))
+        {
+            input_path = candidate;
+            break;
+        }
+    }
+
+    ofstream readme(Outputpath + "EIRENE_D2p_reaction_audit_readme.txt");
+    if (input_path.empty())
+    {
+        readme << "No EIRENE input.dat was found. No reaction audit CSV was generated.\n"
+               << "Searched Casepath/input.dat, Casepath/solps_output/input.dat, Outputpath/input.dat, and ./input.dat.\n"
+               << "Copy or link the current case input.dat to one of those read-only locations to enable the audit.\n"
+               << "Do not infer that AMJUEL H.4 2.2.12 (DS2) is absent from this missing-file condition.\n";
+        return;
+    }
+
+    ofstream out(Outputpath + "EIRENE_D2p_reaction_audit.csv");
+    out << "reaction_id,database,table,reaction_number,eirene_type,attached_to_D2p\n";
+    for (int reaction_id : d2p_reaction_ids)
+    {
+        const auto reaction = reactions.find(reaction_id);
+        if (reaction == reactions.end())
+            continue;
+        const EireneReactionAuditRow &row = reaction->second;
+        out << row.reaction_id << ',' << row.database << ',' << row.table << ','
+            << row.reaction_number << ',' << row.eirene_type << ",1\n";
+    }
+
+    const auto reaction13 = reactions.find(13);
+    const bool reaction13_attached = d2p_reaction_ids.count(13) != 0;
+    const bool reaction13_is_2p2p12 =
+        reaction13 != reactions.end() &&
+        reaction13->second.database == "AMJUEL" &&
+        reaction13->second.table == "H.4" &&
+        reaction13->second.reaction_number == "2.2.12";
+    readme << "Parsed EIRENE input: " << input_path << '\n'
+           << "DS2 is present in EIRENE input as reaction 13: "
+           << ((reaction13_attached && reaction13_is_2p2p12) ? "confirmed" : "not confirmed")
+           << ".\n"
+           << "The audit is read-only; EIRENE was not run and input.dat was not modified.\n";
+}
+
+void D2pMesh3FlightAuditOutput()
+{
+    ofstream audit(Outputpath + "D2p_mesh3_flight_audit.csv");
+    audit << "MeshMode,K_D2Flight,K_flight,K_Prob,"
+          << "push_tri_allows_charged,track_tri_has_charge_gt_0_branch,"
+          << "coll_immediate_charge1_branch_exists,official_Tri_D2p_density_estimator,"
+          << "mesh3_D2p_flight_status\n";
+    audit << MeshMode << ',' << K_D2Flight << ',' << K_flight << ',' << K_Prob << ','
+          << "1,1,1,local_balance_P_over_L,prototype_diagnostic_only\n";
+
+    ofstream interpretation(Outputpath + "D2p_tri_density_interpretation.txt");
+    interpretation
+        << "Official triangular-grid D2+ density definition:\n"
+        << "Tri_n_[i][1] = (Ion_D2 + CX_D2 + optional CXDT_D2) / "
+        << "(triVolume * ne * (k_2.2.11 + k_2.2.12 + k_2.2.14))\n\n"
+        << "This is a local balance estimate.\n"
+        << "It is not a D2+ track-length or residence-time density.\n";
+
+    ofstream design(Outputpath + "D2p_mesh3_test_ion_tracking_design.txt");
+    design
+        << "Prototype status: the minimum charged D2+ triangular-grid path is implemented for diagnostics.\n"
+        << "It is not yet a validated replacement for the formal local-balance result.\n\n"
+        << "1. D2+ creation from D2 ionization/CX should create a charged test ion and return from the neutral collision branch.\n"
+        << "2. Push_Tri must allow D2+ Charge_=1 particles to continue to track().\n"
+        << "3. Particle::track() must implement MeshMode=3 && Charge_>0 motion.\n"
+        << "4. Caltrace_Tri or equivalent must support charged trajectory crossing through triangles.\n"
+        << "5. DS1/DS2/DS3 should be sampled after finite flight time, not immediately after creation.\n"
+        << "6. Boundary handling for charged D2+ must be defined.\n"
+        << "7. A separate Tri_n_D2p_track_length diagnostic must be added.\n"
+        << "8. Formal Tri_n_[i][1]=P/L should not be replaced until the track-length model is validated.\n";
+
+    if (MeshMode == 3 && K_D2Flight == 1)
+    {
+        ofstream warning(Outputpath + "D2p_mesh3_flight_warning.txt");
+        warning
+            << "MeshMode=3 with K_D2Flight=1 enables a prototype D2+ test-ion tracking diagnostic.\n"
+            << "Push_Tri and Particle::track() now contain a minimum charged D2+ path.\n"
+            << "Official Tri_n[D2+]=P/L local balance, not track-length density.\n"
+            << "Do not treat the prototype track-length result as validated EIRENE equivalence.\n";
+    }
 }
 
 void SourceStratumSummaryOutput()

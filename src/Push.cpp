@@ -555,7 +555,10 @@ restart_particle_tri:
     {
         if (PP->Charge() != 0)
         {
-            exit(5);
+            if (!(K_D2Flight && PP->isHydrogenMoleculeIon()))
+            {
+                exit(5);
+            }
         }
         if (K_log)
         {

@@ -423,6 +423,15 @@ private:
 	std::vector<std::vector<std::vector<double>>> Tri_Sum_V_;
 	std::vector<std::vector<std::vector<double>>> Tri_Sum_V_D_1_;
 	std::vector<double> Tri_NumPar_Grid_;
+	std::vector<double> Tri_D2p_track_time_;
+	unsigned long long D2p_created_by_ion_{0};
+	unsigned long long D2p_created_by_cx_{0};
+	unsigned long long D2p_track_steps_{0};
+	unsigned long long D2p_DS_events_[3]{0, 0, 0};
+	unsigned long long D2p_boundary_loss_{0};
+	unsigned long long D2p_max_steps_loss_{0};
+	unsigned long long D2p_current_flight_steps_{0};
+	static constexpr unsigned long long MaxD2pFlightSteps = 100000;
 
 	double *V_Grid_CX_Ion_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
 	double *V_Grid_CX_Ion_Af_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
@@ -490,6 +499,7 @@ public:
 		double lambda_now;
 		double d_flight;
 		double Rand_flight;
+		unsigned long long D2p_current_flight_steps;
 		std::vector<double> V;
 	};
 
@@ -560,6 +570,8 @@ public:
 	void VtoVcharge();
 	void VchargetoV();
 	void Vchargefix(); // when the charged particle flight to next grid, V_charge[0,1,2] should be fixed
+	bool isHydrogenMoleculeIon() const;
+	void markD2pJustCreated(bool created_by_cx);
 	void track();
 	void CalLambda();
 	void Caltrace();
@@ -597,6 +609,7 @@ public:
 	void DumpD2pBalance_B2();
 	void DumpD2pBalance_Tri();
 	void DumpD2pPhysicsDecomposition_B2();
+	void DumpD2pTrackLengthTri();
 	void AppendSourceStratumSummary(std::ostream &out) const;
 	// void FluxCal_Grid();
 	void FluxCal_Target();
