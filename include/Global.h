@@ -74,10 +74,18 @@ extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_DWTrimReflection
 extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, K_database_Pra, K_mu, K_PartoPar;
 extern std::array<int, 5> K_Puff;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
-extern int K_T_array, K_NNCs, K_Roulette, K_Splitting, K_H5Output, MaxSplit;
+extern int K_T_array, K_NNCs, K_Roulette, K_Splitting;
+extern int K_H5Output, MaxSplit, MaxSplitDepth;
+extern int ImportanceMainPoloidalBegin, ImportanceMainPoloidalEnd;
 extern double dt, Te_core, ne_core, NumPar_now, Tn_core, T_N, T_wall, Num_D2_pump, Num_T2_pump, coefficient_D, coefficient_T;
 extern double Num_CD4_pump, t_max, Ratio_T, Ratio_D_Coll, Ratio_T_Coll, Ratio_DT_Coll, coeff_puff;
-extern double W_RouletteMin, W_RouletteTarget, W_SplitMax, W_SplitTarget;
+extern double W_RouletteMin, W_RouletteTarget, W_SplitMax, W_SplitTarget, W_SplitMin;
+extern std::array<double, 3> RegionImportance;
+extern unsigned long long RouletteTrials, RouletteSurvived, RouletteKilled;
+extern unsigned long long SplitEvents, SplitChildrenCreated, SplitSuppressedByMinWeight;
+extern unsigned long long SplitSuppressedByDepth, SplitMaxPendingStates;
+extern unsigned long long ImportanceRouletteTrials, ImportanceRouletteSurvived;
+extern unsigned long long ImportanceRouletteKilled;
 extern double DTmass, D2Tmass, DT2mass, HH2mass, DD2mass, TT2mass, H2H2mass, D2D2mass, T2T2mass;
 extern double Dn[N_RADIAL_GRID];
 

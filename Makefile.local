@@ -55,7 +55,7 @@ hdf5-links: dirs
 $(BIN_DIR)/$(PRGM): $(OBJS) | hdf5-links
 	$(CXX) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp Makefile.local | dirs
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp Makefile.local $(wildcard $(INC_DIR)/*.h) | dirs
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 run-check: $(BIN_DIR)/$(PRGM)

@@ -331,6 +331,8 @@ private:
 	int Zone_;				// Particle Zone in Tokamak
 	double Tn_;				// Particle Temperture
 	double Weight_;			// Particle weight
+	int split_depth_{0};	// Number of variance-reduction split generations
+	int importance_region_{-1}; // Last independently defined physical importance region
 	SourceStratum source_stratum_{SourceStratum::Unknown};
 	int XY_[3];				// Particle position Grid Index in Tokamak
 	int GridIndex_;			// the mesh Index
@@ -531,6 +533,8 @@ public:
 		double dt_trace;
 		double Tn;
 		double Weight;
+		int splitDepth;
+		int importanceRegion;
 		SourceStratum sourceStratum;
 		double sourceWall[4];
 		double lambda_now;
@@ -539,6 +543,7 @@ public:
 		unsigned long long D2p_current_flight_steps;
 		bool D2p_current_created_by_cx;
 		std::vector<double> V;
+		double intersection[10][6];
 	};
 
 	Particle();
@@ -620,7 +625,8 @@ public:
 	void ApplyRussianRoulette();
 	State SaveState() const;
 	void RestoreState(const State &state);
-	void ApplySplitting(std::queue<State> &pending_states);
+	void ApplyRegionalImportance(std::queue<State> &pending_states);
+	int PhysicalImportanceRegion() const;
 	void CalProb();
 	double CollProb();
 	void Coll();

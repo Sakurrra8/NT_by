@@ -189,9 +189,40 @@ void Initialize(int Input, char *settingfile[]) {
     std::string option_line;
     while (std::getline(option_stream, option_line)) {
       std::istringstream option_input(option_line);
-      if (option_input >> option_name && option_name == "K_DWTrimReflection") {
+      if (!(option_input >> option_name))
+        continue;
+      if (option_name == "K_DWTrimReflection")
         option_input >> K_DWTrimReflection;
-      }
+      else if (option_name == "K_Roulette")
+        option_input >> K_Roulette;
+      else if (option_name == "K_Splitting")
+        option_input >> K_Splitting;
+      else if (option_name == "K_H5Output")
+        option_input >> K_H5Output;
+      else if (option_name == "W_RouletteMin")
+        option_input >> W_RouletteMin;
+      else if (option_name == "W_RouletteTarget")
+        option_input >> W_RouletteTarget;
+      else if (option_name == "W_SplitMax")
+        option_input >> W_SplitMax;
+      else if (option_name == "W_SplitTarget")
+        option_input >> W_SplitTarget;
+      else if (option_name == "W_SplitMin")
+        option_input >> W_SplitMin;
+      else if (option_name == "MaxSplit")
+        option_input >> MaxSplit;
+      else if (option_name == "MaxSplitDepth")
+        option_input >> MaxSplitDepth;
+      else if (option_name == "ImportanceOutside")
+        option_input >> RegionImportance[0];
+      else if (option_name == "ImportanceDivertor")
+        option_input >> RegionImportance[1];
+      else if (option_name == "ImportanceMainChamber")
+        option_input >> RegionImportance[2];
+      else if (option_name == "ImportanceMainPoloidalBegin")
+        option_input >> ImportanceMainPoloidalBegin;
+      else if (option_name == "ImportanceMainPoloidalEnd")
+        option_input >> ImportanceMainPoloidalEnd;
     }
   }
   std::getline(In, line);
@@ -277,8 +308,22 @@ void Initialize(int Input, char *settingfile[]) {
       iss >> W_SplitMax;
     else if (Inputstring == "W_SplitTarget")
       iss >> W_SplitTarget;
+    else if (Inputstring == "W_SplitMin")
+      iss >> W_SplitMin;
     else if (Inputstring == "MaxSplit")
       iss >> MaxSplit;
+    else if (Inputstring == "MaxSplitDepth")
+      iss >> MaxSplitDepth;
+    else if (Inputstring == "ImportanceOutside")
+      iss >> RegionImportance[0];
+    else if (Inputstring == "ImportanceDivertor")
+      iss >> RegionImportance[1];
+    else if (Inputstring == "ImportanceMainChamber")
+      iss >> RegionImportance[2];
+    else if (Inputstring == "ImportanceMainPoloidalBegin")
+      iss >> ImportanceMainPoloidalBegin;
+    else if (Inputstring == "ImportanceMainPoloidalEnd")
+      iss >> ImportanceMainPoloidalEnd;
   }
   if (!mesh_mode_read)
     MeshMode = 1;

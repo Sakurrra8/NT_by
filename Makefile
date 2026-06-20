@@ -47,7 +47,7 @@ all : $(BIN_DIR)/$(PRGM)
 $(BIN_DIR)/$(PRGM):$(OBJS)
 	$(LINKCC) $(addprefix $(OBJ_DIR)/, $(OBJS)) $(LIBS) -o $@
 	
-%.o:%.cpp Makefile
+%.o:%.cpp Makefile $(wildcard $(INC_DIR)/*.h)
 	$(CCOMPILE) -c $(INCS) $(INCLUDE) $< -o $(OBJ_DIR)/$@
 
 %.o: %.f90
@@ -57,4 +57,3 @@ clean:
 	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) 
 clean-data:
 	rm -f *~ *.txt *.dat *.nc errfile outfile
-

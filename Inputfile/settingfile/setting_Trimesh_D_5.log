@@ -55,6 +55,20 @@ coeff_recyc_target  1       # recycling coefficient of target
 coeff_ercyc_wall    1       # recycling coefficient of wall
 coeff_puff          0.99    # recycling coefficient of puff location
 
+K_Roulette          1       # terminate low-weight histories without bias
+W_RouletteMin       0.05    # roulette trigger weight
+W_RouletteTarget    0.2     # surviving particle weight
+K_Splitting         1       # regional importance sampling for every particle species
+W_SplitMax          2.0     # split trigger weight
+W_SplitTarget       1.0     # desired child weight
+W_SplitMin          0.05    # minimum child weight for regional splitting
+MaxSplit            4       # maximum children per split event
+MaxSplitDepth       1       # maximum split generations per source history
+ImportanceOutside   1.0     # outside the valid B2 mesh
+ImportanceDivertor  2.0     # divertor legs
+ImportanceMainChamber 1.0   # non-divertor/main-chamber cells
+ImportanceMainPoloidalBegin 25
+ImportanceMainPoloidalEnd   72
 K_H5Output          0       # option: write HDF5 output files
 MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 D_on_W_5.53 distribution model

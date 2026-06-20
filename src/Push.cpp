@@ -38,7 +38,7 @@ restart_particle:
         P->track();
         PP = P;
         PP->ApplyRussianRoulette();
-        PP->ApplySplitting(split_states);
+        PP->ApplyRegionalImportance(split_states);
         if (PP->Weight() == 0)
             FINISH_SPLIT_STATE(restart_particle);
         IfOut = 0;
@@ -573,7 +573,7 @@ restart_particle_tri:
         P->track();
         PP = P;
         PP->ApplyRussianRoulette();
-        PP->ApplySplitting(split_states);
+        PP->ApplyRegionalImportance(split_states);
 
         if (PP->Weight() < 1e-3)
             FINISH_SPLIT_STATE(restart_particle_tri);

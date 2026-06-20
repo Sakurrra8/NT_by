@@ -1,0 +1,74 @@
+# Baseline for variance-reduction benchmarking
+Inputpath Inputfile/
+Casepath case_input/2MW-5e19/
+Outputpath Outputfile/test/data/
+
+N_poloidal 98
+N_radial 38
+
+K_log 0
+StepLog 0
+K_H2_elastic 1
+K_EcrossBDrift 0
+K_Recyc 1
+K_Rec 1
+K_Methane 0
+K_C 0
+K_Ar 0
+K_database 1
+K_database_Pra 1
+K_Maxwell 2
+K_Ei 2
+K_WallRefl 1
+K_backScatter 1
+K_MarColl 1
+K_flight 1
+K_CX_impurity 1
+K_Puff 0 0 0 0 0
+K_D2Flight 0
+K_abnormal_transport 1
+K_Rflect 2
+K_RflectDirection 3
+backGridBoundry 1
+K_Prob 1
+K_H 0
+K_D 1
+K_T 0
+K_back 2
+K_dn 1
+Ratio_T 0
+K_CX_DT 0
+K_DT 0
+K_Wallelement 1
+
+dt 1.e-8
+t_max 10
+numPar_flight 25000
+numPar_flight_D2 10000
+numPar_flight_T2 10000
+numPar_flight_CD4 50000
+numPar_flight_Target 25000
+Num_D2_pump 5e19
+Num_T2_pump 5e19
+Num_CD4_pump 1e19
+coeff_recyc_target 1
+coeff_ercyc_wall 1
+coeff_puff 0.99
+
+K_Roulette 0
+W_RouletteMin 0.05
+W_RouletteTarget 0.2
+K_Splitting 0
+W_SplitMax 2.0
+W_SplitTarget 1.0
+W_SplitMin 1.0
+MaxSplit 4
+MaxSplitDepth 1
+ImportanceOutside 1.0
+ImportanceDivertor 2.0
+ImportanceMainChamber 1.0
+ImportanceMainPoloidalBegin 25
+ImportanceMainPoloidalEnd 72
+K_H5Output 0
+MeshMode 3
+K_DWTrimReflection 1

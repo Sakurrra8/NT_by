@@ -38,6 +38,61 @@ void printRuntimeReport(const std::vector<std::pair<std::string, double>> &stage
 		}
 	}
 }
+
+void printVarianceReductionReport()
+{
+	std::cout << std::endl;
+	std::cout << "===== Variance reduction report =====" << std::endl;
+	std::cout << "Russian roulette: " << (K_Roulette ? "on" : "off")
+			  << ", trials=" << RouletteTrials << ", survived=" << RouletteSurvived
+			  << ", killed=" << RouletteKilled << std::endl;
+	std::cout << "Regional importance sampling: " << (K_Splitting ? "on" : "off")
+			  << ", events=" << SplitEvents << ", children=" << SplitChildrenCreated
+			  << ", max_pending=" << SplitMaxPendingStates << std::endl;
+	std::cout << "Importance regions: outside=" << RegionImportance[0]
+			  << ", divertor=" << RegionImportance[1]
+			  << ", main_chamber=" << RegionImportance[2]
+			  << ", main_poloidal=[" << ImportanceMainPoloidalBegin
+			  << ',' << ImportanceMainPoloidalEnd << ']' << std::endl;
+	std::cout << "Importance roulette: trials=" << ImportanceRouletteTrials
+			  << ", survived=" << ImportanceRouletteSurvived
+			  << ", killed=" << ImportanceRouletteKilled
+			  << ", split_suppressed_min=" << SplitSuppressedByMinWeight << std::endl;
+	std::cout << "=====================================" << std::endl;
+
+	if (!Outputpath.empty())
+	{
+		std::ofstream out(Outputpath + "variance_reduction_report.txt");
+		if (out.is_open())
+		{
+			out << "Parameter Value\n"
+				<< "K_Roulette " << K_Roulette << '\n'
+				<< "K_Splitting " << K_Splitting << '\n'
+				<< "W_RouletteMin " << W_RouletteMin << '\n'
+				<< "W_RouletteTarget " << W_RouletteTarget << '\n'
+				<< "W_SplitMax " << W_SplitMax << '\n'
+				<< "W_SplitTarget " << W_SplitTarget << '\n'
+				<< "W_SplitMin " << W_SplitMin << '\n'
+				<< "MaxSplit " << MaxSplit << '\n'
+				<< "MaxSplitDepth " << MaxSplitDepth << '\n'
+				<< "ImportanceOutside " << RegionImportance[0] << '\n'
+				<< "ImportanceDivertor " << RegionImportance[1] << '\n'
+				<< "ImportanceMainChamber " << RegionImportance[2] << '\n'
+				<< "ImportanceMainPoloidalBegin " << ImportanceMainPoloidalBegin << '\n'
+				<< "ImportanceMainPoloidalEnd " << ImportanceMainPoloidalEnd << '\n'
+				<< "RouletteTrials " << RouletteTrials << '\n'
+				<< "RouletteSurvived " << RouletteSurvived << '\n'
+				<< "RouletteKilled " << RouletteKilled << '\n'
+				<< "SplitEvents " << SplitEvents << '\n'
+				<< "SplitChildrenCreated " << SplitChildrenCreated << '\n'
+				<< "SplitMaxPendingStates " << SplitMaxPendingStates << '\n'
+				<< "SplitSuppressedByMinWeight " << SplitSuppressedByMinWeight << '\n'
+				<< "ImportanceRouletteTrials " << ImportanceRouletteTrials << '\n'
+				<< "ImportanceRouletteSurvived " << ImportanceRouletteSurvived << '\n'
+				<< "ImportanceRouletteKilled " << ImportanceRouletteKilled << '\n';
+		}
+	}
+}
 }
 
 int main(int argc, char *argv[])
@@ -72,6 +127,7 @@ int main(int argc, char *argv[])
 	runtime_stages.push_back({"Output", elapsedSeconds(stage_start, stage_end)});
 
 	printRuntimeReport(runtime_stages, elapsedSeconds(total_start, stage_end));
+	printVarianceReductionReport();
 	return 0;
 }
 // CalPec();

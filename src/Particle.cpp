@@ -248,6 +248,8 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 
 	Tn_ = A->Tn();
 	source_stratum_ = A->sourceStratum();
+	split_depth_ = A->split_depth_;
+	importance_region_ = A->importance_region_;
 
 	// XY_new_[0] = A->XY_new(0);
 	// XY_new_[1] = A->XY_new(1);
@@ -516,6 +518,11 @@ void Particle::Init(int k, int z)
 	double vel = 0.;
 	double deltaX, deltaY, deltaL, cosCX, sinCX;
 	bool record_source_launch = false;
+	if (k == 1 || k == 4 || k == 5 || k == 8)
+	{
+		split_depth_ = 0;
+		importance_region_ = -1;
+	}
 	if (k == 1) // neutral particle from recycling
 	{
 		fate_[0] = 2;
@@ -1396,6 +1403,8 @@ void Particle::Init(int k, int z)
 	}
 	for (int i = 0; i < 3; i++)
 		V_[i] *= vel;
+	if (importance_region_ < 0)
+		importance_region_ = PhysicalImportanceRegion();
 	if (record_source_launch)
 		recordSourceLaunch();
 	// std::cout << V_[0] << V_[1] << V_[2] << endl;
@@ -3946,10 +3955,17 @@ void Particle::ApplyRussianRoulette()
 		return;
 
 	const double survival_probability = Weight_ / W_RouletteTarget;
+	++RouletteTrials;
 	if (Tools::Random() < survival_probability)
+	{
 		Weight_ = W_RouletteTarget;
+		++RouletteSurvived;
+	}
 	else
+	{
 		Weight_ = 0.;
+		++RouletteKilled;
+	}
 }
 
 
@@ -3970,6 +3986,8 @@ Particle::State Particle::SaveState() const
 	state.dt_trace = dt_trace_;
 	state.Tn = Tn_;
 	state.Weight = Weight_;
+	state.splitDepth = split_depth_;
+	state.importanceRegion = importance_region_;
 	state.sourceStratum = source_stratum_;
 	state.lambda_now = lambda_now_;
 	state.d_flight = d_flight_;
@@ -3995,6 +4013,9 @@ Particle::State Particle::SaveState() const
 	}
 	for (int i = 0; i < 4; ++i)
 		state.sourceWall[i] = sourceWall_[i];
+	for (int i = 0; i < 10; ++i)
+		for (int j = 0; j < 6; ++j)
+			state.intersection[i][j] = InterscePoint[i][j];
 	return state;
 }
 
@@ -4014,6 +4035,8 @@ void Particle::RestoreState(const State &state)
 	dt_trace_ = state.dt_trace;
 	Tn_ = state.Tn;
 	Weight_ = state.Weight;
+	split_depth_ = state.splitDepth;
+	importance_region_ = state.importanceRegion;
 	source_stratum_ = state.sourceStratum;
 	lambda_now_ = state.lambda_now;
 	d_flight_ = state.d_flight;
@@ -4039,30 +4062,92 @@ void Particle::RestoreState(const State &state)
 	}
 	for (int i = 0; i < 4; ++i)
 		sourceWall_[i] = state.sourceWall[i];
+	for (int i = 0; i < 10; ++i)
+		for (int j = 0; j < 6; ++j)
+			InterscePoint[i][j] = state.intersection[i][j];
 }
 
-void Particle::ApplySplitting(std::queue<State> &pending_states)
+int Particle::PhysicalImportanceRegion() const
 {
-	if (!K_Splitting || Weight_ <= 0.)
+	if (XY_[0] < 0 || XY_[0] >= N_poloidal ||
+		XY_[1] < 0 || XY_[1] >= N_radial)
+		return 0;
+	if (XY_[0] < ImportanceMainPoloidalBegin ||
+		XY_[0] > ImportanceMainPoloidalEnd)
+		return 1;
+	return 2;
+}
+
+void Particle::ApplyRegionalImportance(std::queue<State> &pending_states)
+{
+	const int new_region = PhysicalImportanceRegion();
+	if (importance_region_ < 0)
+	{
+		importance_region_ = new_region;
 		return;
-	if (W_SplitMax <= 0. || W_SplitTarget <= 0. || MaxSplit < 2)
+	}
+	if (!K_Splitting || Weight_ <= 0. || new_region == importance_region_)
 		return;
-	if (Zone_ <= 1)
+	if (new_region == 0 || importance_region_ == 0)
+	{
+		importance_region_ = new_region;
 		return;
-	if (MeshMode == 1 && Zone_ >= 6)
-		return;
-	if (MeshMode == 3 && Zone_ >= 7)
-		return;
-	if (Weight_ <= W_SplitMax)
+	}
+
+	const double old_importance = RegionImportance[importance_region_];
+	const double new_importance = RegionImportance[new_region];
+	importance_region_ = new_region;
+	if (old_importance <= 0.0 || new_importance <= 0.0)
 		return;
 
-	int split_count = static_cast<int>(std::ceil(Weight_ / W_SplitTarget));
-	split_count = std::max(2, std::min(split_count, MaxSplit));
-	Weight_ /= split_count;
+	const double ratio = new_importance / old_importance;
+	if (ratio > 1.0)
+	{
+		if (MaxSplit < 2)
+			return;
+		int split_count = static_cast<int>(std::floor(ratio));
+		const double fraction = ratio - split_count;
+		if (Tools::Random() < fraction)
+			++split_count;
+		split_count = std::max(1, std::min(split_count, MaxSplit));
+		const int max_children_by_min_weight =
+			W_SplitMin > 0.0
+				? static_cast<int>(std::floor(Weight_ / W_SplitMin))
+				: split_count;
+		split_count = std::min(split_count, max_children_by_min_weight);
+		if (split_count < 2)
+		{
+			++SplitSuppressedByMinWeight;
+			return;
+		}
 
-	State child = SaveState();
-	for (int i = 1; i < split_count; ++i)
-		pending_states.push(child);
+		Weight_ /= split_count;
+		++split_depth_;
+		State child = SaveState();
+		for (int i = 1; i < split_count; ++i)
+			pending_states.push(child);
+		++SplitEvents;
+		SplitChildrenCreated += static_cast<unsigned long long>(split_count - 1);
+		SplitMaxPendingStates =
+			std::max(SplitMaxPendingStates,
+					 static_cast<unsigned long long>(pending_states.size()));
+		return;
+	}
+
+	if (ratio < 1.0)
+	{
+		++ImportanceRouletteTrials;
+		if (Tools::Random() < ratio)
+		{
+			Weight_ /= ratio;
+			++ImportanceRouletteSurvived;
+		}
+		else
+		{
+			Weight_ = 0.0;
+			++ImportanceRouletteKilled;
+		}
+	}
 }
 
 void Particle::beginDeferredCollisionStats(double scale)
@@ -7865,6 +7950,7 @@ void Particle::Clear(int n)
 			D2p_low_charge_speed_weight_dt_[threshold] = 0.;
 		}
 		D2p_current_created_by_cx_ = false;
+		importance_region_ = -1;
 		source_stratum_ = SourceStratum::Unknown;
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)

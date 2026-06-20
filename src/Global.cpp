@@ -80,7 +80,24 @@ double W_RouletteMin = 0.05;
 double W_RouletteTarget = 0.2;
 double W_SplitMax = 5.0;
 double W_SplitTarget = 1.0;
+double W_SplitMin = 1.0;
 int MaxSplit = 4;
+int MaxSplitDepth = 1;
+int ImportanceMainPoloidalBegin = 25;
+int ImportanceMainPoloidalEnd = 72;
+// 0: outside B2 grid, 1: divertor, 2: main chamber/non-divertor
+std::array<double, 3> RegionImportance{{1., 2., 1.}};
+unsigned long long RouletteTrials = 0;
+unsigned long long RouletteSurvived = 0;
+unsigned long long RouletteKilled = 0;
+unsigned long long SplitEvents = 0;
+unsigned long long SplitChildrenCreated = 0;
+unsigned long long SplitSuppressedByMinWeight = 0;
+unsigned long long SplitSuppressedByDepth = 0;
+unsigned long long SplitMaxPendingStates = 0;
+unsigned long long ImportanceRouletteTrials = 0;
+unsigned long long ImportanceRouletteSurvived = 0;
+unsigned long long ImportanceRouletteKilled = 0;
 
 int MeshMode; // Option 1: Orthogonal grid; 2: Full grid; 3: Triangular grid
 
