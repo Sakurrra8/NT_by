@@ -401,6 +401,7 @@ private:
 	void recordSourceLaunch();
 	void beginDeferredCollisionStats(double scale);
 	void endDeferredCollisionStats();
+	void SampleIonVelocity(int isotope);
 
 	/// @brief Statistical pointer views
 	double *n_[N_POLOIDAL_GRID][N_RADIAL_GRID];

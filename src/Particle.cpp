@@ -607,26 +607,22 @@ void Particle::Init(int k, int z)
 		unit vector with a random direction			*/
 		double V_ion[3], V_temp[3], m_A, m_B, Modules;
 		if (this == &H)
+		{
 			m_A = Hmass;
+			for (int i = 0; i < 3; i++)
+				V_ion[i] = V_H_1_now[i];
+		}
 		else if (this == &D || this == &D2)
 		{
 			m_A = Dmass;
-			if (K_Vi == 1)
-			{
-				V_ion[0] = V_D_1_now[0];
-				V_ion[1] = V_D_1_now[0];
-				V_ion[2] = V_D_1_now[0];
-			}
+			for (int i = 0; i < 3; i++)
+				V_ion[i] = V_D_1_now[i];
 		}
 		else if (this == &T || this == &T2)
 		{
 			m_A = Tmass;
-			if (K_Vi == 1)
-			{
-				V_ion[0] = V_T_1_now[0];
-				V_ion[1] = V_T_1_now[0];
-				V_ion[2] = V_T_1_now[0];
-			}
+			for (int i = 0; i < 3; i++)
+				V_ion[i] = V_T_1_now[i];
 		}
 		m_B = mass_;
 		if (Charge_ == 0)
@@ -650,18 +646,6 @@ void Particle::Init(int k, int z)
 			V_temp[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
 		}
 		double Vtheta, Vphi;
-		if (K_Vi == 2)
-		{
-			if (K_Maxwell == 1)
-				vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], m_A);
-			else if (K_Maxwell == 2)
-				vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / m_A);
-			Vtheta = 2 * pi * Tools::Random();
-			Vphi = pi * Tools::Random();
-			V_ion[0] = vel * sin(Vphi) * cos(Vtheta);
-			V_ion[1] = vel * sin(Vphi) * sin(Vtheta);
-			V_ion[2] = vel * cos(Vphi);
-		}
 		Vtheta = 2 * pi * Tools::Random();
 		Vphi = pi * Tools::Random();
 		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) + Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
@@ -1163,22 +1147,14 @@ void Particle::Init(int k, int z)
 		if (this == &T || this == &T2)
 		{
 			m_A = Dmass;
-			if (K_Vi == 1)
-			{
-				V_ion[0] = V_D_1_now[0];
-				V_ion[1] = V_D_1_now[0];
-				V_ion[2] = V_D_1_now[0];
-			}
+			for (int i = 0; i < 3; i++)
+				V_ion[i] = V_D_1_now[i];
 		}
 		if (this == &D || this == &D2)
 		{
 			m_A = Tmass;
-			if (K_Vi == 1)
-			{
-				V_ion[0] = V_T_1_now[0];
-				V_ion[1] = V_T_1_now[0];
-				V_ion[2] = V_T_1_now[0];
-			}
+			for (int i = 0; i < 3; i++)
+				V_ion[i] = V_T_1_now[i];
 		}
 		m_B = mass_;
 		if (Charge_ == 0)
@@ -1202,18 +1178,6 @@ void Particle::Init(int k, int z)
 			V_temp[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
 		}
 		double Vtheta, Vphi;
-		if (K_Vi == 2)
-		{
-			Vtheta = 2 * pi * Tools::Random();
-			Vphi = pi * Tools::Random();
-			if (K_Maxwell == 1)
-				vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], m_A);
-			else if (K_Maxwell == 2)
-				vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / m_A);
-			V_ion[0] = vel * sin(Vphi) * cos(Vtheta);
-			V_ion[1] = vel * sin(Vphi) * sin(Vtheta);
-			V_ion[2] = vel * cos(Vphi);
-		}
 		if (K_test3)
 		{
 			std::cout << "1V of ion: " << V_ion[0] << ", " << V_ion[1] << ", " << V_ion[2] << " T:"
@@ -2102,72 +2066,54 @@ void Particle::track()
 	}
 }
 
+void Particle::SampleIonVelocity(int isotope)
+{
+	double ion_mass;
+	double parallel_flow;
+	double *ion_velocity;
+
+	if (isotope == 1)
+	{
+		ion_mass = Hmass;
+		parallel_flow = ua_H_1[XY_[0]][XY_[1]];
+		ion_velocity = V_H_1_now.data();
+	}
+	else if (isotope == 2)
+	{
+		ion_mass = Dmass;
+		parallel_flow = ua_D_1[XY_[0]][XY_[1]];
+		ion_velocity = V_D_1_now.data();
+	}
+	else
+	{
+		ion_mass = Tmass;
+		parallel_flow = ua_T_1[XY_[0]][XY_[1]];
+		ion_velocity = V_T_1_now.data();
+	}
+
+	const double Vtheta = 2 * pi * Tools::Random();
+	const double Vphi = pi * Tools::Random();
+	double speed = 0.;
+	if (K_Maxwell == 1)
+		speed = Tools::Maxwell(Ti[XY_[0]][XY_[1]], ion_mass);
+	else if (K_Maxwell == 2)
+		speed = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / ion_mass);
+
+	ion_velocity[0] = speed * sin(Vphi) * cos(Vtheta) + parallel_flow * B[XY_[0]][XY_[1]][0];
+	ion_velocity[1] = speed * sin(Vphi) * sin(Vtheta) + parallel_flow * B[XY_[0]][XY_[1]][1];
+	ion_velocity[2] = speed * cos(Vphi) + parallel_flow * B[XY_[0]][XY_[1]][2];
+}
+
 void Particle::CalLambda()
 {
 	const double H3_test_particle_energy =
 		0.5 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) / qe;
 	double CS_Vacuum = 0.01;
-	if (Zone_ < 6)
+	if (Zone_ < 6 && K_Vi == 1 && MeshMode == 3)
 	{
-		if (K_Vi == 1)
+		double Vtheta, Vphi, vel;
+		if (K_H)
 		{
-			double Vtheta, Vphi, vel;
-			if (Zone_ < 6)
-			{
-				if (K_H)
-				{
-					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
-					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
-					if (K_Maxwell == 1)
-						vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], Hmass);
-					else if (K_Maxwell == 2)
-						vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / Hmass);
-					V_H_1_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_H_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
-					V_H_1_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_H_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][1];
-					V_H_1_now[2] = vel * cos(Vphi) + ua_H_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][2];
-				}
-
-				if (K_D)
-				{
-					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
-					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
-					if (K_Maxwell == 1)
-						vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], Dmass);
-					else if (K_Maxwell == 2)
-						vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / Dmass);
-					V_D_1_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
-					V_D_1_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][1];
-					V_D_1_now[2] = vel * cos(Vphi) + ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][2];
-					/*V_D_1_now[0] = ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
-					V_D_1_now[1] = ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][1];
-					V_D_1_now[2] = ua_D_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][2];*/
-
-					// std::cout << V_D_1_now[0] << '\t' << V_D_1_now[1] << '\t' << V_D_1_now[2] << endl;
-					/// statistic the velocity of
-					/*for (int i = 0; i < 3; i++)
-						Sum_V_D_1_[XY_[0]][XY_[1]][i][0] += V_D_1_now[i];
-					Num_V_D_1_[XY_[0]][XY_[1]][0] += 1;*/
-				}
-
-				if (K_T)
-				{
-					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
-					if (K_Maxwell == 1)
-						vel = Tools::Maxwell(Ti[XY_[0]][XY_[1]], Tmass);
-					else if (K_Maxwell == 2)
-						vel = sqrt((3.0 * qe * Ti[XY_[0]][XY_[1]]) / Tmass);
-					V_T_1_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_T_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][0];
-					V_T_1_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_T_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][1];
-					V_T_1_now[2] = vel * cos(Vphi) + ua_T_1[XY_[0]][XY_[1]] * B[XY_[0]][XY_[1]][2];
-				}
-			}
-			if (MeshMode == 3)
-			{
-				if (K_H)
-				{
 					Vtheta = 2 * pi * Tools::Random();
 					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
@@ -2189,9 +2135,9 @@ void Particle::CalLambda()
 					V_H2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_H2_0_Tri[Tri_Index_][0];
 					V_H2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_H2_0_Tri[Tri_Index_][1];
 					V_H2_0_now[2] = vel * cos(Vphi) + ua_H2_0_Tri[Tri_Index_][2];
-				}
-				if (K_D)
-				{
+		}
+		if (K_D)
+		{
 					Vtheta = 2 * pi * Tools::Random();
 					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
@@ -2214,15 +2160,9 @@ void Particle::CalLambda()
 					V_D2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_D2_0_Tri[Tri_Index_][1];
 					V_D2_0_now[2] = vel * cos(Vphi) + ua_D2_0_Tri[Tri_Index_][2];
 
-					/*V_D_0_now[0] = ua_D_0_Tri[Tri_Index_][0];
-					V_D_0_now[1] = ua_D_0_Tri[Tri_Index_][1];
-					V_D_0_now[2] = ua_D_0_Tri[Tri_Index_][2];
-					V_D2_0_now[0] = ua_D2_0_Tri[Tri_Index_][0];
-					V_D2_0_now[1] = ua_D2_0_Tri[Tri_Index_][1];
-					V_D2_0_now[2] = ua_D2_0_Tri[Tri_Index_][2];*/
-				}
-				if (K_T)
-				{
+		}
+		if (K_T)
+		{
 					Vtheta = 2 * pi * Tools::Random();
 					Vphi = pi * Tools::Random();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
@@ -2244,8 +2184,6 @@ void Particle::CalLambda()
 					V_T2_0_now[0] = vel * sin(Vphi) * cos(Vtheta) + ua_T2_0_Tri[Tri_Index_][0];
 					V_T2_0_now[1] = vel * sin(Vphi) * sin(Vtheta) + ua_T2_0_Tri[Tri_Index_][1];
 					V_T2_0_now[2] = vel * cos(Vphi) + ua_T2_0_Tri[Tri_Index_][2];
-				}
-			}
 		}
 	}
 
@@ -4765,20 +4703,9 @@ void Particle::Coll()
 		pause();
 	}*/
 
-	double V_temp1; // parallel velocity of D ion particle before collision
+	double V_temp1 = 0.; // parallel velocity of D ion particle before collision
 	double V_temp2; // parallel velocity of neutral particle before collision
-	double V_temp3; // parallel velocity of T ion particle before collision
-	if (Zone_ < 6)
-	{
-		if (K_D)
-		{
-			V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
-		}
-		if (K_T)
-		{
-			V_temp3 = B[XY_[0]][XY_[1]][0] * V_T_1_now[0] + B[XY_[0]][XY_[1]][1] * V_T_1_now[1] + B[XY_[0]][XY_[1]][2] * V_T_1_now[2];
-		}
-	}
+	double V_temp3 = 0.; // parallel velocity of T ion particle before collision
 	if (this == &H || this == &D || this == &T)
 	{
 		if (Charge_ == MaxCharge_)
@@ -4935,6 +4862,21 @@ void Particle::Coll()
 			}
 			else if (rand_one < (Ion_factor + CX_factor) / sigma_all)
 			{
+				if (this == &H)
+					SampleIonVelocity(1);
+				else if (this == &D)
+					SampleIonVelocity(2);
+				else
+					SampleIonVelocity(3);
+				CX_[Charge_].Set_V_relative(
+					this == &H ? V_H_1_now[0] : (this == &D ? V_D_1_now[0] : V_T_1_now[0]),
+					this == &H ? V_H_1_now[1] : (this == &D ? V_D_1_now[1] : V_T_1_now[1]),
+					this == &H ? V_H_1_now[2] : (this == &D ? V_D_1_now[2] : V_T_1_now[2]),
+					V_[0], V_[1], V_[2]);
+				if (this == &D)
+					V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
+				else if (this == &T)
+					V_temp3 = B[XY_[0]][XY_[1]][0] * V_T_1_now[0] + B[XY_[0]][XY_[1]][1] * V_T_1_now[1] + B[XY_[0]][XY_[1]][2] * V_T_1_now[2];
 				if (Zone_ > 5)
 				{
 					std::cout << "Collsion error 1 in Ion" << endl;
@@ -5028,7 +4970,14 @@ void Particle::Coll()
 						CX_[Charge_].E_Add(Tri_Index_, -0.5 * Tmass * CX_[0].V_2_relative() * collisionStatWeight());
 					}
 					for (int i = 0; i < 3; i++)
-						SetV(i, V_D_1_now[i]);
+					{
+						if (this == &H)
+							SetV(i, V_H_1_now[i]);
+						else if (this == &D)
+							SetV(i, V_D_1_now[i]);
+						else
+							SetV(i, V_T_1_now[i]);
+					}
 					setfate(0, 1, Index_); // CX with D
 				}
 				CalTn();
@@ -5042,6 +4991,18 @@ void Particle::Coll()
 			}
 			else if (rand_one < (Ion_factor + CX_factor + CX_DT_factor) / sigma_all)
 			{
+				if (this == &D)
+				{
+					SampleIonVelocity(3);
+					CX_DT_[Charge_].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
+					V_temp3 = B[XY_[0]][XY_[1]][0] * V_T_1_now[0] + B[XY_[0]][XY_[1]][1] * V_T_1_now[1] + B[XY_[0]][XY_[1]][2] * V_T_1_now[2];
+				}
+				else if (this == &T)
+				{
+					SampleIonVelocity(2);
+					CX_DT_[Charge_].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
+					V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
+				}
 				// std::cout << "???" << endl;
 				if (MeshMode == 1)
 				{
@@ -5554,6 +5515,16 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[4] / Sum_factor[Num_Collision_D2 - 1])
 				{
+					if (this == &H2)
+						SampleIonVelocity(1);
+					else if (this == &D2)
+						SampleIonVelocity(2);
+					else
+						SampleIonVelocity(3);
+					if (this == &D2)
+						V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
+					else if (this == &T2)
+						V_temp3 = B[XY_[0]][XY_[1]][0] * V_T_1_now[0] + B[XY_[0]][XY_[1]][1] * V_T_1_now[1] + B[XY_[0]][XY_[1]][2] * V_T_1_now[2];
 					if (MeshMode == 1)
 					{
 						CX_[0].n_Add(XY_, collisionStatWeight());
@@ -5692,6 +5663,16 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[5] / Sum_factor[Num_Collision_D2 - 1])
 				{
+					if (this == &H2)
+						SampleIonVelocity(1);
+					else if (this == &D2)
+						SampleIonVelocity(2);
+					else
+						SampleIonVelocity(3);
+					if (this == &D2)
+						V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
+					else if (this == &T2)
+						V_temp3 = B[XY_[0]][XY_[1]][0] * V_T_1_now[0] + B[XY_[0]][XY_[1]][1] * V_T_1_now[1] + B[XY_[0]][XY_[1]][2] * V_T_1_now[2];
 					if (MeshMode == 1)
 					{
 						Ela_[0].n_Add(XY_, collisionStatWeight());
@@ -5795,6 +5776,16 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[6] / Sum_factor[Num_Collision_D2 - 1])
 				{
+					if (this == &D2)
+					{
+						SampleIonVelocity(3);
+						V_temp3 = B[XY_[0]][XY_[1]][0] * V_T_1_now[0] + B[XY_[0]][XY_[1]][1] * V_T_1_now[1] + B[XY_[0]][XY_[1]][2] * V_T_1_now[2];
+					}
+					else if (this == &T2)
+					{
+						SampleIonVelocity(2);
+						V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
+					}
 					CX_DT_[0].n_Add(XY_, collisionStatWeight());
 					if (this == &D2)
 					{
@@ -5846,6 +5837,16 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[7] / Sum_factor[Num_Collision_D2 - 1])
 				{
+					if (this == &D2)
+					{
+						SampleIonVelocity(3);
+						V_temp3 = B[XY_[0]][XY_[1]][0] * V_T_1_now[0] + B[XY_[0]][XY_[1]][1] * V_T_1_now[1] + B[XY_[0]][XY_[1]][2] * V_T_1_now[2];
+					}
+					else if (this == &T2)
+					{
+						SampleIonVelocity(2);
+						V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
+					}
 					Ela_DT_.begin()->n_Add(XY_, collisionStatWeight());
 					if (this == &D2)
 					{
