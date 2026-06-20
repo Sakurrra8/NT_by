@@ -773,6 +773,7 @@ void Prepare()
 			angle_B_with_target[i] = 60;
 		}
 	}
+	DTargetIncidentAngle = angle_B_with_target;
 	/*ofstream Out_temp("doc/angel.txt");
 	for (int i = 0; i < N_radial * 2; i++)
 	{
@@ -834,18 +835,25 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				if (coeff_recyc_target > D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]))
-				{
-					NumPar_D_recyc[i] = NumPar_wall_D[i] * D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
-					Tn_D_recyc[i] = D_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) * Ei_Dion[i] / 1.5;
-					NumPar_D2_recyc[i] = (coeff_recyc_target - D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i])) * NumPar_wall_D[i] / 2.;
-				}
+				const double reflection_probability =
+					K_DWTrimReflection == 1
+						? D_W_Trim.ReflectionProbability(Ei_Dion[i], angle_B_with_target[i])
+						: D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
+				const double fast_probability =
+					std::min(coeff_recyc_target, reflection_probability);
+				NumPar_D_recyc[i] = NumPar_wall_D[i] * fast_probability;
+				NumPar_D2_recyc[i] =
+					(coeff_recyc_target - fast_probability) * NumPar_wall_D[i] / 2.0;
+				if (K_DWTrimReflection == 1)
+					Tn_D_recyc[i] =
+						D_W_Trim.MeanReflectedEnergy(Ei_Dion[i], angle_B_with_target[i]) /
+						1.5;
+				else if (fast_probability > 0.0)
+					Tn_D_recyc[i] =
+						D_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) /
+						fast_probability * Ei_Dion[i] / 1.5;
 				else
-				{
-					NumPar_D_recyc[i] = NumPar_wall_D[i] * coeff_recyc_target;
-					Tn_D_recyc[i] = D_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) / coeff_recyc_target * Ei_Dion[i] / 1.5;
-					NumPar_D2_recyc[i] = 0.;
-				}
+					Tn_D_recyc[i] = 0.0;
 				// out << NumPar_D_recyc[i] << '\t' << NumPar_D2_recyc[i] << endl;
 			}
 		}

@@ -166,6 +166,7 @@ std::vector<std::vector<double>> dTip, dTir, dTix, dTiy, dTiz;
 /// @brief Target Value
 std::vector<double> NumPar_H_recyc, Tn_H_recyc, NumPar_H2_recyc;
 std::vector<double> NumPar_D_recyc, Tn_D_recyc, NumPar_D2_recyc;
+std::vector<double> DTargetIncidentAngle;
 std::vector<double> NumPar_T_recyc, Tn_T_recyc, NumPar_T2_recyc;
 double NumPar_wall_H[80], NumPar_wall_D[80], NumPar_wall_T[80];
 double Xrecyc[80][2], theta[80][2], Ei_Dion[80];

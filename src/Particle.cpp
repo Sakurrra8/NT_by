@@ -1,5 +1,55 @@
 #include "Particle.h"
 
+namespace
+{
+void setDWTrimDirection(std::vector<double> &velocity,
+						const DWReflectionSample &sample,
+						double wall_cos, double wall_sin,
+						const double reference_direction[3])
+{
+	const double normal[3] = {-wall_sin, wall_cos, 0.0};
+	const double normal_projection =
+		reference_direction[0] * normal[0] +
+		reference_direction[1] * normal[1] +
+		reference_direction[2] * normal[2];
+	double tangent[3] = {
+		reference_direction[0] - normal_projection * normal[0],
+		reference_direction[1] - normal_projection * normal[1],
+		reference_direction[2] - normal_projection * normal[2]};
+	double tangent_length = std::sqrt(
+		tangent[0] * tangent[0] + tangent[1] * tangent[1] +
+		tangent[2] * tangent[2]);
+	if (tangent_length < 1e-20)
+	{
+		tangent[0] = wall_cos;
+		tangent[1] = wall_sin;
+		tangent[2] = 0.0;
+		tangent_length = 1.0;
+	}
+	for (double &component : tangent)
+		component /= tangent_length;
+
+	const double transverse[3] = {
+		normal[1] * tangent[2] - normal[2] * tangent[1],
+		normal[2] * tangent[0] - normal[0] * tangent[2],
+		normal[0] * tangent[1] - normal[1] * tangent[0]};
+	const double cos_polar = std::max(0.0, std::min(1.0, sample.cos_polar));
+	const double sin_polar =
+		std::sqrt(std::max(0.0, 1.0 - cos_polar * cos_polar));
+	const double cos_azimuth =
+		std::max(-1.0, std::min(1.0, sample.cos_azimuth));
+	const double sin_azimuth =
+		Tools::randomSign() *
+		std::sqrt(std::max(0.0, 1.0 - cos_azimuth * cos_azimuth));
+
+	for (int component = 0; component < 3; ++component)
+		velocity[component] =
+			cos_polar * normal[component] +
+			sin_polar * (cos_azimuth * tangent[component] +
+						 sin_azimuth * transverse[component]);
+}
+}
+
 string sourceStratumName(SourceStratum source)
 {
 	switch (source)
@@ -505,8 +555,25 @@ void Particle::Init(int k, int z)
 
 		if (this == &H || this == &D || this == &T)
 		{
-			Tn_ = T_Init_[z];
-			Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 0);
+			if (this == &D && K_DWTrimReflection == 1 && K_Wallelement == 1)
+			{
+				const DWReflectionSample sample =
+					D_W_Trim.Sample(Ei_Dion[z], DTargetIncidentAngle[z],
+									Tools::Random(), Tools::Random(), Tools::Random());
+				Tn_ = (2.0 / 3.0) * sample.energy_eV;
+				const double reference_direction[3] = {
+					B[XY_[0]][XY_[1]][0],
+					B[XY_[0]][XY_[1]][1],
+					B[XY_[0]][XY_[1]][2]};
+				setDWTrimDirection(V_, sample, Grid4.Cos_Target(z),
+								   Grid4.Sin_Target(z), reference_direction);
+			}
+			else
+			{
+				Tn_ = T_Init_[z];
+				Tools::calculateReflectionVelocity(
+					V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 0);
+			}
 		}
 		else if (this == &H2 || this == &D2 || this == &T2)
 		{
@@ -628,45 +695,8 @@ void Particle::Init(int k, int z)
 				D_W_Trim.Sample(1.5 * Tn_, incident_angle_deg,
 								Tools::Random(), Tools::Random(), Tools::Random());
 			Tn_ = (2.0 / 3.0) * sample.energy_eV;
-
-			const double normal[3] = {-wall_sin, wall_cos, 0.0};
-			const double normal_projection =
-				V_[0] * normal[0] + V_[1] * normal[1] + V_[2] * normal[2];
-			double tangent[3] = {
-				V_[0] - normal_projection * normal[0],
-				V_[1] - normal_projection * normal[1],
-				V_[2] - normal_projection * normal[2]};
-			double tangent_length = std::sqrt(
-				tangent[0] * tangent[0] + tangent[1] * tangent[1] +
-				tangent[2] * tangent[2]);
-			if (tangent_length < 1e-20)
-			{
-				tangent[0] = wall_cos;
-				tangent[1] = wall_sin;
-				tangent[2] = 0.0;
-				tangent_length = 1.0;
-			}
-			for (double &component : tangent)
-				component /= tangent_length;
-
-			const double transverse[3] = {
-				normal[1] * tangent[2] - normal[2] * tangent[1],
-				normal[2] * tangent[0] - normal[0] * tangent[2],
-				normal[0] * tangent[1] - normal[1] * tangent[0]};
-			const double cos_polar = std::max(0.0, std::min(1.0, sample.cos_polar));
-			const double sin_polar =
-				std::sqrt(std::max(0.0, 1.0 - cos_polar * cos_polar));
-			const double cos_azimuth =
-				std::max(-1.0, std::min(1.0, sample.cos_azimuth));
-			const double sin_azimuth =
-				Tools::randomSign() *
-				std::sqrt(std::max(0.0, 1.0 - cos_azimuth * cos_azimuth));
-
-			for (int component = 0; component < 3; ++component)
-				V_[component] =
-					cos_polar * normal[component] +
-					sin_polar * (cos_azimuth * tangent[component] +
-								 sin_azimuth * transverse[component]);
+			const double incident_direction[3] = {V_[0], V_[1], V_[2]};
+			setDWTrimDirection(V_, sample, wall_cos, wall_sin, incident_direction);
 		};
 
 		if (InterscePoint[0][4] == 11)

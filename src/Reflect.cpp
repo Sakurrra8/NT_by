@@ -525,6 +525,34 @@ double DWTrimReflection::ReflectionProbability(double incident_energy_eV,
 		0.0, 1.0);
 }
 
+double DWTrimReflection::MeanReflectedEnergy(double incident_energy_eV,
+											  double incident_angle_deg) const
+{
+	if (!loaded_)
+		throw std::runtime_error("D-on-W TRIM reflection database is not loaded");
+
+	const double energy = clampValue(incident_energy_eV, energies_.front(), energies_.back());
+	const double angle = clampValue(incident_angle_deg, angles_.front(), angles_.back());
+	const int ei = FindInterval(energies_.data(), static_cast<int>(energies_.size()), energy);
+	const int ai = FindInterval(angles_.data(), static_cast<int>(angles_.size()), angle);
+	const double energy_weight =
+		(std::log(energy) - std::log(energies_[ei])) /
+		(std::log(energies_[ei + 1]) - std::log(energies_[ei]));
+	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
+
+	auto blockMean = [](const Block &block) {
+		double sum = 0.0;
+		for (int q = 1; q <= 5; ++q)
+			sum += block.energy[q];
+		return sum / 5.0;
+	};
+	return clampValue(
+		bilinear(blockMean(BlockAt(ei, ai)), blockMean(BlockAt(ei + 1, ai)),
+				 blockMean(BlockAt(ei, ai + 1)), blockMean(BlockAt(ei + 1, ai + 1)),
+				 energy_weight, angle_weight),
+		0.0, incident_energy_eV);
+}
+
 DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 											 double incident_angle_deg,
 											 double xi_energy,

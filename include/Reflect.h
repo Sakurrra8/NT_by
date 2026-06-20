@@ -92,6 +92,7 @@ public:
 	bool Load(const std::string &filename);
 	bool IsLoaded() const;
 	double ReflectionProbability(double incident_energy_eV, double incident_angle_deg) const;
+	double MeanReflectedEnergy(double incident_energy_eV, double incident_angle_deg) const;
 	DWReflectionSample Sample(double incident_energy_eV, double incident_angle_deg,
 							  double xi_energy, double xi_polar, double xi_azimuth) const;
 };

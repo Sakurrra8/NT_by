@@ -88,6 +88,7 @@ void Initialize(int Input, char *settingfile[]) {
   NumPar_D_recyc.resize(N_radial * 2);
   NumPar_D2_recyc.resize(N_radial * 2);
   Tn_D_recyc.resize(N_radial * 2);
+  DTargetIncidentAngle.resize(N_radial * 2, 60.0);
   NumPar_T_recyc.resize(N_radial * 2);
   NumPar_T2_recyc.resize(N_radial * 2);
   Tn_T_recyc.resize(N_radial * 2);

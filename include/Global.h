@@ -142,6 +142,7 @@ extern int num_CoreBoundry, num_GridBoundry, num_PFRBoundry;
 extern double CoreBoundry[55][2], GridBoundry[100][2], PFRBoundry[55][2]; //, cosCore[60], sinCore[60];
 extern std::vector<double> NumPar_H_recyc, Tn_H_recyc, NumPar_H2_recyc;
 extern std::vector<double> NumPar_D_recyc, Tn_D_recyc, NumPar_D2_recyc;
+extern std::vector<double> DTargetIncidentAngle;
 extern std::vector<double> NumPar_T_recyc, Tn_T_recyc, NumPar_T2_recyc;
 extern double Ei_Dion[80], InterscePoint[10][6], coeff_recyc_target, coeff_ercyc_wall;
 // extern vector<double> S_target, S_wall;
