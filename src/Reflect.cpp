@@ -1,4 +1,5 @@
 #include "Reflect.h"
+#include <stdexcept>
 
 void Reflect::SetReflect(double n_a[4], double E_a[4], double n_b[6], double E_b[6], double epsilon_L)
 {
@@ -341,4 +342,256 @@ int BinarySearch(const vector<double> &array, int low, int high, double key)
 			low = mid;
 	}
 	return low;
+}
+
+namespace
+{
+constexpr std::array<double, 7> kQuantileGrid{{0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0}};
+
+double clampValue(double value, double low, double high)
+{
+	return std::max(low, std::min(high, value));
+}
+
+double linear(double a, double b, double weight)
+{
+	return a + weight * (b - a);
+}
+
+double bilinear(double q00, double q10, double q01, double q11,
+				double energy_weight, double angle_weight)
+{
+	return linear(linear(q00, q10, energy_weight),
+				  linear(q01, q11, energy_weight), angle_weight);
+}
+
+std::vector<double> numbersInLine(const std::string &line)
+{
+	std::vector<double> values;
+	std::istringstream input(line);
+	double value = 0.0;
+	while (input >> value)
+		values.push_back(value);
+	return values;
+}
+}
+
+double DWTrimReflection::SampleQuantile(const std::array<double, 7> &values, double xi)
+{
+	xi = clampValue(xi, 0.0, 1.0);
+	const int interval = FindInterval(kQuantileGrid.data(), static_cast<int>(kQuantileGrid.size()), xi);
+	const double width = kQuantileGrid[interval + 1] - kQuantileGrid[interval];
+	const double weight = width > 0.0 ? (xi - kQuantileGrid[interval]) / width : 0.0;
+	return linear(values[interval], values[interval + 1], weight);
+}
+
+int DWTrimReflection::FindInterval(const double *grid, int size, double value)
+{
+	if (size < 2)
+		throw std::invalid_argument("DWTrimReflection grid must contain at least two points");
+	if (value <= grid[0])
+		return 0;
+	if (value >= grid[size - 1])
+		return size - 2;
+	const double *upper = std::upper_bound(grid, grid + size, value);
+	return static_cast<int>(upper - grid) - 1;
+}
+
+const DWTrimReflection::Block &DWTrimReflection::BlockAt(int energy_index, int angle_index) const
+{
+	return blocks_[energy_index][angle_index];
+}
+
+bool DWTrimReflection::Load(const std::string &filename)
+{
+	std::ifstream input(filename);
+	if (!input)
+	{
+		std::cerr << "Cannot open D-on-W TRIM reflection database: " << filename << '\n';
+		return false;
+	}
+
+	std::vector<Block> parsed;
+	std::string line;
+	while (std::getline(input, line))
+	{
+		const std::vector<double> header = numbersInLine(line);
+		if (header.size() < 10 || std::abs(header[0] - 1.0) > 1e-8 ||
+			std::abs(header[1] - 2.01) > 1e-6 || std::abs(header[2] - 74.0) > 1e-8)
+			continue;
+
+		Block block;
+		block.incident_energy_eV = header[4];
+		block.incident_angle_deg = header[5];
+		block.particle_reflection = header[6];
+		block.energy_reflection = header[7];
+
+		auto readDataRow = [&input, &line]() {
+			while (std::getline(input, line))
+			{
+				const std::vector<double> values = numbersInLine(line);
+				if (!values.empty())
+					return values;
+			}
+			return std::vector<double>{};
+		};
+
+		std::vector<double> values = readDataRow();
+		if (values.size() != 7)
+			throw std::runtime_error("Invalid energy row in D-on-W TRIM database");
+		for (int q = 0; q < 5; ++q)
+			block.energy[q + 1] = values[q];
+		block.energy[0] = values[5];
+		block.energy[6] = values[6];
+
+		for (int energy_q = 0; energy_q < 5; ++energy_q)
+		{
+			values = readDataRow();
+			if (values.size() != 7)
+				throw std::runtime_error("Invalid polar-angle row in D-on-W TRIM database");
+			for (int q = 0; q < 5; ++q)
+				block.cos_polar[energy_q][q + 1] = values[q];
+			block.cos_polar[energy_q][0] = values[5];
+			block.cos_polar[energy_q][6] = values[6];
+		}
+
+		for (int energy_q = 0; energy_q < 5; ++energy_q)
+			for (int polar_q = 0; polar_q < 5; ++polar_q)
+			{
+				values = readDataRow();
+				if (values.size() != 7)
+					throw std::runtime_error("Invalid azimuth row in D-on-W TRIM database");
+				for (int q = 0; q < 5; ++q)
+					block.cos_azimuth[energy_q][polar_q][q + 1] = values[q];
+				block.cos_azimuth[energy_q][polar_q][0] = values[5];
+				block.cos_azimuth[energy_q][polar_q][6] = values[6];
+			}
+		parsed.push_back(block);
+	}
+
+	if (parsed.size() != 84)
+	{
+		std::cerr << "D-on-W TRIM database contains " << parsed.size()
+				  << " blocks; expected 84\n";
+		return false;
+	}
+
+	for (int energy_index = 0; energy_index < 12; ++energy_index)
+	{
+		energies_[energy_index] = parsed[energy_index * 7].incident_energy_eV;
+		for (int angle_index = 0; angle_index < 7; ++angle_index)
+		{
+			const Block &block = parsed[energy_index * 7 + angle_index];
+			if (energy_index == 0)
+				angles_[angle_index] = block.incident_angle_deg;
+			if (std::abs(block.incident_energy_eV - energies_[energy_index]) > 1e-8 ||
+				std::abs(block.incident_angle_deg - angles_[angle_index]) > 1e-8)
+				throw std::runtime_error("Unexpected D-on-W TRIM energy/angle block ordering");
+			blocks_[energy_index][angle_index] = block;
+		}
+	}
+
+	loaded_ = true;
+	return true;
+}
+
+bool DWTrimReflection::IsLoaded() const
+{
+	return loaded_;
+}
+
+double DWTrimReflection::ReflectionProbability(double incident_energy_eV,
+												double incident_angle_deg) const
+{
+	if (!loaded_)
+		throw std::runtime_error("D-on-W TRIM reflection database is not loaded");
+
+	const double energy = clampValue(incident_energy_eV, energies_.front(), energies_.back());
+	const double angle = clampValue(incident_angle_deg, angles_.front(), angles_.back());
+	const int ei = FindInterval(energies_.data(), static_cast<int>(energies_.size()), energy);
+	const int ai = FindInterval(angles_.data(), static_cast<int>(angles_.size()), angle);
+	const double log_energy = std::log(energy);
+	const double energy_weight =
+		(log_energy - std::log(energies_[ei])) /
+		(std::log(energies_[ei + 1]) - std::log(energies_[ei]));
+	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
+
+	return clampValue(
+		bilinear(BlockAt(ei, ai).particle_reflection,
+				 BlockAt(ei + 1, ai).particle_reflection,
+				 BlockAt(ei, ai + 1).particle_reflection,
+				 BlockAt(ei + 1, ai + 1).particle_reflection,
+				 energy_weight, angle_weight),
+		0.0, 1.0);
+}
+
+DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
+											 double incident_angle_deg,
+											 double xi_energy,
+											 double xi_polar,
+											 double xi_azimuth) const
+{
+	if (!loaded_)
+		throw std::runtime_error("D-on-W TRIM reflection database is not loaded");
+
+	const double energy = clampValue(incident_energy_eV, energies_.front(), energies_.back());
+	const double angle = clampValue(incident_angle_deg, angles_.front(), angles_.back());
+	const int ei = FindInterval(energies_.data(), static_cast<int>(energies_.size()), energy);
+	const int ai = FindInterval(angles_.data(), static_cast<int>(angles_.size()), angle);
+	const double energy_weight =
+		(std::log(energy) - std::log(energies_[ei])) /
+		(std::log(energies_[ei + 1]) - std::log(energies_[ei]));
+	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
+
+	auto sampleBlock = [xi_energy, xi_polar, xi_azimuth](const Block &block) {
+		DWReflectionSample sample;
+		sample.energy_eV = SampleQuantile(block.energy, xi_energy);
+
+		constexpr std::array<double, 5> conditional_grid{{0.1, 0.3, 0.5, 0.7, 0.9}};
+		const double energy_xi = clampValue(xi_energy, conditional_grid.front(), conditional_grid.back());
+		const int energy_q = FindInterval(conditional_grid.data(), 5, energy_xi);
+		const double energy_q_weight =
+			(energy_xi - conditional_grid[energy_q]) /
+			(conditional_grid[energy_q + 1] - conditional_grid[energy_q]);
+		sample.cos_polar = linear(
+			SampleQuantile(block.cos_polar[energy_q], xi_polar),
+			SampleQuantile(block.cos_polar[energy_q + 1], xi_polar),
+			energy_q_weight);
+
+		const double polar_xi = clampValue(xi_polar, conditional_grid.front(), conditional_grid.back());
+		const int polar_q = FindInterval(conditional_grid.data(), 5, polar_xi);
+		const double polar_q_weight =
+			(polar_xi - conditional_grid[polar_q]) /
+			(conditional_grid[polar_q + 1] - conditional_grid[polar_q]);
+		const double azimuth_low = linear(
+			SampleQuantile(block.cos_azimuth[energy_q][polar_q], xi_azimuth),
+			SampleQuantile(block.cos_azimuth[energy_q][polar_q + 1], xi_azimuth),
+			polar_q_weight);
+		const double azimuth_high = linear(
+			SampleQuantile(block.cos_azimuth[energy_q + 1][polar_q], xi_azimuth),
+			SampleQuantile(block.cos_azimuth[energy_q + 1][polar_q + 1], xi_azimuth),
+			polar_q_weight);
+		sample.cos_azimuth = linear(azimuth_low, azimuth_high, energy_q_weight);
+		return sample;
+	};
+
+	const DWReflectionSample q00 = sampleBlock(BlockAt(ei, ai));
+	const DWReflectionSample q10 = sampleBlock(BlockAt(ei + 1, ai));
+	const DWReflectionSample q01 = sampleBlock(BlockAt(ei, ai + 1));
+	const DWReflectionSample q11 = sampleBlock(BlockAt(ei + 1, ai + 1));
+
+	DWReflectionSample result;
+	result.energy_eV = clampValue(
+		bilinear(q00.energy_eV, q10.energy_eV, q01.energy_eV, q11.energy_eV,
+				 energy_weight, angle_weight),
+		0.0, incident_energy_eV);
+	result.cos_polar = clampValue(
+		bilinear(q00.cos_polar, q10.cos_polar, q01.cos_polar, q11.cos_polar,
+				 energy_weight, angle_weight),
+		0.0, 1.0);
+	result.cos_azimuth = clampValue(
+		bilinear(q00.cos_azimuth, q10.cos_azimuth, q01.cos_azimuth, q11.cos_azimuth,
+				 energy_weight, angle_weight),
+		-1.0, 1.0);
+	return result;
 }

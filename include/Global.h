@@ -70,7 +70,7 @@ extern int N_poloidal, N_radial;
 #define gridCellCount() (N_poloidal * N_radial)
 #define gridIndex2D(i, j) ((i) * N_radial + (j))
 extern bool K_log, StepLog, K_H2_elastic, K_EcrossBDrift, backGridBoundry, K_H, K_D, K_T;
-extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_Prob, K_back, K_dn, K_CX_DT, K_DT, K_flight, K_GRID, K_Pump, K_test1, K_test2, K_test3, K_Tn, K_Vi, K_Wallelement;
+extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_DWTrimReflection, K_Prob, K_back, K_dn, K_CX_DT, K_DT, K_flight, K_GRID, K_Pump, K_test1, K_test2, K_test3, K_Tn, K_Vi, K_Wallelement;
 extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, K_database_Pra, K_mu, K_PartoPar;
 extern std::array<int, 5> K_Puff;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
@@ -254,6 +254,7 @@ extern Reflect D_Be;
 extern Reflect T_Be;
 extern Reflect Ar_W;
 extern Reflect He_W;
+extern DWTrimReflection D_W_Trim;
 
 extern ofstream out;
 

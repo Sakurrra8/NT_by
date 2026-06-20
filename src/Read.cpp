@@ -274,6 +274,12 @@ void Read()
         T_W.ReadTrimData(K_Reflect, 25, 11, Inputpath + "database/tw_rn.dat", Inputpath + "database/tw_re.dat");
         std::cout << "the C wall is lack" << endl;
     }
+    if (K_DWTrimReflection == 1)
+    {
+        if (!D_W_Trim.Load(Inputpath + "database/D_on_W_5.53"))
+            throw std::runtime_error("Failed to load D_on_W_5.53 reflection database");
+        std::cout << "D-on-W TRIM distribution model enabled" << endl;
+    }
     /*for (double i = 1; i < 1000; i++)
     {
         std::cout << i << '\t' << D_W.n_RefCoeff(K_Reflect, i) << '\t' << T_W.n_RefCoeff(K_Reflect, i) << "\t";

@@ -620,6 +620,55 @@ void Particle::Init(int k, int z)
 	}
 	else if (k == 3) // neutral particle from Wall, z = 1 for
 	{
+		const bool use_dw_trim =
+			K_DWTrimReflection == 1 && this == &D && K_Wallelement == 1 && z == 0;
+		auto apply_dw_trim_velocity = [this](double wall_cos, double wall_sin,
+											double incident_angle_deg) {
+			const DWReflectionSample sample =
+				D_W_Trim.Sample(1.5 * Tn_, incident_angle_deg,
+								Tools::Random(), Tools::Random(), Tools::Random());
+			Tn_ = (2.0 / 3.0) * sample.energy_eV;
+
+			const double normal[3] = {-wall_sin, wall_cos, 0.0};
+			const double normal_projection =
+				V_[0] * normal[0] + V_[1] * normal[1] + V_[2] * normal[2];
+			double tangent[3] = {
+				V_[0] - normal_projection * normal[0],
+				V_[1] - normal_projection * normal[1],
+				V_[2] - normal_projection * normal[2]};
+			double tangent_length = std::sqrt(
+				tangent[0] * tangent[0] + tangent[1] * tangent[1] +
+				tangent[2] * tangent[2]);
+			if (tangent_length < 1e-20)
+			{
+				tangent[0] = wall_cos;
+				tangent[1] = wall_sin;
+				tangent[2] = 0.0;
+				tangent_length = 1.0;
+			}
+			for (double &component : tangent)
+				component /= tangent_length;
+
+			const double transverse[3] = {
+				normal[1] * tangent[2] - normal[2] * tangent[1],
+				normal[2] * tangent[0] - normal[0] * tangent[2],
+				normal[0] * tangent[1] - normal[1] * tangent[0]};
+			const double cos_polar = std::max(0.0, std::min(1.0, sample.cos_polar));
+			const double sin_polar =
+				std::sqrt(std::max(0.0, 1.0 - cos_polar * cos_polar));
+			const double cos_azimuth =
+				std::max(-1.0, std::min(1.0, sample.cos_azimuth));
+			const double sin_azimuth =
+				Tools::randomSign() *
+				std::sqrt(std::max(0.0, 1.0 - cos_azimuth * cos_azimuth));
+
+			for (int component = 0; component < 3; ++component)
+				V_[component] =
+					cos_polar * normal[component] +
+					sin_polar * (cos_azimuth * tangent[component] +
+								 sin_azimuth * transverse[component]);
+		};
+
 		if (InterscePoint[0][4] == 11)
 		{
 			source_stratum_ = SourceStratum::MCW;
@@ -639,7 +688,10 @@ void Particle::Init(int k, int z)
 			if (K_Wallelement == 1)
 			{
 				if (this == &D)
-					Tn_ = Tn_ * D_W.E_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle((int)InterscePoint[0][3])) / D_W.n_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle((int)InterscePoint[0][3]));
+				{
+					if (!use_dw_trim)
+						Tn_ = Tn_ * D_W.E_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle((int)InterscePoint[0][3])) / D_W.n_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle((int)InterscePoint[0][3]));
+				}
 				else if (this == &H)
 					Tn_ = Tn_ * H_W.E_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle((int)InterscePoint[0][3])) / H_W.n_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle((int)InterscePoint[0][3]));
 				else if (this == &T)
@@ -673,11 +725,21 @@ void Particle::Init(int k, int z)
 			{
 				if (InterscePoint[0][4] == 11) // wall
 				{
-					Tools::calculateReflectionVelocity(V_, Grid4.Wall_.Cos_Wall((int)InterscePoint[0][3]), Grid4.Wall_.Sin_Wall((int)InterscePoint[0][3]), 1);
+					const double wall_cos = Grid4.Wall_.Cos_Wall((int)InterscePoint[0][3]);
+					const double wall_sin = Grid4.Wall_.Sin_Wall((int)InterscePoint[0][3]);
+					if (use_dw_trim)
+						apply_dw_trim_velocity(wall_cos, wall_sin, CalAngle((int)InterscePoint[0][3]));
+					else
+						Tools::calculateReflectionVelocity(V_, wall_cos, wall_sin, 1);
 				}
 				else if (InterscePoint[0][4] == 1) // target
 				{
-					Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target((int)InterscePoint[0][3]), Grid4.Sin_Target((int)InterscePoint[0][3]), 1);
+					const double wall_cos = Grid4.Cos_Target((int)InterscePoint[0][3]);
+					const double wall_sin = Grid4.Sin_Target((int)InterscePoint[0][3]);
+					if (use_dw_trim)
+						apply_dw_trim_velocity(wall_cos, wall_sin, CalAngle((int)InterscePoint[0][3]));
+					else
+						Tools::calculateReflectionVelocity(V_, wall_cos, wall_sin, 1);
 				}
 				else
 				{
@@ -719,7 +781,10 @@ void Particle::Init(int k, int z)
 			if (K_Wallelement == 1)
 			{
 				if (this == &D)
-					Tn_ = Tn_ * D_W.E_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle(Sin_temp, Cos_temp)) / D_W.n_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle(Sin_temp, Cos_temp));
+				{
+					if (!use_dw_trim)
+						Tn_ = Tn_ * D_W.E_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle(Sin_temp, Cos_temp)) / D_W.n_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle(Sin_temp, Cos_temp));
+				}
 				else if (this == &H)
 					Tn_ = Tn_ * H_W.E_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle(Sin_temp, Cos_temp)) / H_W.n_RefCoeff(K_Reflect, 1.5 * Tn_, CalAngle(Sin_temp, Cos_temp));
 				else if (this == &T)
@@ -751,7 +816,10 @@ void Particle::Init(int k, int z)
 			{
 				if (InterscePoint[0][4] == 11 || InterscePoint[0][4] == 1)
 				{
-					Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 1);
+					if (use_dw_trim)
+						apply_dw_trim_velocity(Cos_temp, Sin_temp, CalAngle(Sin_temp, Cos_temp));
+					else
+						Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 1);
 				}
 				else
 				{
@@ -8450,12 +8518,22 @@ double Particle::CalAngle(int num_wall)
 	// std::cout << 180 / pi * acos(abs(V_[0] * sinang[num_wall] - V_[1] * cosang[num_wall]) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))) << endl;
 	if (MeshMode == 1)
 	{
+		const double speed = sqrt(
+			Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
+		if (speed <= 0.0)
+			return 0.0;
+		double cosine = 0.0;
 		if (InterscePoint[0][4] == 11)
-			return 180 / pi * acos(abs(V_[0] * Grid4.Wall_.Sin_Wall(num_wall) - V_[1] * Grid4.Wall_.Cos_Wall(num_wall) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))));
+			cosine = abs(V_[0] * Grid4.Wall_.Sin_Wall(num_wall) -
+						 V_[1] * Grid4.Wall_.Cos_Wall(num_wall)) /
+					 speed;
 		else if (InterscePoint[0][4] == 1)
-			return 180 / pi * acos(abs(V_[0] * Grid1.Sin_target(num_wall) - V_[1] * Grid1.Cos_target(num_wall) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))));
+			cosine = abs(V_[0] * Grid1.Sin_target(num_wall) -
+						 V_[1] * Grid1.Cos_target(num_wall)) /
+					 speed;
 		else
 			throw std::logic_error("angle calculation of reflect have some problem in Calangle()");
+		return 180 / pi * acos(std::max(0.0, std::min(1.0, cosine)));
 	}
 	else if (MeshMode == 3)
 	{
@@ -8475,7 +8553,13 @@ double Particle::CalAngle(double Sin, double Cos)
 	// std::cout << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 	// std::cout << num_wall << '\t' << cosang[num_wall] << '\t' << sinang[num_wall] << endl;
 	// std::cout << 180 / pi * acos(abs(V_[0] * sinang[num_wall] - V_[1] * cosang[num_wall]) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])))) << endl;
-	return 180 / pi * acos(abs(V_[0] * Sin - V_[1] * Cos) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]))));
+	const double speed = sqrt(
+		Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
+	if (speed <= 0.0)
+		return 0.0;
+	const double cosine = std::max(
+		0.0, std::min(1.0, abs(V_[0] * Sin - V_[1] * Cos) / speed));
+	return 180 / pi * acos(cosine);
 }
 
 int Particle::MaxCharge() { return MaxCharge_; }

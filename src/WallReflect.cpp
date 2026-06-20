@@ -15,7 +15,12 @@ void WallReflect()
             if (P == &H)
                 coeff_reflect = H_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &D)
-                coeff_reflect = D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
+            {
+                const double angle = P->CalAngle((int)InterscePoint[0][5]);
+                coeff_reflect = K_DWTrimReflection == 1
+                                    ? std::min(coeff_recyc, D_W_Trim.ReflectionProbability(1.5 * P->Tn(), angle))
+                                    : D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), angle);
+            }
             else if (P == &T)
                 coeff_reflect = T_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
             else if (P == &H2 || P == &D2 || P == &T2)
@@ -199,7 +204,12 @@ void WallReflect()
             if (P == &H)
                 coeff_reflect = H_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
             else if (P == &D)
-                coeff_reflect = D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
+            {
+                const double angle = P->CalAngle((int)InterscePoint[0][3]);
+                coeff_reflect = K_DWTrimReflection == 1
+                                    ? std::min(coeff_recyc, D_W_Trim.ReflectionProbability(1.5 * P->Tn(), angle))
+                                    : D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), angle);
+            }
             else if (P == &T)
                 coeff_reflect = T_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
             else if (P == &H2 || P == &D2 || P == &T2)

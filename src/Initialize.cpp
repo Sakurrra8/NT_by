@@ -179,6 +179,20 @@ void Initialize(int Input, char *settingfile[]) {
   std::getline(In, line);
   In >> Inputstring >> K_back;
   // std::cout << K_back << endl;
+
+  // Optional named switch. A second pass keeps all existing positional setting
+  // files backward compatible when this key is absent.
+  {
+    std::ifstream option_stream(settingfile[1]);
+    std::string option_name;
+    std::string option_line;
+    while (std::getline(option_stream, option_line)) {
+      std::istringstream option_input(option_line);
+      if (option_input >> option_name && option_name == "K_DWTrimReflection") {
+        option_input >> K_DWTrimReflection;
+      }
+    }
+  }
   std::getline(In, line);
   In >> Inputstring >> K_dn;
   // std::cout << K_dn << endl;

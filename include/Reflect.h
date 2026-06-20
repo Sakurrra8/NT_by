@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <array>
+#include <string>
 
 using namespace std;
 
@@ -54,6 +56,44 @@ struct TrimBlock
 	double theta0 = 0.0;				  // 网格点入射角 (度)
 	double RN = 0.0;					  // 粒子反射系数
 	std::vector<double> energy_quantiles; // 5个能量分布分位数
+};
+
+struct DWReflectionSample
+{
+	double energy_eV = 0.0;
+	double cos_polar = 1.0;
+	double cos_azimuth = 1.0;
+};
+
+class DWTrimReflection
+{
+private:
+	struct Block
+	{
+		double incident_energy_eV = 0.0;
+		double incident_angle_deg = 0.0;
+		double particle_reflection = 0.0;
+		double energy_reflection = 0.0;
+		std::array<double, 7> energy{};
+		std::array<std::array<double, 7>, 5> cos_polar{};
+		std::array<std::array<std::array<double, 7>, 5>, 5> cos_azimuth{};
+	};
+
+	std::array<double, 12> energies_{};
+	std::array<double, 7> angles_{};
+	std::array<std::array<Block, 7>, 12> blocks_{};
+	bool loaded_ = false;
+
+	static double SampleQuantile(const std::array<double, 7> &values, double xi);
+	static int FindInterval(const double *grid, int size, double value);
+	const Block &BlockAt(int energy_index, int angle_index) const;
+
+public:
+	bool Load(const std::string &filename);
+	bool IsLoaded() const;
+	double ReflectionProbability(double incident_energy_eV, double incident_angle_deg) const;
+	DWReflectionSample Sample(double incident_energy_eV, double incident_angle_deg,
+							  double xi_energy, double xi_polar, double xi_azimuth) const;
 };
 
 #endif

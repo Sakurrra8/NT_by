@@ -57,3 +57,4 @@ coeff_puff          0.99    # recycling coefficient of puff location
 
 K_H5Output          0       # option: write HDF5 output files
 MeshMode            3       # option: externmesh mode
+K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 D_on_W_5.53 distribution model

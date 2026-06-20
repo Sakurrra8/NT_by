@@ -37,6 +37,7 @@ int K_D2Flight;           // OP: D2 flight
 int K_abnormal_transport; // OP: abnormal transport
 int K_flight;             // OP: 1 for mean free path; 2 for fixed time step; 3 for
 int K_Reflect;            // OP: 1 for empirical formula; 2 for Trim database; 3 for calculate from Trim
+int K_DWTrimReflection = 0; // OP: 0 for legacy D-W reflection; 1 for D_on_W_5.53 distributions
 int K_ReflectDirection;   // OP: 1 for cosing distribution; 2 for forward-reflect distribution; 3 for mirror reflection
 bool backGridBoundry;     // OP: make Particles go back to Grid when Particle flight
 bool K_H;                 // OP: H calculation
@@ -326,6 +327,7 @@ Reflect D_Be;
 Reflect T_Be;
 Reflect Ar_W;
 Reflect He_W;
+DWTrimReflection D_W_Trim;
 
 std::ofstream Xlog;
 std::ofstream Vlog;
