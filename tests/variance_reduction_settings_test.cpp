@@ -5,7 +5,7 @@
 int main()
 {
 	char program[] = "variance_reduction_settings_test";
-	char setting[] = "Inputfile/settingfile/setting_Trimesh_D_5.log";
+	char setting[] = "Inputfile/settingfile/setting_Trimesh_D_5_vr_on.log";
 	char *arguments[] = {program, setting};
 	Initialize(2, arguments);
 

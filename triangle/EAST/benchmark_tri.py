@@ -276,7 +276,7 @@ def main():
     )
     parser.add_argument('--root', default='.', help='Repository root. Default: current directory')
     parser.add_argument('--case', default='case_input/2MW-5e19')
-    parser.add_argument('--output', default='Outputfile/test')
+    parser.add_argument('--output', default='Outputfile/10086938')
     parser.add_argument('--outdir', default=None, help='Default: output/fig/tri_benchmark')
     parser.add_argument('--xlim', nargs=2, type=float, default=[1.30, 1.80])
     parser.add_argument('--ylim', nargs=2, type=float, default=[-1.12, -0.60])

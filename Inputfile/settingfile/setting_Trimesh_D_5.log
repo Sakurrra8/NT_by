@@ -43,11 +43,11 @@ K_Wallelement       1       # option: 1 for W wall, 2 for C wall
 
 dt                  1.e-8   # Time step
 t_max               10      # Max time for Particle
-numPar_flight       25000   # number of test flight from Grid
+numPar_flight       50000   # number of test flight from Grid
 numPar_flight_D2    10000   # number of pumping D2
 numPar_flight_T2    10000   # number of pumping T2
 numPar_flight_CD4   50000   # number of test flight of Methane
-numPar_flight_Target 25000  # sum of test flight from Wall recycling
+numPar_flight_Target 50000  # sum of test flight from Wall recycling
 Num_D2_pump         5e19    # number of test flight of pumping D2 particle
 Num_T2_pump         5e19    # number of test flight of pumping T2 particle
 Num_CD4_pump        1e19    # sum of test flight for CD4 seeding
@@ -55,10 +55,10 @@ coeff_recyc_target  1       # recycling coefficient of target
 coeff_ercyc_wall    1       # recycling coefficient of wall
 coeff_puff          0.99    # recycling coefficient of puff location
 
-K_Roulette          1       # terminate low-weight histories without bias
+K_Roulette          0       # baseline: variance reduction disabled
 W_RouletteMin       0.05    # roulette trigger weight
 W_RouletteTarget    0.2     # surviving particle weight
-K_Splitting         1       # regional importance sampling for every particle species
+K_Splitting         0       # baseline: regional importance sampling disabled
 W_SplitMax          2.0     # split trigger weight
 W_SplitTarget       1.0     # desired child weight
 W_SplitMin          0.05    # minimum child weight for regional splitting
