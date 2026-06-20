@@ -1,5 +1,6 @@
 #include "Global.h"
 #include "Particle.h"
+#include "RecyclingFlightAllocation.h"
 // #include "sys/timeb.h"
 #include <cstdlib>
 #include <random>
@@ -821,11 +822,12 @@ void Prepare()
 			}
 		}
 		H.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
-		H.CalWeight2(NumPar_H_recyc, numPar_flight_Target); // numPar_flight_Target is Sum of test
-		H2.CalWeight2(NumPar_H2_recyc, numPar_flight_Target);
-
 		H.RecycledCal(NumPar_H_recyc, Tn_H_recyc);
 		H2.RecycledCal(NumPar_H2_recyc);
+		const auto h_recycling_flights = AllocateRecyclingFlights(
+			H.RecycledSourceSum(), H2.RecycledSourceSum(), numPar_flight_Target);
+		H.CalWeight2(NumPar_H_recyc, h_recycling_flights.first);
+		H2.CalWeight2(NumPar_H2_recyc, h_recycling_flights.second);
 	}
 	// D recycling
 	if (K_D)
@@ -878,11 +880,12 @@ void Prepare()
 		}
 		// out.close();
 		D.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
-		D.CalWeight2(NumPar_D_recyc, numPar_flight_Target); // numPar_flight_Target is Sum of test
-		D2.CalWeight2(NumPar_D2_recyc, numPar_flight_Target);
-
 		D.RecycledCal(NumPar_D_recyc, Tn_D_recyc);
 		D2.RecycledCal(NumPar_D2_recyc);
+		const auto d_recycling_flights = AllocateRecyclingFlights(
+			D.RecycledSourceSum(), D2.RecycledSourceSum(), numPar_flight_Target);
+		D.CalWeight2(NumPar_D_recyc, d_recycling_flights.first);
+		D2.CalWeight2(NumPar_D2_recyc, d_recycling_flights.second);
 	}
 	// T recycling
 	if (K_T)
@@ -927,10 +930,12 @@ void Prepare()
 		}
 		// out.close();
 		T.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
-		T.CalWeight2(NumPar_T_recyc, numPar_flight_Target); // numPar_flight_Target is Sum of test
-		T2.CalWeight2(NumPar_T2_recyc, numPar_flight_Target);
 		T.RecycledCal(NumPar_T_recyc, Tn_T_recyc);
 		T2.RecycledCal(NumPar_T2_recyc);
+		const auto t_recycling_flights = AllocateRecyclingFlights(
+			T.RecycledSourceSum(), T2.RecycledSourceSum(), numPar_flight_Target);
+		T.CalWeight2(NumPar_T_recyc, t_recycling_flights.first);
+		T2.CalWeight2(NumPar_T2_recyc, t_recycling_flights.second);
 	}
 
 	for (int i = 0; i <= num_CoreBoundry / 2; i++)

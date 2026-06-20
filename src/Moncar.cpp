@@ -1,5 +1,6 @@
 #include "Global.h"
 #include "Particle.h"
+#include "RecyclingFlightAllocation.h"
 
 void Moncar()
 {
@@ -38,10 +39,12 @@ void Moncar()
     {
         if (K_H)
         {
+            const auto recycling_flights = AllocateRecyclingFlights(
+                H.RecycledSourceSum(), H2.RecycledSourceSum(), numPar_flight_Target);
             if (H.RecycledSourceSum() > 0.)
             {
                 H.BeginDeferredFlightStats(H.NumPar_Target());
-                for (int j = 1; j <= numPar_flight_Target; j++)
+                for (int j = 1; j <= recycling_flights.first; j++)
                 {
                     const int target = H.sampleRecycledTarget();
                     P = &H;
@@ -54,7 +57,7 @@ void Moncar()
             if (H2.RecycledSourceSum() > 0.)
             {
                 H2.BeginDeferredFlightStats(H2.NumPar_Target());
-                for (int j = 1; j <= numPar_flight_Target; j++)
+                for (int j = 1; j <= recycling_flights.second; j++)
                 {
                     const int target = H2.sampleRecycledTarget();
                     P = &H2;
@@ -66,10 +69,12 @@ void Moncar()
         }
         if (K_D)
         {
+            const auto recycling_flights = AllocateRecyclingFlights(
+                D.RecycledSourceSum(), D2.RecycledSourceSum(), numPar_flight_Target);
             if (D.RecycledSourceSum() > 0.)
             {
                 D.BeginDeferredFlightStats(D.NumPar_Target());
-                for (int j = 1; j <= numPar_flight_Target; j++)
+                for (int j = 1; j <= recycling_flights.first; j++)
                 {
                     const int target = D.sampleRecycledTarget();
                     P = &D;
@@ -82,7 +87,7 @@ void Moncar()
             if (D2.RecycledSourceSum() > 0.)
             {
                 D2.BeginDeferredFlightStats(D2.NumPar_Target());
-                for (int j = 1; j <= numPar_flight_Target; j++)
+                for (int j = 1; j <= recycling_flights.second; j++)
                 {
                     const int target = D2.sampleRecycledTarget();
                     P = &D2;
@@ -94,10 +99,12 @@ void Moncar()
         }
         if (K_T)
         {
+            const auto recycling_flights = AllocateRecyclingFlights(
+                T.RecycledSourceSum(), T2.RecycledSourceSum(), numPar_flight_Target);
             if (T.RecycledSourceSum() > 0.)
             {
                 T.BeginDeferredFlightStats(T.NumPar_Target());
-                for (int j = 1; j <= numPar_flight_Target; j++)
+                for (int j = 1; j <= recycling_flights.first; j++)
                 {
                     const int target = T.sampleRecycledTarget();
                     P = &T;
@@ -110,7 +117,7 @@ void Moncar()
             if (T2.RecycledSourceSum() > 0.)
             {
                 T2.BeginDeferredFlightStats(T2.NumPar_Target());
-                for (int j = 1; j <= numPar_flight_Target; j++)
+                for (int j = 1; j <= recycling_flights.second; j++)
                 {
                     const int target = T2.sampleRecycledTarget();
                     P = &T2;
