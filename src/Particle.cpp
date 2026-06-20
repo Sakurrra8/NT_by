@@ -2106,6 +2106,10 @@ void Particle::SampleIonVelocity(int isotope)
 
 void Particle::CalLambda()
 {
+	const bool valid_plasma_cell =
+		Zone_ < 6 &&
+		XY_[0] >= 0 && XY_[0] < N_poloidal &&
+		XY_[1] >= 0 && XY_[1] < N_radial;
 	const auto H3_energy_relative_to_ion_flow = [this](double parallel_flow) {
 		return 0.5 * mass_ *
 			   (Tools::sqr(V_[0] - parallel_flow * B[XY_[0]][XY_[1]][0]) +
@@ -2113,12 +2117,24 @@ void Particle::CalLambda()
 				Tools::sqr(V_[2] - parallel_flow * B[XY_[0]][XY_[1]][2])) /
 			   qe;
 	};
-	const double H3_test_particle_energy =
-		H3_energy_relative_to_ion_flow(ua_D_1[XY_[0]][XY_[1]]);
-	const double H3_test_particle_energy_H =
-		H3_energy_relative_to_ion_flow(ua_H_1[XY_[0]][XY_[1]]);
-	const double H3_test_particle_energy_T =
-		H3_energy_relative_to_ion_flow(ua_T_1[XY_[0]][XY_[1]]);
+	const double test_particle_energy =
+		0.5 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) / qe;
+	const auto ion_parallel_flow = [this](const std::vector<std::vector<double>> &flow) {
+		if (XY_[0] < 0 || static_cast<std::size_t>(XY_[0]) >= flow.size())
+			return 0.;
+		if (XY_[1] < 0 || static_cast<std::size_t>(XY_[1]) >= flow[XY_[0]].size())
+			return 0.;
+		return flow[XY_[0]][XY_[1]];
+	};
+	const double H3_test_particle_energy = valid_plasma_cell
+											   ? H3_energy_relative_to_ion_flow(ion_parallel_flow(ua_D_1))
+											   : test_particle_energy;
+	const double H3_test_particle_energy_H = valid_plasma_cell
+												 ? H3_energy_relative_to_ion_flow(ion_parallel_flow(ua_H_1))
+												 : test_particle_energy;
+	const double H3_test_particle_energy_T = valid_plasma_cell
+												 ? H3_energy_relative_to_ion_flow(ion_parallel_flow(ua_T_1))
+												 : test_particle_energy;
 	double CS_Vacuum = 0.01;
 	if (Zone_ < 6 && K_Vi == 1 && MeshMode == 3)
 	{

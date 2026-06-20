@@ -31,6 +31,8 @@ mkdir -p $workdir/fig
 cp "$input_file" $workdir/
 
 srun -n 1 ./bin/edit "$input_file" $workdir/data/
+run_status=$?
 
 mv $PWD/log/NeuTran-$SLURM_JOBID* $workdir/ 2>/dev/null
 mv $workdir Outputfile/
+exit $run_status
