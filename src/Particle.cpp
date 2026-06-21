@@ -1868,8 +1868,13 @@ void Particle::track()
 							dt_ = -log(Tools::Random()) * lambda_min_[Charge_];
 						}
 					}
+					const double trace_dt = std::isfinite(dt_)
+												? dt_
+												: 1.e6 / std::max(
+													  std::sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])),
+													  1.);
 					for (int i = 0; i < 3; i++)
-						X_new_[i] = X_[i] + V_[i] * dt_;
+						X_new_[i] = X_[i] + V_[i] * trace_dt;
 					Caltrace_Tri();
 					if (Zone_ == 1)
 					{
@@ -2135,7 +2140,7 @@ void Particle::CalLambda()
 	const double H3_test_particle_energy_T = valid_plasma_cell
 												 ? H3_energy_relative_to_ion_flow(ion_parallel_flow(ua_T_1))
 												 : test_particle_energy;
-	double CS_Vacuum = 0.01;
+	const double CS_Vacuum = 0.;
 	if (Zone_ < 6 && K_Vi == 1 && MeshMode == 3)
 	{
 		double Vtheta, Vphi, vel;
@@ -2423,6 +2428,54 @@ void Particle::CalLambda()
 	}
 	else if (MeshMode == 3)
 	{
+		if (Zone_ >= 6)
+		{
+			Ion_[0].Setcs_now(0.);
+			CX_[0].Setcs_now(0.);
+			CX_DT_[0].Setcs_now(0.);
+			if (this == &H2 || this == &D2 || this == &T2)
+			{
+				Ela_[0].Setcs_now(0.);
+				Ela_DT_[0].Setcs_now(0.);
+				Diss1_[0].Setcs_now(0.);
+				Diss2_[0].Setcs_now(0.);
+			}
+
+			const bool valid_triangle = Tri_Index_ >= 0 && Tri_Index_ < num_trimesh_;
+			if (K_NNCs && valid_triangle)
+			{
+				if (this == &H || this == &H2)
+				{
+					R_with_H_[0].Set_V_relative(V_H_0_now[0], V_H_0_now[1], V_H_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_H2_0_now[0], V_H2_0_now[1], V_H2_0_now[2], V_[0], V_[1], V_[2]);
+				}
+				else if (this == &D || this == &D2)
+				{
+					R_with_H_[0].Set_V_relative(V_D_0_now[0], V_D_0_now[1], V_D_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_D2_0_now[0], V_D2_0_now[1], V_D2_0_now[2], V_[0], V_[1], V_[2]);
+				}
+				else if (this == &T || this == &T2)
+				{
+					R_with_H_[0].Set_V_relative(V_T_0_now[0], V_T_0_now[1], V_T_0_now[2], V_[0], V_[1], V_[2]);
+					R_with_H2_[0].Set_V_relative(V_T2_0_now[0], V_T2_0_now[1], V_T2_0_now[2], V_[0], V_[1], V_[2]);
+				}
+				R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
+				R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
+			}
+			else
+			{
+				R_with_H_[0].Setcs_now(0.);
+				R_with_H2_[0].Setcs_now(0.);
+			}
+
+			const double neutral_collision_rate =
+				R_with_H_[0].cs_now() + R_with_H2_[0].cs_now();
+			lambda_now_ = neutral_collision_rate > 0.
+							  ? 1. / neutral_collision_rate
+							  : std::numeric_limits<double>::infinity();
+			return;
+		}
+
 		if (this == &H || this == &D || this == &T)
 		{
 			if (this == &H)
