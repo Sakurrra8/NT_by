@@ -74,7 +74,7 @@ extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_DWTrimReflection
 extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, K_database_Pra, K_mu, K_PartoPar;
 extern std::array<int, 5> K_Puff;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
-extern int K_T_array, K_NNCs, K_Roulette, K_Splitting, K_DWTargetActualAngle;
+extern int K_T_array, K_NNCs, K_Roulette, K_Splitting, K_DWTargetActualAngle, K_DTargetSourceMode;
 extern int K_H5Output, MaxSplit, MaxSplitDepth;
 extern int ImportanceMainPoloidalBegin, ImportanceMainPoloidalEnd;
 extern double dt, Te_core, ne_core, NumPar_now, Tn_core, T_N, T_wall, DWTrimERMIN, Num_D2_pump, Num_T2_pump, coefficient_D, coefficient_T;

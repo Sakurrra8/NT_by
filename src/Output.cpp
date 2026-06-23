@@ -28,6 +28,8 @@ void Output()
         {
             HydrogenOutput_Tri(&H, &H2);
         }
+        H.Dump_Flux();
+        H2.Dump_Flux();
 
         Out_temp.open(Outputpath + "recycling_H.txt");
         for (int i = 0; i < 76; i++)
@@ -41,6 +43,8 @@ void Output()
         HydrogenOutput(&D, &D2);
         if (MeshMode == 3)
             HydrogenOutput_Tri(&D, &D2);
+        D.Dump_Flux();
+        D2.Dump_Flux();
         D2.DumpD2pBalance_B2();
         D2.DumpD2pBalance_Tri();
         D2.DumpD2pPhysicsDecomposition_B2();
@@ -60,6 +64,8 @@ void Output()
         HydrogenOutput(&T, &T2);
         if (MeshMode == 3)
             HydrogenOutput_Tri(&T, &T2);
+        T.Dump_Flux();
+        T2.Dump_Flux();
 
         Out_temp.open(Outputpath + "recycling_T.txt");
         for (int i = 0; i < 76; i++)
@@ -498,8 +504,6 @@ void HydrogenOutput(Particle *OutPar1, Particle *OutPar2)
         OutPar1->Dump_2D(SE, Rec, 1);
         OutPar1->Dump_2D(Pra, Rec, 1);
     }
-    OutPar1->Dump_Flux();
-
     OutPar2->Dump_2D(n, n, 0);
     OutPar2->Dump_2D(n, n, 1);
     // OutPar2->Dump_array_2D(n, n, 0);
@@ -516,7 +520,6 @@ void HydrogenOutput(Particle *OutPar1, Particle *OutPar2)
     OutPar2->Dump_2D(Smu, Ela);
     OutPar2->Dump_2D(Sn, Diss1);
     OutPar2->Dump_2D(Sn, Diss2);
-    OutPar2->Dump_Flux();
     for (int i = 0; i < 4; i++)
         OutPar2->Dump_2D(Sn, DS[i], 1);
     OutPar2->Dump_2D(Pra, DS[2], 1);
@@ -805,8 +808,6 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
         OutPar1->Dump_Tri(SE, Rec, 1);
         OutPar1->Dump_Tri(Pra, Rec, 1);
     }
-    OutPar1->Dump_Flux();
-
     OutPar2->Dump_Tri(n, n, 0);
     OutPar2->Dump_Tri(n, n, 1);
     OutPar2->Dump_Tri(E, n, 0); // energy output
@@ -830,7 +831,6 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
     OutPar2->Dump_Tri(SE, R_with_H2);
     OutPar2->Dump_Tri(Smu, R_with_H);
     OutPar2->Dump_Tri(Smu, R_with_H2);
-    // OutPar2->Dump_Flux();
     for (int i = 0; i < 4; i++)
         OutPar2->Dump_Tri(Sn, DS[i], 1);
     OutPar2->Dump_Tri(Pra, DS[2], 1);

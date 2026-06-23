@@ -199,6 +199,8 @@ void Initialize(int Input, char *settingfile[]) {
         option_input >> DWTrimERMIN;
       else if (option_name == "K_DWTargetActualAngle")
         option_input >> K_DWTargetActualAngle;
+      else if (option_name == "K_DTargetSourceMode")
+        option_input >> K_DTargetSourceMode;
       else if (option_name == "K_Roulette")
         option_input >> K_Roulette;
       else if (option_name == "K_Splitting")

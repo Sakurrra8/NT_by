@@ -73,5 +73,6 @@ K_H5Output          0       # option: write HDF5 output files
 MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 D_on_W_5.53 distribution model
 K_DWTargetActualAngle 1     # use local B-to-target-normal incidence angle
+K_DTargetSourceMode 2       # 1 use recycled_neutral_flux_D; 2 use ni*abs(ua)*abs(b.normal)*target_area and TRIM split
 SurfaceTemperature_eV 0.1   # EIRENE EWALL=-0.1: Maxwellian-flux wall temperature
 DWTrimERMIN_eV      1.0     # EIRENE ERMIN: disable fast reflection below 1 eV

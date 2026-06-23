@@ -2,13 +2,53 @@
 #include "Particle.h"
 #include "RecyclingFlightAllocation.h"
 // #include "sys/timeb.h"
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <random>
+#include <stdexcept>
 
 void get_unit_vector_xy();
 void get_center();
 void get_dTi();
 void CX_DT_Fix();
+
+namespace
+{
+double NormalProjectionFromAngle(double angle_degree)
+{
+	const double kPi = 3.14159265358979323846;
+	return std::abs(std::cos(angle_degree * kPi / 180.0));
+}
+
+void ApplyDTargetIonFluxProfile(const std::vector<double> &angle_B_with_target)
+{
+	double inner_total = 0.0;
+	double outer_total = 0.0;
+	const int outer_poloidal = poloidalLastIndex();
+
+	for (int i = 0; i < N_radial; ++i)
+	{
+		const double inner_density = std::max(0.0, n_D_1[1][i]);
+		const double outer_density = std::max(0.0, n_D_1[outer_poloidal][i]);
+		const double inner_source =
+			inner_density * std::abs(ua_D_1[1][i]) *
+			NormalProjectionFromAngle(angle_B_with_target[i]) * Grid4.Vol_Target(i);
+		const double outer_source =
+			outer_density * std::abs(ua_D_1[outer_poloidal][i]) *
+			NormalProjectionFromAngle(angle_B_with_target[i + N_radial]) * Grid4.Vol_Target(i + N_radial);
+		NumPar_wall_D[i] = inner_source;
+		NumPar_wall_D[i + N_radial] = outer_source;
+		inner_total += inner_source;
+		outer_total += outer_source;
+	}
+	if (inner_total <= 0.0 || outer_total <= 0.0)
+		throw std::runtime_error("D target ion-flux profile is zero; check nDion, ua_Dion and target geometry");
+	std::cout << "D target source mode: SOLPS projected ion flux profile"
+			  << " (IT D+ flux=" << inner_total
+			  << ", OT D+ flux=" << outer_total << ")" << std::endl;
+}
+}
 
 void Prepare()
 {
@@ -775,6 +815,8 @@ void Prepare()
 		}
 	}
 	DTargetIncidentAngle = angle_B_with_target;
+	/// get the area of the target before target source construction
+	Grid4.get_sx();
 	/*ofstream Out_temp("doc/angel.txt");
 	for (int i = 0; i < N_radial * 2; i++)
 	{
@@ -832,6 +874,10 @@ void Prepare()
 	// D recycling
 	if (K_D)
 	{
+		if (K_DTargetSourceMode == 2)
+			ApplyDTargetIonFluxProfile(angle_B_with_target);
+		else if (K_DTargetSourceMode != 1)
+			throw std::runtime_error("Unsupported K_DTargetSourceMode; use 1 or 2");
 		// out.open("doc/recycling_D.txt");
 		if (K_Wallelement == 1)
 		{
@@ -963,9 +1009,6 @@ void Prepare()
 		PFRBoundry[i][0] = Grid[poloidalLastIndex() - i][1][1];
 		PFRBoundry[i][1] = Grid[poloidalLastIndex() - i][1][6];
 	}
-
-	/// get the area of the target and wall
-	Grid4.get_sx();
 
 	/*out.open("doc/plasmaboundary.txt");
 	for (int i = 0; i < Grid1.PLasma_Grid_Boundry_num(); i++)
