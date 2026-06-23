@@ -90,6 +90,7 @@ extern double DTmass, D2Tmass, DT2mass, HH2mass, DD2mass, TT2mass, H2H2mass, D2D
 extern double Dn[N_RADIAL_GRID];
 
 extern int MeshMode;
+extern std::string DWTrimDatabase;
 
 // 三维网格
 extern std::vector<std::vector<std::vector<double>>> Grid;

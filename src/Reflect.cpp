@@ -416,15 +416,15 @@ bool DWTrimReflection::Load(const std::string &filename)
 	while (std::getline(input, line))
 	{
 		const std::vector<double> header = numbersInLine(line);
-		if (header.size() < 10 || std::abs(header[0] - 1.0) > 1e-8 ||
-			std::abs(header[1] - 2.01) > 1e-6 || std::abs(header[2] - 74.0) > 1e-8)
+		if (header.size() < 7 || std::abs(header[0] - 1.0) > 1e-8 ||
+			std::abs(header[1] - 2.01) > 2e-2 || std::abs(header[2] - 74.0) > 1e-8)
 			continue;
 
 		Block block;
 		block.incident_energy_eV = header[4];
 		block.incident_angle_deg = header[5];
 		block.particle_reflection = header[6];
-		block.energy_reflection = header[7];
+		block.energy_reflection = header.size() > 7 ? header[7] : 0.0;
 
 		auto readDataRow = [&input, &line]() {
 			while (std::getline(input, line))
@@ -437,34 +437,34 @@ bool DWTrimReflection::Load(const std::string &filename)
 		};
 
 		std::vector<double> values = readDataRow();
-		if (values.size() != 7)
+		if (values.size() != 5 && values.size() != 7)
 			throw std::runtime_error("Invalid energy row in D-on-W TRIM database");
 		for (int q = 0; q < 5; ++q)
 			block.energy[q + 1] = values[q];
-		block.energy[0] = values[5];
-		block.energy[6] = values[6];
+		block.energy[0] = values.size() == 7 ? values[5] : values[0];
+		block.energy[6] = values.size() == 7 ? values[6] : values[4];
 
 		for (int energy_q = 0; energy_q < 5; ++energy_q)
 		{
 			values = readDataRow();
-			if (values.size() != 7)
+			if (values.size() != 5 && values.size() != 7)
 				throw std::runtime_error("Invalid polar-angle row in D-on-W TRIM database");
 			for (int q = 0; q < 5; ++q)
 				block.cos_polar[energy_q][q + 1] = values[q];
-			block.cos_polar[energy_q][0] = values[5];
-			block.cos_polar[energy_q][6] = values[6];
+			block.cos_polar[energy_q][0] = values.size() == 7 ? values[5] : values[0];
+			block.cos_polar[energy_q][6] = values.size() == 7 ? values[6] : values[4];
 		}
 
 		for (int energy_q = 0; energy_q < 5; ++energy_q)
 			for (int polar_q = 0; polar_q < 5; ++polar_q)
 			{
 				values = readDataRow();
-				if (values.size() != 7)
+				if (values.size() != 5 && values.size() != 7)
 					throw std::runtime_error("Invalid azimuth row in D-on-W TRIM database");
 				for (int q = 0; q < 5; ++q)
 					block.cos_azimuth[energy_q][polar_q][q + 1] = values[q];
-				block.cos_azimuth[energy_q][polar_q][0] = values[5];
-				block.cos_azimuth[energy_q][polar_q][6] = values[6];
+				block.cos_azimuth[energy_q][polar_q][0] = values.size() == 7 ? values[5] : values[0];
+				block.cos_azimuth[energy_q][polar_q][6] = values.size() == 7 ? values[6] : values[4];
 			}
 		parsed.push_back(block);
 	}

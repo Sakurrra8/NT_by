@@ -276,9 +276,9 @@ void Read()
     }
     if (K_DWTrimReflection == 1)
     {
-        if (!D_W_Trim.Load(Inputpath + "database/D_on_W_5.53"))
+        if (!D_W_Trim.Load(Inputpath + "database/" + DWTrimDatabase))
             throw std::runtime_error("Failed to load D_on_W_5.53 reflection database");
-        std::cout << "D-on-W TRIM distribution model enabled" << endl;
+        std::cout << "D-on-W TRIM distribution model enabled: " << DWTrimDatabase << endl;
     }
     /*for (double i = 1; i < 1000; i++)
     {

@@ -197,6 +197,8 @@ void Initialize(int Input, char *settingfile[]) {
         option_input >> T_wall;
       else if (option_name == "DWTrimERMIN_eV")
         option_input >> DWTrimERMIN;
+      else if (option_name == "DWTrimDatabase")
+        option_input >> DWTrimDatabase;
       else if (option_name == "K_DWTargetActualAngle")
         option_input >> K_DWTargetActualAngle;
       else if (option_name == "K_DTargetSourceMode")

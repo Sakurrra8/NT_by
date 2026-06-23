@@ -11,6 +11,7 @@ string Inputpath;            // path for Inputfiles
 string Casepath;             //
 string Outputpath;           // path for result Output
 string name_Xlog, name_Vlog; // path for log Output
+string DWTrimDatabase = "D_on_W_5.53";
 
 /// OP
 bool K_log;                  // OP: Particle way log
