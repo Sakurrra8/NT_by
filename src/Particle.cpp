@@ -2,52 +2,52 @@
 
 namespace
 {
-void setDWTrimDirection(std::vector<double> &velocity,
-						const DWReflectionSample &sample,
-						double wall_cos, double wall_sin,
-						const double reference_direction[3])
-{
-	const double normal[3] = {-wall_sin, wall_cos, 0.0};
-	const double normal_projection =
-		reference_direction[0] * normal[0] +
-		reference_direction[1] * normal[1] +
-		reference_direction[2] * normal[2];
-	double tangent[3] = {
-		reference_direction[0] - normal_projection * normal[0],
-		reference_direction[1] - normal_projection * normal[1],
-		reference_direction[2] - normal_projection * normal[2]};
-	double tangent_length = std::sqrt(
-		tangent[0] * tangent[0] + tangent[1] * tangent[1] +
-		tangent[2] * tangent[2]);
-	if (tangent_length < 1e-20)
+	void setDWTrimDirection(std::vector<double> &velocity,
+							const DWReflectionSample &sample,
+							double wall_cos, double wall_sin,
+							const double reference_direction[3])
 	{
-		tangent[0] = wall_cos;
-		tangent[1] = wall_sin;
-		tangent[2] = 0.0;
-		tangent_length = 1.0;
+		const double normal[3] = {-wall_sin, wall_cos, 0.0};
+		const double normal_projection =
+			reference_direction[0] * normal[0] +
+			reference_direction[1] * normal[1] +
+			reference_direction[2] * normal[2];
+		double tangent[3] = {
+			reference_direction[0] - normal_projection * normal[0],
+			reference_direction[1] - normal_projection * normal[1],
+			reference_direction[2] - normal_projection * normal[2]};
+		double tangent_length = std::sqrt(
+			tangent[0] * tangent[0] + tangent[1] * tangent[1] +
+			tangent[2] * tangent[2]);
+		if (tangent_length < 1e-20)
+		{
+			tangent[0] = wall_cos;
+			tangent[1] = wall_sin;
+			tangent[2] = 0.0;
+			tangent_length = 1.0;
+		}
+		for (double &component : tangent)
+			component /= tangent_length;
+
+		const double transverse[3] = {
+			normal[1] * tangent[2] - normal[2] * tangent[1],
+			normal[2] * tangent[0] - normal[0] * tangent[2],
+			normal[0] * tangent[1] - normal[1] * tangent[0]};
+		const double cos_polar = std::max(0.0, std::min(1.0, sample.cos_polar));
+		const double sin_polar =
+			std::sqrt(std::max(0.0, 1.0 - cos_polar * cos_polar));
+		const double cos_azimuth =
+			std::max(-1.0, std::min(1.0, sample.cos_azimuth));
+		const double sin_azimuth =
+			Tools::randomSign() *
+			std::sqrt(std::max(0.0, 1.0 - cos_azimuth * cos_azimuth));
+
+		for (int component = 0; component < 3; ++component)
+			velocity[component] =
+				cos_polar * normal[component] +
+				sin_polar * (cos_azimuth * tangent[component] +
+							 sin_azimuth * transverse[component]);
 	}
-	for (double &component : tangent)
-		component /= tangent_length;
-
-	const double transverse[3] = {
-		normal[1] * tangent[2] - normal[2] * tangent[1],
-		normal[2] * tangent[0] - normal[0] * tangent[2],
-		normal[0] * tangent[1] - normal[1] * tangent[0]};
-	const double cos_polar = std::max(0.0, std::min(1.0, sample.cos_polar));
-	const double sin_polar =
-		std::sqrt(std::max(0.0, 1.0 - cos_polar * cos_polar));
-	const double cos_azimuth =
-		std::max(-1.0, std::min(1.0, sample.cos_azimuth));
-	const double sin_azimuth =
-		Tools::randomSign() *
-		std::sqrt(std::max(0.0, 1.0 - cos_azimuth * cos_azimuth));
-
-	for (int component = 0; component < 3; ++component)
-		velocity[component] =
-			cos_polar * normal[component] +
-			sin_polar * (cos_azimuth * tangent[component] +
-						 sin_azimuth * transverse[component]);
-}
 }
 
 string sourceStratumName(SourceStratum source)
@@ -269,28 +269,28 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
  */
 namespace
 {
-void buildCdf(const std::vector<double> &weights, std::vector<double> &cdf, double &sum)
-{
-	cdf.resize(weights.size());
-	sum = 0.;
-	for (std::size_t i = 0; i < weights.size(); ++i)
+	void buildCdf(const std::vector<double> &weights, std::vector<double> &cdf, double &sum)
 	{
-		if (weights[i] > 0.)
-			sum += weights[i];
-		cdf[i] = sum;
+		cdf.resize(weights.size());
+		sum = 0.;
+		for (std::size_t i = 0; i < weights.size(); ++i)
+		{
+			if (weights[i] > 0.)
+				sum += weights[i];
+			cdf[i] = sum;
+		}
 	}
-}
 
-int sampleCdf(const std::vector<double> &cdf, double sum)
-{
-	if (cdf.empty() || sum <= 0.)
-		return 0;
-	const double r = Tools::Random() * sum;
-	auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
-	if (it == cdf.end())
-		return static_cast<int>(cdf.size() - 1);
-	return static_cast<int>(it - cdf.begin());
-}
+	int sampleCdf(const std::vector<double> &cdf, double sum)
+	{
+		if (cdf.empty() || sum <= 0.)
+			return 0;
+		const double r = Tools::Random() * sum;
+		auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
+		if (it == cdf.end())
+			return static_cast<int>(cdf.size() - 1);
+		return static_cast<int>(it - cdf.begin());
+	}
 }
 
 int Particle::sampleTargetPlate(const std::vector<double> &Counts)
@@ -681,7 +681,8 @@ void Particle::Init(int k, int z)
 		const bool use_dw_trim =
 			K_DWTrimReflection == 1 && this == &D && K_Wallelement == 1 && z == 0;
 		auto apply_dw_trim_velocity = [this](double wall_cos, double wall_sin,
-											double incident_angle_deg) {
+											 double incident_angle_deg)
+		{
 			const DWReflectionSample sample =
 				D_W_Trim.Sample(1.5 * Tn_, incident_angle_deg,
 								Tools::Random(), Tools::Random(), Tools::Random());
@@ -2115,7 +2116,8 @@ void Particle::CalLambda()
 		Zone_ < 6 &&
 		XY_[0] >= 0 && XY_[0] < N_poloidal &&
 		XY_[1] >= 0 && XY_[1] < N_radial;
-	const auto H3_energy_relative_to_ion_flow = [this](double parallel_flow) {
+	const auto H3_energy_relative_to_ion_flow = [this](double parallel_flow)
+	{
 		return 0.5 * mass_ *
 			   (Tools::sqr(V_[0] - parallel_flow * B[XY_[0]][XY_[1]][0]) +
 				Tools::sqr(V_[1] - parallel_flow * B[XY_[0]][XY_[1]][1]) +
@@ -2124,7 +2126,8 @@ void Particle::CalLambda()
 	};
 	const double test_particle_energy =
 		0.5 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) / qe;
-	const auto ion_parallel_flow = [this](const std::vector<std::vector<double>> &flow) {
+	const auto ion_parallel_flow = [this](const std::vector<std::vector<double>> &flow)
+	{
 		if (XY_[0] < 0 || static_cast<std::size_t>(XY_[0]) >= flow.size())
 			return 0.;
 		if (XY_[1] < 0 || static_cast<std::size_t>(XY_[1]) >= flow[XY_[0]].size())
@@ -2140,6 +2143,7 @@ void Particle::CalLambda()
 	const double H3_test_particle_energy_T = valid_plasma_cell
 												 ? H3_energy_relative_to_ion_flow(ion_parallel_flow(ua_T_1))
 												 : test_particle_energy;
+#if 0
 	const double CS_Vacuum = 0.;
 	if (Zone_ < 6 && K_Vi == 1 && MeshMode == 3)
 	{
@@ -2218,6 +2222,9 @@ void Particle::CalLambda()
 					V_T2_0_now[2] = vel * cos(Vphi) + ua_T2_0_Tri[Tri_Index_][2];
 		}
 	}
+#else
+	const double CS_Vacuum = 0.;
+#endif
 
 	if (MeshMode == 1)
 	{
@@ -2353,9 +2360,9 @@ void Particle::CalLambda()
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
 				if (K_Vi == 1)
 				{
-					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy,
+					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 2.,
 																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
 																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
 					if (K_DT)
 					{
@@ -2519,14 +2526,8 @@ void Particle::CalLambda()
 			}
 			else if (this == &D)
 			{
-				CX_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
-				if (K_DT)
-					CX_DT_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
 				if (K_NNCs)
 				{
-					R_with_H_[0].Set_V_relative(V_D_0_now[0], V_D_0_now[1], V_D_0_now[2], V_[0], V_[1], V_[2]);
-					R_with_H2_[0].Set_V_relative(V_D2_0_now[0], V_D2_0_now[1], V_D2_0_now[2], V_[0], V_[1], V_[2]);
-
 					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
 					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
 				}
@@ -2552,10 +2553,10 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy,
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy / 2.,
 																				   Ti[XY_[0]][XY_[1]] / 2));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T,
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T / 2.,
 																						  Ti[XY_[0]][XY_[1]] / 2));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
@@ -2587,14 +2588,8 @@ void Particle::CalLambda()
 			}
 			else if (this == &T)
 			{
-				CX_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
-				if (K_DT)
-					CX_DT_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
 				if (K_NNCs)
 				{
-					R_with_H_[0].Set_V_relative(V_T_0_now[0], V_T_0_now[1], V_T_0_now[2], V_[0], V_[1], V_[2]);
-					R_with_H2_[0].Set_V_relative(V_T2_0_now[0], V_T2_0_now[1], V_T2_0_now[2], V_[0], V_[1], V_[2]);
-
 					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
 					R_with_H2_[0].Setcs_now(R_with_H2_[0].cs(Tri_Index_));
 				}
@@ -2649,14 +2644,6 @@ void Particle::CalLambda()
 		{
 			if (this == &H2)
 			{
-				CX_[0].Set_V_relative(V_H_1_now[0], V_H_1_now[1], V_H_1_now[2], V_[0], V_[1], V_[2]);
-				Ela_[0].Set_V_relative(V_H_1_now[0], V_H_1_now[1], V_H_1_now[2], V_[0], V_[1], V_[2]);
-				if (K_NNCs)
-				{
-					R_with_H_[0].Set_V_relative(V_H_0_now[0], V_H_0_now[1], V_H_0_now[2], V_[0], V_[1], V_[2]);
-					R_with_H2_[0].Set_V_relative(V_H2_0_now[0], V_H2_0_now[1], V_H2_0_now[2], V_[0], V_[1], V_[2]);
-				}
-
 				Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(Tri_Index_));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
@@ -2676,19 +2663,6 @@ void Particle::CalLambda()
 			}
 			else if (this == &D2)
 			{
-				CX_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
-				Ela_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
-				if (K_NNCs)
-				{
-					R_with_H_[0].Set_V_relative(V_D_0_now[0], V_D_0_now[1], V_D_0_now[2], V_[0], V_[1], V_[2]);
-					R_with_H2_[0].Set_V_relative(V_D2_0_now[0], V_D2_0_now[1], V_D2_0_now[2], V_[0], V_[1], V_[2]);
-				}
-				if (K_DT)
-				{
-					CX_DT_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
-					Ela_DT_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
-				}
-
 				Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(Tri_Index_));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
@@ -2706,15 +2680,15 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy,
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 2.,
 																			   Ti[XY_[0]][XY_[1]] / 2.));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
 																			   Ti[XY_[0]][XY_[1]] / 2.));
 						if (K_DT)
 						{
-							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T,
+							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T / 2.,
 																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
-							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
+							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T / 2.,
 																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
 						}
 					}
@@ -2741,18 +2715,6 @@ void Particle::CalLambda()
 			}
 			else if (this == &T2)
 			{
-				CX_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
-				Ela_[0].Set_V_relative(V_T_1_now[0], V_T_1_now[1], V_T_1_now[2], V_[0], V_[1], V_[2]);
-				if (K_NNCs)
-				{
-					R_with_H_[0].Set_V_relative(V_T_0_now[0], V_T_0_now[1], V_T_0_now[2], V_[0], V_[1], V_[2]);
-					R_with_H2_[0].Set_V_relative(V_T2_0_now[0], V_T2_0_now[1], V_T2_0_now[2], V_[0], V_[1], V_[2]);
-				}
-				if (K_DT)
-				{
-					CX_DT_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
-					Ela_DT_[0].Set_V_relative(V_D_1_now[0], V_D_1_now[1], V_D_1_now[2], V_[0], V_[1], V_[2]);
-				}
 				Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(Tri_Index_));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
@@ -3988,7 +3950,6 @@ void Particle::ApplyRussianRoulette()
 	}
 }
 
-
 Particle::State Particle::SaveState() const
 {
 	State state{};
@@ -4172,7 +4133,8 @@ void Particle::ApplyRegionalImportance(std::queue<State> &pending_states)
 
 void Particle::beginDeferredCollisionStats(double scale)
 {
-	auto beginVector = [scale](std::vector<ParCollCar> &cars) {
+	auto beginVector = [scale](std::vector<ParCollCar> &cars)
+	{
 		for (auto &car : cars)
 			car.BeginDeferredStats(scale);
 	};
@@ -4194,7 +4156,8 @@ void Particle::beginDeferredCollisionStats(double scale)
 
 void Particle::endDeferredCollisionStats()
 {
-	auto endVector = [](std::vector<ParCollCar> &cars) {
+	auto endVector = [](std::vector<ParCollCar> &cars)
+	{
 		for (auto &car : cars)
 			car.EndDeferredStats();
 	};
@@ -4265,10 +4228,16 @@ void Particle::EndDeferredFlightStats()
 		}
 	defer_flight_stats_ = false;
 	deferred_flight_stat_scale_ = 1.0;
-	pendingGridN_.clear(); pendingGridE_.clear(); pendingGridV_.clear();
-	pendingTriN_.clear(); pendingTriE_.clear(); pendingTriV_.clear();
-	pendingCxIonBefore_.clear(); pendingCxIonAfter_.clear();
-	pendingCxNeutralBefore_.clear(); pendingCxNeutralAfter_.clear();
+	pendingGridN_.clear();
+	pendingGridE_.clear();
+	pendingGridV_.clear();
+	pendingTriN_.clear();
+	pendingTriE_.clear();
+	pendingTriV_.clear();
+	pendingCxIonBefore_.clear();
+	pendingCxIonAfter_.clear();
+	pendingCxNeutralBefore_.clear();
+	pendingCxNeutralAfter_.clear();
 }
 
 void Particle::addDensityStatGrid(int i, int j, int charge, double n)
@@ -4784,7 +4753,7 @@ void Particle::Coll()
 	}*/
 
 	double V_temp1 = 0.; // parallel velocity of D ion particle before collision
-	double V_temp2; // parallel velocity of neutral particle before collision
+	double V_temp2;		 // parallel velocity of neutral particle before collision
 	double V_temp3 = 0.; // parallel velocity of T ion particle before collision
 	if (this == &H || this == &D || this == &T)
 	{
@@ -7422,9 +7391,7 @@ void Particle::Stat_Tri(int n)
 			{
 				const int a = Grid4.b2_index(i, 0);
 				const int b = Grid4.b2_index(i, 1);
-				const double loss_rate = R2_2_11_H4.cal(ne[a][b], Te[a][b])
-					+ R2_2_12_H4.cal(ne[a][b], Te[a][b])
-					+ R2_2_14_H4.cal(ne[a][b], Te[a][b]);
+				const double loss_rate = R2_2_11_H4.cal(ne[a][b], Te[a][b]) + R2_2_12_H4.cal(ne[a][b], Te[a][b]) + R2_2_14_H4.cal(ne[a][b], Te[a][b]);
 				double production_rate = Ion_[0].Sn(i) + CX_[0].Sn(i);
 				if (K_DT && K_CX_DT)
 				{

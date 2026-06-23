@@ -761,7 +761,7 @@ void Prepare()
 	}*/
 
 	std::vector<double> angle_B_with_target(N_radial * 2);
-	if (0) // 0: 固定角度60度； 1：实际角度
+	if (1) // 0: 固定角度60度； 1：实际角度
 		for (int i = 0; i < N_radial; i++)
 		{
 			angle_B_with_target[i] = Tools::CalBFieldToWallNormalAngle(B[1][i][0], B[1][i][1], B[1][i][2], Grid4.Cos_Target(i), Grid4.Sin_Target(i));
@@ -821,7 +821,7 @@ void Prepare()
 				}
 			}
 		}
-		H.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
+		H.CalWeight1(numPar_flight); // numPar_flight is Test flight particle of each grid
 		H.RecycledCal(NumPar_H_recyc, Tn_H_recyc);
 		H2.RecycledCal(NumPar_H2_recyc);
 		const auto h_recycling_flights = AllocateRecyclingFlights(
@@ -879,7 +879,7 @@ void Prepare()
 			}
 		}
 		// out.close();
-		D.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
+		D.CalWeight1(numPar_flight); // numPar_flight is Test flight particle of each grid
 		D.RecycledCal(NumPar_D_recyc, Tn_D_recyc);
 		D2.RecycledCal(NumPar_D2_recyc);
 		const auto d_recycling_flights = AllocateRecyclingFlights(
@@ -929,7 +929,7 @@ void Prepare()
 			// out << NumPar_T_recyc[i] << '\t'	<< NumPar_T2_recyc[i] << endl;
 		}
 		// out.close();
-		T.CalWeight1(numPar_flight);						// numPar_flight is Test flight particle of each grid
+		T.CalWeight1(numPar_flight); // numPar_flight is Test flight particle of each grid
 		T.RecycledCal(NumPar_T_recyc, Tn_T_recyc);
 		T2.RecycledCal(NumPar_T2_recyc);
 		const auto t_recycling_flights = AllocateRecyclingFlights(
