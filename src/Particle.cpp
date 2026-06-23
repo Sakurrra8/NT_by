@@ -1872,8 +1872,8 @@ void Particle::track()
 					const double trace_dt = std::isfinite(dt_)
 												? dt_
 												: 1.e6 / std::max(
-													  std::sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])),
-													  1.);
+															 std::sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])),
+															 1.);
 					for (int i = 0; i < 3; i++)
 						X_new_[i] = X_[i] + V_[i] * trace_dt;
 					Caltrace_Tri();
@@ -2553,11 +2553,11 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy / 2.,
-																				   Ti[XY_[0]][XY_[1]] / 2));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy / 1.,
+																				   Ti[XY_[0]][XY_[1]] / 1));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T / 2.,
-																						  Ti[XY_[0]][XY_[1]] / 2));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T / 1.,
+																						  Ti[XY_[0]][XY_[1]] / 1));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
@@ -2680,10 +2680,10 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 2.,
-																			   Ti[XY_[0]][XY_[1]] / 2.));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
-																			   Ti[XY_[0]][XY_[1]] / 2.));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 1.,
+																			   Ti[XY_[0]][XY_[1]] / 1.));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 1.,
+																			   Ti[XY_[0]][XY_[1]] / 1.));
 						if (K_DT)
 						{
 							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T / 2.,

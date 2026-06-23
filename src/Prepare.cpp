@@ -847,9 +847,9 @@ void Prepare()
 				NumPar_D2_recyc[i] =
 					(coeff_recyc_target - fast_probability) * NumPar_wall_D[i] / 2.0;
 				if (K_DWTrimReflection == 1)
-					Tn_D_recyc[i] =
-						D_W_Trim.MeanReflectedEnergy(Ei_Dion[i], angle_B_with_target[i]) /
-						1.5;
+				{
+					Tn_D_recyc[i] = D_W_Trim.MeanReflectedEnergy(Ei_Dion[i], angle_B_with_target[i]) / 1.5;
+				}
 				else if (fast_probability > 0.0)
 					Tn_D_recyc[i] =
 						D_W.E_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]) /
