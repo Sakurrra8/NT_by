@@ -761,11 +761,11 @@ void Prepare()
 	}*/
 
 	std::vector<double> angle_B_with_target(N_radial * 2);
-	if (1) // 0: 固定角度60度； 1：实际角度
+	if (K_DWTargetActualAngle == 1)
 		for (int i = 0; i < N_radial; i++)
 		{
 			angle_B_with_target[i] = Tools::CalBFieldToWallNormalAngle(B[1][i][0], B[1][i][1], B[1][i][2], Grid4.Cos_Target(i), Grid4.Sin_Target(i));
-			angle_B_with_target[i + N_radial] = Tools::CalBFieldToWallNormalAngle(B[N_radial - 2][i][0], B[N_radial - 2][i][1], B[N_radial - 2][i][2], Grid4.Cos_Target(i + N_radial), Grid4.Sin_Target(i + N_radial));
+			angle_B_with_target[i + N_radial] = Tools::CalBFieldToWallNormalAngle(B[poloidalLastIndex()][i][0], B[poloidalLastIndex()][i][1], B[poloidalLastIndex()][i][2], Grid4.Cos_Target(i + N_radial), Grid4.Sin_Target(i + N_radial));
 		}
 	else
 	{
@@ -839,7 +839,9 @@ void Prepare()
 			{
 				const double reflection_probability =
 					K_DWTrimReflection == 1
-						? D_W_Trim.ReflectionProbability(Ei_Dion[i], angle_B_with_target[i])
+						? (Ei_Dion[i] >= DWTrimERMIN
+							   ? D_W_Trim.ReflectionProbability(Ei_Dion[i], angle_B_with_target[i])
+							   : 0.0)
 						: D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
 				const double fast_probability =
 					std::min(coeff_recyc_target, reflection_probability);

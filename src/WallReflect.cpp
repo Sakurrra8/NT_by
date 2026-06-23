@@ -18,7 +18,9 @@ void WallReflect()
             {
                 const double angle = P->CalAngle((int)InterscePoint[0][5]);
                 coeff_reflect = K_DWTrimReflection == 1
-                                    ? std::min(coeff_recyc, D_W_Trim.ReflectionProbability(1.5 * P->Tn(), angle))
+                                    ? (1.5 * P->Tn() >= DWTrimERMIN
+                                           ? std::min(coeff_recyc, D_W_Trim.ReflectionProbability(1.5 * P->Tn(), angle))
+                                           : 0.0)
                                     : D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), angle);
             }
             else if (P == &T)
@@ -139,7 +141,7 @@ void WallReflect()
                 return;
             }
             P->setfate(0, 15, InterscePoint[0][4]);
-            P->Init(3, 0);
+            P->Init(3, 1);
             // P->track();
             if (P->Weight() == 0)
                 return;
@@ -207,7 +209,9 @@ void WallReflect()
             {
                 const double angle = P->CalAngle((int)InterscePoint[0][3]);
                 coeff_reflect = K_DWTrimReflection == 1
-                                    ? std::min(coeff_recyc, D_W_Trim.ReflectionProbability(1.5 * P->Tn(), angle))
+                                    ? (1.5 * P->Tn() >= DWTrimERMIN
+                                           ? std::min(coeff_recyc, D_W_Trim.ReflectionProbability(1.5 * P->Tn(), angle))
+                                           : 0.0)
                                     : D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), angle);
             }
             else if (P == &T)

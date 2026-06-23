@@ -39,6 +39,7 @@ namespace Tools
     // 快捷函数：生成 [min, max] 范围内的浮点数
     double Random();
     double Maxwell(double E, double Mass);
+    double MaxwellianFluxSpeed(double temperature_eV, double mass);
     double intersect(double *A, double *B, int i);
     int PointandLine(double line_x1, double line_y1, double line_x2, double line_y2, double point_x, double point_y);
     double randomSign();

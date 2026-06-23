@@ -38,6 +38,7 @@ int K_abnormal_transport;    // OP: abnormal transport
 int K_flight;                // OP: 1 for mean free path; 2 for fixed time step; 3 for
 int K_Reflect;               // OP: 1 for empirical formula; 2 for Trim database; 3 for calculate from Trim
 int K_DWTrimReflection = 0;  // OP: 0 for legacy D-W reflection; 1 for D_on_W_5.53 distributions
+int K_DWTargetActualAngle = 1; // OP: 0 fixed 60 deg; 1 local B-to-target-normal angle
 int K_ReflectDirection;      // OP: 1 for cosing distribution; 2 for forward-reflect distribution; 3 for mirror reflection
 bool backGridBoundry;        // OP: make Particles go back to Grid when Particle flight
 bool K_H;                    // OP: H calculation
@@ -107,7 +108,8 @@ double Dn[N_RADIAL_GRID];
 double InterscePoint[10][6] = {0}; // 0: distance of particle and interscePoint; 1,2: x,y index; 3: number of boundary; 4:types of intersection boundaries
 double NumPar_now = 0;
 double T_N = 0.1;    // Temperature of injected impurities
-double T_wall = 0.1; // Temperture of Target(eV)
+double T_wall = 0.1; // Surface temperature (eV); configurable by SurfaceTemperature_eV
+double DWTrimERMIN = 0.0; // Disable fast D-W reflection below this incident energy (eV)
 
 // 真空区域参数
 double Te_vacuum = 0.3, ne_vacuum = 1e13;

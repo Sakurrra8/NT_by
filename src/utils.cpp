@@ -81,6 +81,13 @@ namespace Tools
         return Vel;
     }
 
+    double MaxwellianFluxSpeed(double temperature_eV, double mass)
+    {
+        const double energy_eV =
+            -temperature_eV * std::log(Random() * Random());
+        return std::sqrt(2.0 * qe * energy_eV / mass);
+    }
+
     double intersect(double *A, double *B, int i)
     {
         if (i == 1)

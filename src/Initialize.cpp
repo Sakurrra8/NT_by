@@ -193,6 +193,12 @@ void Initialize(int Input, char *settingfile[]) {
         continue;
       if (option_name == "K_DWTrimReflection")
         option_input >> K_DWTrimReflection;
+      else if (option_name == "SurfaceTemperature_eV")
+        option_input >> T_wall;
+      else if (option_name == "DWTrimERMIN_eV")
+        option_input >> DWTrimERMIN;
+      else if (option_name == "K_DWTargetActualAngle")
+        option_input >> K_DWTargetActualAngle;
       else if (option_name == "K_Roulette")
         option_input >> K_Roulette;
       else if (option_name == "K_Splitting")

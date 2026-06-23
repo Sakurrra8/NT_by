@@ -227,6 +227,11 @@ def main():
         default=None,
         help="Default: CASE/fig/tri_nt_solps_comparison.pdf",
     )
+    parser.add_argument(
+        "--metrics",
+        default=None,
+        help="Default: CASE/fig/tri_nt_solps_comparison_metrics.csv",
+    )
     parser.add_argument("--xlim", nargs=2, type=float, default=(1.30, 1.80))
     parser.add_argument("--ylim", nargs=2, type=float, default=(-1.12, -0.60))
     args = parser.parse_args()
@@ -343,7 +348,12 @@ def main():
             )
             metric_rows.append(metrics(name, nt, reference))
 
-    metric_path = figure_dir / "tri_nt_solps_comparison_metrics.csv"
+    metric_path = (
+        (root / args.metrics).resolve()
+        if args.metrics
+        else figure_dir / "tri_nt_solps_comparison_metrics.csv"
+    )
+    metric_path.parent.mkdir(parents=True, exist_ok=True)
     keys = []
     for row in metric_rows:
         for key in row:

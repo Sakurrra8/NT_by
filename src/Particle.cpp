@@ -518,6 +518,7 @@ void Particle::Init(int k, int z)
 	double vel = 0.;
 	double deltaX, deltaY, deltaL, cosCX, sinCX;
 	bool record_source_launch = false;
+	bool thermal_surface_emission = false;
 	if (k == 1 || k == 4 || k == 5 || k == 8)
 	{
 		split_depth_ = 0;
@@ -586,9 +587,12 @@ void Particle::Init(int k, int z)
 		{
 			Tn_ = T_wall;
 			Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 0);
+			thermal_surface_emission = true;
 		}
 		// Tools::AdjustIncidentVelocity(V_, B[XY_[0]][XY_[1]][0], B[XY_[0]][XY_[1]][1], B[XY_[0]][XY_[1]][2], Grid4.Cos_Target(z), Grid4.Cos_Target(z));
-		if (K_Maxwell == 1)
+		if (thermal_surface_emission)
+			vel = Tools::MaxwellianFluxSpeed(Tn_, mass_);
+		else if (K_Maxwell == 1)
 			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
@@ -771,6 +775,7 @@ void Particle::Init(int k, int z)
 			}
 			if (z == 1) // thermalrelease of neutral particle
 			{
+				thermal_surface_emission = true;
 				if (InterscePoint[0][4] == 11) // wall
 				{
 					Tools::calculateReflectionVelocity(V_, Grid4.Wall_.Cos_Wall((int)InterscePoint[0][3]), Grid4.Wall_.Sin_Wall((int)InterscePoint[0][3]), 0);
@@ -851,6 +856,7 @@ void Particle::Init(int k, int z)
 			}
 			if (z == 1) // thermalrelease of neutral particle
 			{
+				thermal_surface_emission = true;
 				if (InterscePoint[0][4] == 11 || InterscePoint[0][4] == 1)
 				{
 					Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 0);
@@ -889,7 +895,9 @@ void Particle::Init(int k, int z)
 		// std::cout << z << '\t' << X_[0] << '\t' << X_[1] << '\t' << X_[2] <<
 		// '\t'; std::cout << '\t' << name_ << '\t' << Charge_ << '\t' << V_[0] <<
 		// '\t' << V_[1] << '\t' << V_[2] << endl;
-		if (K_Maxwell == 1)
+		if (thermal_surface_emission)
+			vel = Tools::MaxwellianFluxSpeed(Tn_, mass_);
+		else if (K_Maxwell == 1)
 			vel = Tools::Maxwell(Tn_, mass_);
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
