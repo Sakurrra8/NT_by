@@ -2068,9 +2068,8 @@ void Particle::track()
 				neutral_velocity[0] * neutral_velocity[0] +
 				neutral_velocity[1] * neutral_velocity[1] +
 				neutral_velocity[2] * neutral_velocity[2]);
-			const double max_physical_speed = 3.e8;
 			if (!std::isfinite(charge_speed) || !std::isfinite(neutral_speed) ||
-				charge_speed > max_physical_speed || neutral_speed > max_physical_speed ||
+				charge_speed > D2pMaxAllowedSpeed || neutral_speed > D2pMaxAllowedSpeed ||
 				!std::isfinite(X_new_[0]) || !std::isfinite(X_new_[1]) || !std::isfinite(X_new_[2]))
 			{
 				if (this == &D2)
@@ -7954,6 +7953,8 @@ void Particle::DumpD2pTrackLengthTri()
 		D2p_track_steps_ > 0 ? D2p_sum_segment_dt_ / D2p_track_steps_ : 0.;
 	const double mean_segment_length =
 		D2p_track_steps_ > 0 ? D2p_sum_segment_length_ / D2p_track_steps_ : 0.;
+	const double max_charge_speed_fraction =
+		D2pMaxAllowedSpeed > 0. ? D2p_max_charge_speed_ / D2pMaxAllowedSpeed : 0.;
 	double low_speed_weight_dt_fraction[4]{0., 0., 0., 0.};
 	for (int threshold = 0; threshold < 4; ++threshold)
 		low_speed_weight_dt_fraction[threshold] =
@@ -7981,6 +7982,7 @@ void Particle::DumpD2pTrackLengthTri()
 			   "sum_represented_weight_segment_length_over_dt,"
 			   "fallback_to_neutral_velocity_count,fallback_to_neutral_velocity_weight,"
 			   "mean_segment_dt,mean_segment_length,min_abs_V_charge,max_abs_V_charge,"
+			   "max_allowed_D2p_speed,max_abs_V_charge_fraction_of_allowed,"
 			   "count_abs_V_charge_lt_1,sum_weight_dt_abs_V_charge_lt_1,"
 			   "count_abs_V_charge_lt_10,sum_weight_dt_abs_V_charge_lt_10,"
 			   "count_abs_V_charge_lt_100,sum_weight_dt_abs_V_charge_lt_100,"
@@ -8007,6 +8009,7 @@ void Particle::DumpD2pTrackLengthTri()
 			<< D2p_fallback_to_neutral_velocity_weight_ << ','
 			<< mean_segment_dt << ',' << mean_segment_length << ','
 			<< D2p_min_charge_speed_ << ',' << D2p_max_charge_speed_ << ','
+			<< D2pMaxAllowedSpeed << ',' << max_charge_speed_fraction << ','
 			<< D2p_low_charge_speed_count_[0] << ','
 			<< D2p_low_charge_speed_weight_dt_[0] << ','
 			<< D2p_low_charge_speed_count_[1] << ','

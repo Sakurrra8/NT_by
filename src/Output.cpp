@@ -48,7 +48,8 @@ void Output()
         D2.DumpD2pBalance_B2();
         D2.DumpD2pBalance_Tri();
         D2.DumpD2pPhysicsDecomposition_B2();
-        D2.DumpD2pTrackLengthTri();
+        if (MeshMode == 3 && K_D2Flight == 1)
+            D2.DumpD2pTrackLengthTri();
         EireneD2pReactionAuditOutput();
         D2pMesh3FlightAuditOutput();
 
@@ -376,12 +377,15 @@ void EireneD2pReactionAuditOutput()
 void D2pMesh3FlightAuditOutput()
 {
     ofstream audit(Outputpath + "D2p_mesh3_flight_audit.csv");
+    const bool transport_enabled = MeshMode == 3 && K_D2Flight == 1;
     audit << "MeshMode,K_D2Flight,K_flight,K_Prob,"
           << "push_tri_allows_charged,track_tri_has_charge_gt_0_branch,"
           << "coll_immediate_charge1_branch_exists,official_Tri_D2p_density_estimator,"
-          << "mesh3_D2p_flight_status\n";
+          << "mesh3_D2p_flight_status,D2p_max_allowed_speed_m_s\n";
     audit << MeshMode << ',' << K_D2Flight << ',' << K_flight << ',' << K_Prob << ','
-          << "1,1,1,local_balance_P_over_L,prototype_diagnostic_only\n";
+          << "1,1,1,local_balance_P_over_L,"
+          << (transport_enabled ? "transport_enabled" : "transport_disabled")
+          << ',' << D2pMaxAllowedSpeed << '\n';
 
     ofstream interpretation(Outputpath + "D2p_tri_density_interpretation.txt");
     interpretation
@@ -393,25 +397,40 @@ void D2pMesh3FlightAuditOutput()
 
     ofstream design(Outputpath + "D2p_mesh3_test_ion_tracking_design.txt");
     design
-        << "Prototype status: the minimum charged D2+ triangular-grid path is implemented for diagnostics.\n"
-        << "It is not yet a validated replacement for the formal local-balance result.\n\n"
-        << "1. D2+ creation from D2 ionization/CX should create a charged test ion and return from the neutral collision branch.\n"
-        << "2. Push_Tri must allow D2+ Charge_=1 particles to continue to track().\n"
-        << "3. Particle::track() must implement MeshMode=3 && Charge_>0 motion.\n"
-        << "4. Caltrace_Tri or equivalent must support charged trajectory crossing through triangles.\n"
-        << "5. DS1/DS2/DS3 should be sampled after finite flight time, not immediately after creation.\n"
-        << "6. Boundary handling for charged D2+ must be defined.\n"
-        << "7. A separate Tri_n_D2p_track_length diagnostic must be added.\n"
-        << "8. Formal Tri_n_[i][1]=P/L should not be replaced until the track-length model is validated.\n";
+        << "K_D2Flight controls charged D2+ transport in MeshMode=3.\n"
+        << "K_D2Flight=0: D2+ is not transported as a test ion; the formal output remains the local-balance density P/L.\n"
+        << "K_D2Flight=1: D2 ionization/CX creates a charged D2+ test ion and follows it with fixed-time steps.\n\n"
+        << "Transport principle:\n"
+        << "1. New D2+ inherits the parent D2 neutral velocity projected onto the local magnetic field.\n"
+        << "2. Each charged step applies the parallel ion friction/thermal relaxation and optional electric/drift terms.\n"
+        << "3. The step is limited by the current triangle size so a fixed-time charged step cannot skip many mesh cells.\n"
+        << "4. Triangle crossing updates Tri_Index_/XY_ before the next force evaluation.\n"
+        << "5. DS1/DS2/DS3 are sampled after finite D2+ residence time using the local D2+ reaction rates.\n"
+        << "6. Leaving the plasma triangle mesh or producing non-finite/superluminal speed terminates that test ion as a boundary/numerical loss.\n\n"
+        << "Speed guard:\n"
+        << "D2pMaxAllowedSpeed=" << D2pMaxAllowedSpeed << " m/s.\n"
+        << "This is a numerical sanity limit close to c, not a physical velocity clamp for normal D2+ ions.\n"
+        << "Normal D2+ speeds in this case are O(1e3-1e4) m/s, many orders of magnitude below the guard.\n"
+        << "The guard only catches corrupted states such as invalid mesh-field access or runaway arithmetic.\n";
 
-    if (MeshMode == 3 && K_D2Flight == 1)
+    ofstream status(Outputpath + "D2p_transport_status.txt");
+    status
+        << "MeshMode=" << MeshMode << '\n'
+        << "K_D2Flight=" << K_D2Flight << '\n'
+        << "D2p_transport=" << (transport_enabled ? "enabled" : "disabled") << '\n'
+        << "D2p_max_allowed_speed_m_s=" << D2pMaxAllowedSpeed << '\n'
+        << "density_reference=local_balance_P_over_L\n"
+        << "track_length_outputs="
+        << (transport_enabled ? "enabled" : "disabled") << '\n';
+
+    if (transport_enabled)
     {
         ofstream warning(Outputpath + "D2p_mesh3_flight_warning.txt");
         warning
-            << "MeshMode=3 with K_D2Flight=1 enables a prototype D2+ test-ion tracking diagnostic.\n"
-            << "Push_Tri and Particle::track() now contain a minimum charged D2+ path.\n"
+            << "MeshMode=3 with K_D2Flight=1 enables D2+ test-ion tracking.\n"
+            << "Particle::track() follows charged D2+ with fixed-time steps and triangle-index updates.\n"
             << "Official Tri_n[D2+]=P/L local balance, not track-length density.\n"
-            << "Do not treat the prototype track-length result as validated EIRENE equivalence.\n";
+            << "Use track-length outputs as transport diagnostics and compare them against local balance.\n";
     }
 }
 

@@ -46,6 +46,7 @@
 
 constexpr int N_POLOIDAL_GRID = 98;
 constexpr int N_RADIAL_GRID = 38;
+constexpr double D2pMaxAllowedSpeed = 3.0e8;
 
 using namespace std;
 using namespace H5;
