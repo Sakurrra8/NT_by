@@ -2032,7 +2032,8 @@ void Particle::track()
 		}
 		else if (K_D2Flight && isHydrogenMoleculeIon())
 		{
-			if (Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_ || Zone_ >= 7)
+				if (Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_ || Zone_ >= 6 ||
+					XY_[0] < 0 || XY_[1] < 0 || Grid4.if_in_plasmagrid(Tri_Index_) != 1)
 			{
 				if (this == &D2)
 				{
@@ -2151,7 +2152,8 @@ void Particle::track()
 				++D2p_track_steps_;
 			}
 
-			if (Zone_ >= 6 || Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_)
+			if (Zone_ >= 6 || Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_ ||
+				XY_[0] < 0 || XY_[1] < 0 || Grid4.if_in_plasmagrid(Tri_Index_) != 1)
 			{
 				if (this == &D2)
 				{
