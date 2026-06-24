@@ -21,6 +21,42 @@ namespace
 		return std::min(requested_dt, 0.25 * min_edge / speed);
 	}
 
+	int findTriangleContainingPoint(double x, double y)
+	{
+		for (std::size_t tri = 0; tri < Grid4.tris_.size(); ++tri)
+			if (Grid4.Ifingrid(static_cast<int>(tri), x, y))
+				return static_cast<int>(tri);
+		return -1;
+	}
+
+	int findTriangleAlongRay(double x, double y, const std::vector<double> &velocity)
+	{
+		const double speed_rz = std::hypot(velocity[0], velocity[1]);
+		if (speed_rz <= 1.e-20)
+			return -1;
+		const double ux = velocity[0] / speed_rz;
+		const double uy = velocity[1] / speed_rz;
+		const double offsets[] = {1.e-9, 1.e-8, 1.e-7, 1.e-6, 1.e-5, 1.e-4, 1.e-3, 1.e-2, 1.e-1};
+		for (double offset : offsets)
+		{
+			const int tri = findTriangleContainingPoint(x + ux * offset, y + uy * offset);
+			if (tri >= 0)
+				return tri;
+		}
+		return -1;
+	}
+
+	int zoneFromB2Index(int i, int j)
+	{
+		if (j >= N_radial / 2 && j <= radialLastIndex())
+			return 3;
+		if (i <= 24)
+			return 4;
+		if (i <= 72)
+			return 2;
+		return 5;
+	}
+
 	void setDWTrimDirection(std::vector<double> &velocity,
 							const DWReflectionSample &sample,
 							double wall_cos, double wall_sin,
@@ -1301,7 +1337,7 @@ void Particle::Init(int k, int z)
 		else if (K_Maxwell == 2)
 			vel = sqrt((3.0 * qe * Tn_) / mass_);
 
-		Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 1);
+		Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 0);
 		// std::cout << "fashe: " << V_[0] << '\t' << V_[1] << '\t' << V_[2] << endl;
 		// std::cout << V_[0] << V_[1] << V_[2] << endl;
 	}
@@ -1895,6 +1931,38 @@ void Particle::track()
 				VchargetoV();
 				CalTn();
 				// std::cout << name_ << '\t' << Charge_ << "+\t" << ChargeTag_ << endl;
+			}
+			if (Tri_Index_ < 0 || static_cast<std::size_t>(Tri_Index_) >= Grid4.tris_.size() ||
+				!Grid4.Ifingrid(Tri_Index_, X_[0], X_[1]))
+			{
+				int tri = findTriangleContainingPoint(X_[0], X_[1]);
+				if (tri < 0)
+					tri = findTriangleAlongRay(X_[0], X_[1], V_);
+				if (tri < 0)
+				{
+					std::cerr << "MeshMode3 neutral launch outside tri mesh: name=" << name_
+							  << " charge=" << Charge_
+							  << " zone=" << Zone_
+							  << " x=" << X_[0] << "," << X_[1]
+							  << " v=" << V_[0] << "," << V_[1] << "," << V_[2]
+							  << std::endl;
+					Weight_ = 0.;
+					Zone_ = 7;
+					return;
+				}
+				Tri_Index_ = tri;
+				if (Grid4.if_in_plasmagrid(Tri_Index_) == 1)
+				{
+					XY_[0] = Tri_B2_[Tri_Index_][0];
+					XY_[1] = Tri_B2_[Tri_Index_][1];
+					Zone_ = zoneFromB2Index(XY_[0], XY_[1]);
+				}
+				else
+				{
+					XY_[0] = -1;
+					XY_[1] = -1;
+					Zone_ = 6;
+				}
 			}
 			if (K_flight == 1 || K_flight == 3)
 			{
