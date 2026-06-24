@@ -614,6 +614,7 @@ public:
 	void VtoVcharge();
 	void VchargetoV();
 	void Vchargefix(); // when the charged particle flight to next grid, V_charge[0,1,2] should be fixed
+	void advanceChargedMinimalTrace();
 	bool isHydrogenMoleculeIon() const;
 	void markD2pJustCreated(bool created_by_cx);
 	void track();

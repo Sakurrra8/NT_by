@@ -1484,6 +1484,26 @@ void Particle::Vchargefix()
 	V_Charge_[2] = V_Charge_[3] * B[XY_[0]][XY_[1]][2];
 }
 
+void Particle::advanceChargedMinimalTrace()
+{
+	if (ChargeTag_ == 0)
+		VtoVcharge();
+	divimp_F();
+	divimp_Ti();
+	Vchargefix();
+	for (int i = 0; i < 3; ++i)
+	{
+		V_[i] = V_Charge_[i];
+		X_new_[i] = X_[i] + dt * V_[i];
+	}
+	divimp_E();
+	if (K_EcrossBDrift)
+		divimp_drift_E();
+	if (K_abnormal_transport)
+		if (XY_[0] > 1 && XY_[0] < poloidalLastIndex())
+			divimp_anomalous_diffusion();
+}
+
 bool Particle::isHydrogenMoleculeIon() const
 {
 	return Charge_ == 1 && (name_ == "H2" || name_ == "D2" || name_ == "T2");
@@ -1801,26 +1821,7 @@ void Particle::track()
 		}
 		else if (Charge_ > 0)
 		{
-			if (ChargeTag_ == 0)
-			{
-				VtoVcharge();
-			}
-			divimp_F();
-			divimp_Ti();
-			//  std::cout << name_ << '\t' << V_[0] << '\t' << V_[1] << '\t' << V_[2] <<
-			//  endl; std::cout << Rand_temp << '\t' << sin(Rand_temp) << '\t' <<
-			//  cos(Rand_temp) << endl;
-			V_Charge_[0] = V_Charge_[3] * B[XY_[0]][XY_[1]][0];
-			V_Charge_[1] = V_Charge_[3] * B[XY_[0]][XY_[1]][1];
-			V_Charge_[2] = V_Charge_[3] * B[XY_[0]][XY_[1]][2];
-			for (int i = 0; i < 3; i++)
-				X_new_[i] = X_[i] + dt * V_Charge_[i];
-			divimp_E();
-			if (K_EcrossBDrift)
-				divimp_drift_E();
-			if (K_abnormal_transport)
-				if (XY_[0] > 1 && XY_[0] < poloidalLastIndex())
-					divimp_anomalous_diffusion();
+			advanceChargedMinimalTrace();
 			if (K_GRID)
 				Grid1.Find(X_new_, &Zone_, XY_);
 			else
@@ -1961,33 +1962,30 @@ void Particle::track()
 				return;
 			}
 
-			if (ChargeTag_ == 0)
-				VtoVcharge();
-			Vchargefix();
-
 			const int start_tri = Tri_Index_;
 			const int start_i = XY_[0];
 			const int start_j = XY_[1];
 			const double x_before[3] = {X_[0], X_[1], X_[2]};
 			const std::vector<double> neutral_velocity = V_;
-			for (int i = 0; i < 3; ++i)
-				V_[i] = V_Charge_[i];
+			advanceChargedMinimalTrace();
 			const double charge_speed = std::sqrt(
 				V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]);
 			const double neutral_speed = std::sqrt(
 				neutral_velocity[0] * neutral_velocity[0] +
 				neutral_velocity[1] * neutral_velocity[1] +
 				neutral_velocity[2] * neutral_velocity[2]);
-			const bool fallback_to_neutral_velocity = std::abs(V_[0]) < 1e-20;
+			const bool fallback_to_neutral_velocity = charge_speed < 1e-20;
 			if (fallback_to_neutral_velocity)
+			{
 				V_ = neutral_velocity;
+				for (int i = 0; i < 3; ++i)
+					X_new_[i] = X_[i] + V_[i] * dt;
+			}
 
 			dt_ = dt;
 			d_flight_ = 1.;
 			Rand_flight_ = 0.;
 			IfColl_ = 0;
-			for (int i = 0; i < 3; ++i)
-				X_new_[i] = X_[i] + V_[i] * dt_;
 			Caltrace_Tri();
 
 			const bool position_was_advanced =
@@ -9002,8 +9000,14 @@ void Particle::divimp_F()
 	q = Charge_;
 	double ts1, lnA;
 	lnA = 15.0;
+	double background_ion_density = n_D_1[i][j];
+	if (i >= 0 && i < static_cast<int>(n_T_1.size()) &&
+		j >= 0 && j < static_cast<int>(n_T_1[i].size()))
+		background_ion_density += n_T_1[i][j];
+	if (background_ion_density <= 0.)
+		return;
 	ts1 = mass_ * 6.02e26 * Ti[i][j] * sqrt(Ti[i][j] / (Dmass * 6.02e26)) /
-		  (6.8 * 1e4 * (1.0 + Dmass / mass_) * (n_D_1[i][j] + n_T_1[i][j]) * 1e-18 * lnA);
+		  (6.8 * 1e4 * (1.0 + Dmass / mass_) * background_ion_density * 1e-18 * lnA);
 	/*if (K_back == 1)
 		ts1 = mass_ * 6.02e26 * Ti[i][j] * sqrt(Ti[i][j] / (Hmass * 6.02e26)) /
 			  (6.8 * 1e4 * (1.0 + Hmass / mass_) * ni[i][j] * 1e-18 * lnA);
@@ -9055,10 +9059,10 @@ void Particle::divimp_drift_E()
 	1:p->epx
 	*/
 
-	X_[0] += vdp * dt * epx[i][j];
-	X_[1] += vdp * dt * epy[i][j];
-	X_[0] += vdr * dt * erx[i][j];
-	X_[1] += vdr * dt * ery[i][j];
+	X_new_[0] += vdp * dt * epx[i][j];
+	X_new_[1] += vdp * dt * epy[i][j];
+	X_new_[0] += vdr * dt * erx[i][j];
+	X_new_[1] += vdr * dt * ery[i][j];
 }
 
 void Particle::divimp_anomalous_diffusion()
