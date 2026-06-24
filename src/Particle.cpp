@@ -2,6 +2,25 @@
 
 namespace
 {
+	double triangleStepLimit(int tri_index, double speed, double requested_dt)
+	{
+		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size() || speed <= 0.)
+			return requested_dt;
+		const auto &tri = Grid4.tris_[tri_index];
+		double min_edge = std::numeric_limits<double>::max();
+		for (int edge = 0; edge < 3; ++edge)
+		{
+			const auto &a = Grid4.nodes_[tri.v[edge]];
+			const auto &b = Grid4.nodes_[tri.v[(edge + 1) % 3]];
+			const double length = std::hypot(a.r - b.r, a.z - b.z);
+			if (length > 0.)
+				min_edge = std::min(min_edge, length);
+		}
+		if (!std::isfinite(min_edge) || min_edge == std::numeric_limits<double>::max())
+			return requested_dt;
+		return std::min(requested_dt, 0.25 * min_edge / speed);
+	}
+
 	void setDWTrimDirection(std::vector<double> &velocity,
 							const DWReflectionSample &sample,
 							double wall_cos, double wall_sin,
@@ -1484,17 +1503,23 @@ void Particle::Vchargefix()
 	V_Charge_[2] = V_Charge_[3] * B[XY_[0]][XY_[1]][2];
 }
 
-void Particle::advanceChargedMinimalTrace()
+void Particle::advanceChargedMinimalTrace(double requested_dt)
 {
 	if (ChargeTag_ == 0)
 		VtoVcharge();
 	divimp_F();
 	divimp_Ti();
 	Vchargefix();
+	const double speed = std::sqrt(
+		V_Charge_[0] * V_Charge_[0] +
+		V_Charge_[1] * V_Charge_[1] +
+		V_Charge_[2] * V_Charge_[2]);
+	const double step_dt = MeshMode == 3 ? triangleStepLimit(Tri_Index_, speed, requested_dt) : requested_dt;
+	dt_ = step_dt;
 	for (int i = 0; i < 3; ++i)
 	{
 		V_[i] = V_Charge_[i];
-		X_new_[i] = X_[i] + dt * V_[i];
+		X_new_[i] = X_[i] + step_dt * V_[i];
 	}
 	divimp_E();
 	if (K_EcrossBDrift)
@@ -1821,7 +1846,7 @@ void Particle::track()
 		}
 		else if (Charge_ > 0)
 		{
-			advanceChargedMinimalTrace();
+			advanceChargedMinimalTrace(dt);
 			if (K_GRID)
 				Grid1.Find(X_new_, &Zone_, XY_);
 			else
@@ -1967,7 +1992,7 @@ void Particle::track()
 			const int start_j = XY_[1];
 			const double x_before[3] = {X_[0], X_[1], X_[2]};
 			const std::vector<double> neutral_velocity = V_;
-			advanceChargedMinimalTrace();
+			advanceChargedMinimalTrace(dt);
 			const double charge_speed = std::sqrt(
 				V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]);
 			const double neutral_speed = std::sqrt(
@@ -1982,7 +2007,8 @@ void Particle::track()
 					X_new_[i] = X_[i] + V_[i] * dt;
 			}
 
-			dt_ = dt;
+			if (!std::isfinite(dt_) || dt_ <= 0.)
+				dt_ = dt;
 			d_flight_ = 1.;
 			Rand_flight_ = 0.;
 			IfColl_ = 0;
@@ -3876,13 +3902,22 @@ void Particle::Caltrace_Tri()
 		}
 	}
 
-	if (!FindIt)
-	{
-		if (!Grid4.Ifingrid(Tri_Index_, X_new_[0], X_new_[1]))
+		if (!FindIt)
 		{
-			std::cout << "nimadewsm?" << endl;
-			pause();
-		}
+			if (!Grid4.Ifingrid(Tri_Index_, X_new_[0], X_new_[1]))
+			{
+				if (K_D2Flight && isHydrogenMoleculeIon())
+				{
+					IfColl_ = 0;
+					boundary_start_ = 0;
+					IfFlightOut_ = 7;
+					Zone_ = 7;
+					Weight_ = 0.;
+					return;
+				}
+				std::cout << "nimadewsm?" << endl;
+				pause();
+			}
 		IfColl_ = 1;
 		boundary_start_ = 0;
 		dt_trace_ = dt_;
