@@ -2068,6 +2068,18 @@ void Particle::track()
 				neutral_velocity[0] * neutral_velocity[0] +
 				neutral_velocity[1] * neutral_velocity[1] +
 				neutral_velocity[2] * neutral_velocity[2]);
+			if (!std::isfinite(charge_speed) || !std::isfinite(neutral_speed) ||
+				!std::isfinite(X_new_[0]) || !std::isfinite(X_new_[1]) || !std::isfinite(X_new_[2]))
+			{
+				if (this == &D2)
+				{
+					++D2p_boundary_loss_;
+					D2p_boundary_loss_weight_ += diagnosticEventWeight();
+				}
+				Weight_ = 0.;
+				IfColl_ = 0;
+				return;
+			}
 			const bool fallback_to_neutral_velocity = charge_speed < 1e-20;
 			if (fallback_to_neutral_velocity)
 			{
