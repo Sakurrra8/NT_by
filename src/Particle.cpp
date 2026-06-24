@@ -1543,23 +1543,23 @@ void Particle::advanceChargedMinimalTrace(double requested_dt)
 {
 	if (ChargeTag_ == 0)
 		VtoVcharge();
-	divimp_F();
-	divimp_Ti();
-	Vchargefix();
 	const double speed = std::sqrt(
 		V_Charge_[0] * V_Charge_[0] +
 		V_Charge_[1] * V_Charge_[1] +
 		V_Charge_[2] * V_Charge_[2]);
 	const double step_dt = MeshMode == 3 ? triangleStepLimit(Tri_Index_, speed, requested_dt) : requested_dt;
 	dt_ = step_dt;
+	divimp_F(step_dt);
+	divimp_Ti(step_dt);
+	Vchargefix();
 	for (int i = 0; i < 3; ++i)
 	{
 		V_[i] = V_Charge_[i];
 		X_new_[i] = X_[i] + step_dt * V_[i];
 	}
-	divimp_E();
+	divimp_E(step_dt);
 	if (K_EcrossBDrift)
-		divimp_drift_E();
+		divimp_drift_E(step_dt);
 	if (K_abnormal_transport)
 		if (XY_[0] > 1 && XY_[0] < poloidalLastIndex())
 			divimp_anomalous_diffusion();
@@ -9116,7 +9116,7 @@ void Particle::Dump_Flux()
 
 double Particle::sourceWall(int i) { return sourceWall_[i]; }
 
-void Particle::divimp_Ti()
+void Particle::divimp_Ti(double step_dt)
 {
 	if (Charge_ == 0)
 	{
@@ -9143,12 +9143,14 @@ void Particle::divimp_Ti()
 
 	b = -3.0 * (1.0 - u - 5.0 * 1.414 * q * q * (1.1 * u5_2 - 0.35 * u3_2)) /
 		(2.6 - 2.0 * u + 5.4 * u2);
-	dv = b * dTip[i][j] * qe / mass_ * dt * fabs(Bpol[i][j] / Btor[i][j]);
+	if (Btor[i][j] == 0.)
+		return;
+	dv = b * dTip[i][j] * qe / mass_ * step_dt * fabs(Bpol[i][j] / Btor[i][j]);
 	Vlog << dv << endl;
 	V_Charge_[3] += dv;
 }
 
-void Particle::divimp_F()
+void Particle::divimp_F(double step_dt)
 {
 	if (Charge_ == 0)
 	{
@@ -9181,22 +9183,27 @@ void Particle::divimp_F()
 	ts2 = ts1 / q / q;
 	double dv;
 	// dv = (vp[i][j] - p->vx) / ts2;
-	dv = (ua_D_1[i][j] * 1 - V_Charge_[3]) / ts2 * dt;
+	if (!std::isfinite(ts2) || ts2 <= 0.)
+		return;
+	const double relax = 1. - std::exp(-step_dt / ts2);
+	dv = (ua_D_1[i][j] - V_Charge_[3]) * relax;
 	Vlog << dv << ' ';
 	V_Charge_[3] += dv;
 }
 
-void Particle::divimp_E()
+void Particle::divimp_E(double step_dt)
 {
 	int i, j, q;
 	i = XY_[0];
 	j = XY_[1];
 	q = Charge_;
+	if (Btor[i][j] == 0.)
+		return;
 	V_Charge_[3] +=
-		Charge_ * qe * Epol[i][j] / mass_ * dt * Bpol[i][j] / Btor[i][j];
+		Charge_ * qe * Epol[i][j] / mass_ * step_dt * Bpol[i][j] / Btor[i][j];
 }
 
-void Particle::divimp_drift_E()
+void Particle::divimp_drift_E(double step_dt)
 {
 	int i, j;
 	double vdp;
@@ -9219,10 +9226,10 @@ void Particle::divimp_drift_E()
 	1:p->epx
 	*/
 
-	X_new_[0] += vdp * dt * epx[i][j];
-	X_new_[1] += vdp * dt * epy[i][j];
-	X_new_[0] += vdr * dt * erx[i][j];
-	X_new_[1] += vdr * dt * ery[i][j];
+	X_new_[0] += vdp * step_dt * epx[i][j];
+	X_new_[1] += vdp * step_dt * epy[i][j];
+	X_new_[0] += vdr * step_dt * erx[i][j];
+	X_new_[1] += vdr * step_dt * ery[i][j];
 }
 
 void Particle::divimp_anomalous_diffusion()

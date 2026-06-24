@@ -641,10 +641,10 @@ public:
 	void SetTn(double T);
 	void SetZone(int zone);
 	void SetsourceWall(double *sourceWall);
-	void divimp_Ti();
-	void divimp_F();
-	void divimp_E();
-	void divimp_drift_E();
+	void divimp_Ti(double step_dt);
+	void divimp_F(double step_dt);
+	void divimp_E(double step_dt);
+	void divimp_drift_E(double step_dt);
 	void divimp_anomalous_diffusion();
 	void SetX_new(int i, double X);
 	void SetWeight(double w);

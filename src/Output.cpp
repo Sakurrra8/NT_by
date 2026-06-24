@@ -406,11 +406,12 @@ void D2pMesh3FlightAuditOutput()
         << "3. The step is limited by the current triangle size so a fixed-time charged step cannot skip many mesh cells.\n"
         << "4. Triangle crossing updates Tri_Index_/XY_ before the next force evaluation.\n"
         << "5. DS1/DS2/DS3 are sampled after finite D2+ residence time using the local D2+ reaction rates.\n"
-        << "6. Leaving the plasma triangle mesh or producing non-finite/superluminal speed terminates that test ion as a boundary/numerical loss.\n\n"
+        << "6. Leaving the plasma triangle mesh or producing non-finite/unphysical speed terminates that test ion as a boundary/numerical loss.\n\n"
         << "Speed guard:\n"
         << "D2pMaxAllowedSpeed=" << D2pMaxAllowedSpeed << " m/s.\n"
-        << "This is a numerical sanity limit close to c, not a physical velocity clamp for normal D2+ ions.\n"
-        << "Normal D2+ speeds in this case are O(1e3-1e4) m/s, many orders of magnitude below the guard.\n"
+        << "This is a numerical sanity limit, not a physical velocity clamp for normal D2+ ions.\n"
+        << "For D2+, 1e6 m/s is about 20 keV, far above the tens-of-eV edge-ion scale expected here.\n"
+        << "Normal D2+ speeds in this case should be O(1e3-1e4) m/s, well below the guard.\n"
         << "The guard only catches corrupted states such as invalid mesh-field access or runaway arithmetic.\n";
 
     ofstream status(Outputpath + "D2p_transport_status.txt");
