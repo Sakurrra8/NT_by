@@ -519,6 +519,10 @@ void Particle::Init(int k, int z)
 	double deltaX, deltaY, deltaL, cosCX, sinCX;
 	bool record_source_launch = false;
 	bool thermal_surface_emission = false;
+	bool prescribed_reflection_speed = false;
+	auto speedFromEnergy = [this](double energy_eV) {
+		return std::sqrt(2.0 * qe * std::max(0.0, energy_eV) / mass_);
+	};
 	if (k == 1 || k == 4 || k == 5 || k == 8)
 	{
 		split_depth_ = 0;
@@ -569,6 +573,8 @@ void Particle::Init(int k, int z)
 					D_W_Trim.Sample(Ei_Dion[z], DTargetIncidentAngle[z],
 									Tools::Random(), Tools::Random(), Tools::Random());
 				Tn_ = (2.0 / 3.0) * sample.energy_eV;
+				vel = speedFromEnergy(sample.energy_eV);
+				prescribed_reflection_speed = true;
 				const double reference_direction[3] = {
 					B[XY_[0]][XY_[1]][0],
 					B[XY_[0]][XY_[1]][1],
@@ -592,10 +598,13 @@ void Particle::Init(int k, int z)
 		// Tools::AdjustIncidentVelocity(V_, B[XY_[0]][XY_[1]][0], B[XY_[0]][XY_[1]][1], B[XY_[0]][XY_[1]][2], Grid4.Cos_Target(z), Grid4.Cos_Target(z));
 		if (thermal_surface_emission)
 			vel = Tools::MaxwellianFluxSpeed(Tn_, mass_);
-		else if (K_Maxwell == 1)
-			vel = Tools::Maxwell(Tn_, mass_);
-		else if (K_Maxwell == 2)
-			vel = sqrt((3.0 * qe * Tn_) / mass_);
+		else if (!prescribed_reflection_speed)
+		{
+			if (K_Maxwell == 1)
+				vel = Tools::Maxwell(Tn_, mass_);
+			else if (K_Maxwell == 2)
+				vel = sqrt((3.0 * qe * Tn_) / mass_);
+		}
 
 		if (K_test1)
 		{
@@ -684,13 +693,15 @@ void Particle::Init(int k, int z)
 	{
 		const bool use_dw_trim =
 			K_DWTrimReflection == 1 && this == &D && K_Wallelement == 1 && z == 0;
-		auto apply_dw_trim_velocity = [this](double wall_cos, double wall_sin,
-											 double incident_angle_deg)
+		auto apply_dw_trim_velocity = [this, &speedFromEnergy](double wall_cos, double wall_sin,
+											 double incident_angle_deg,
+											 double &speed)
 		{
 			const DWReflectionSample sample =
 				D_W_Trim.Sample(1.5 * Tn_, incident_angle_deg,
 								Tools::Random(), Tools::Random(), Tools::Random());
 			Tn_ = (2.0 / 3.0) * sample.energy_eV;
+			speed = speedFromEnergy(sample.energy_eV);
 			const double incident_direction[3] = {V_[0], V_[1], V_[2]};
 			setDWTrimDirection(V_, sample, wall_cos, wall_sin, incident_direction);
 		};
@@ -754,7 +765,10 @@ void Particle::Init(int k, int z)
 					const double wall_cos = Grid4.Wall_.Cos_Wall((int)InterscePoint[0][3]);
 					const double wall_sin = Grid4.Wall_.Sin_Wall((int)InterscePoint[0][3]);
 					if (use_dw_trim)
-						apply_dw_trim_velocity(wall_cos, wall_sin, CalAngle((int)InterscePoint[0][3]));
+					{
+						apply_dw_trim_velocity(wall_cos, wall_sin, CalAngle((int)InterscePoint[0][3]), vel);
+						prescribed_reflection_speed = true;
+					}
 					else
 						Tools::calculateReflectionVelocity(V_, wall_cos, wall_sin, 1);
 				}
@@ -763,7 +777,10 @@ void Particle::Init(int k, int z)
 					const double wall_cos = Grid4.Cos_Target((int)InterscePoint[0][3]);
 					const double wall_sin = Grid4.Sin_Target((int)InterscePoint[0][3]);
 					if (use_dw_trim)
-						apply_dw_trim_velocity(wall_cos, wall_sin, CalAngle((int)InterscePoint[0][3]));
+					{
+						apply_dw_trim_velocity(wall_cos, wall_sin, CalAngle((int)InterscePoint[0][3]), vel);
+						prescribed_reflection_speed = true;
+					}
 					else
 						Tools::calculateReflectionVelocity(V_, wall_cos, wall_sin, 1);
 				}
@@ -844,7 +861,10 @@ void Particle::Init(int k, int z)
 				if (InterscePoint[0][4] == 11 || InterscePoint[0][4] == 1)
 				{
 					if (use_dw_trim)
-						apply_dw_trim_velocity(Cos_temp, Sin_temp, CalAngle(Sin_temp, Cos_temp));
+					{
+						apply_dw_trim_velocity(Cos_temp, Sin_temp, CalAngle(Sin_temp, Cos_temp), vel);
+						prescribed_reflection_speed = true;
+					}
 					else
 						Tools::calculateReflectionVelocity(V_, Cos_temp, Sin_temp, 1);
 				}
@@ -897,10 +917,13 @@ void Particle::Init(int k, int z)
 		// '\t' << V_[1] << '\t' << V_[2] << endl;
 		if (thermal_surface_emission)
 			vel = Tools::MaxwellianFluxSpeed(Tn_, mass_);
-		else if (K_Maxwell == 1)
-			vel = Tools::Maxwell(Tn_, mass_);
-		else if (K_Maxwell == 2)
-			vel = sqrt((3.0 * qe * Tn_) / mass_);
+		else if (!prescribed_reflection_speed)
+		{
+			if (K_Maxwell == 1)
+				vel = Tools::Maxwell(Tn_, mass_);
+			else if (K_Maxwell == 2)
+				vel = sqrt((3.0 * qe * Tn_) / mass_);
+		}
 		// std::cout << name_ + ": " << Tn_ << " " << V_[0] << "," << V_[1] << "," << V_[2] << endl;
 		// SetsourceWall(InterscePoint[0]);
 		// std::cout << Tn_ << endl;
