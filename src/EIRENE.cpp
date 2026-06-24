@@ -1,4 +1,5 @@
 #include "EIRENE.h"
+#include <cstdlib>
 #define e 2.71828
 
 EIRENE::EIRENE(int Fit, int Num, const string &database)
@@ -8,17 +9,41 @@ EIRENE::EIRENE(int Fit, int Num, const string &database)
     database_ = database;
     string line;
     int b;
-    string path_EIRENE;
+    string database_file;
     if (database_ == "amjuel")
-        path_EIRENE = "Inputfile/database/amjuel.txt"; /*amjuel.tex*/ // path and name of v_ionisation file
+        database_file = "amjuel.txt"; /*amjuel.tex*/ // path and name of v_ionisation file
     else if (database_ == "methane")
-        path_EIRENE = "Inputfile/database/METHANE";
+        database_file = "METHANE";
     else if (database == "hydhel")
-        path_EIRENE = "Inputfile/database/hydhel.txt"; /*amjuel.tex*/ // path and name of v_ionisation file
+        database_file = "hydhel.txt"; /*hydhel.tex*/ // path and name of v_ionisation file
     else if (database == "ammonx_elsa")
-        path_EIRENE = "Inputfile/database/AMMONX_Arrh-elast.tex";
+        database_file = "AMMONX_Arrh-elast.tex";
+    string path_EIRENE = "Inputfile/database/" + database_file;
     std::ifstream fp;
     fp.open(path_EIRENE, std::ios::in);
+    if (!fp.is_open())
+    {
+        const char *env_database_path = std::getenv("NT_DATABASE_PATH");
+        vector<string> database_paths;
+        if (env_database_path)
+            database_paths.push_back(env_database_path);
+        database_paths.push_back("nt/Inputfile/database/");
+        database_paths.push_back("/data/leuven/379/vsc37950/nt/Inputfile/database/");
+        for (const string &database_path : database_paths)
+        {
+            string candidate = database_path;
+            if (!candidate.empty() && candidate.back() != '/')
+                candidate += "/";
+            candidate += database_file;
+            fp.clear();
+            fp.open(candidate, std::ios::in);
+            if (fp.is_open())
+            {
+                path_EIRENE = candidate;
+                break;
+            }
+        }
+    }
 
     if (!fp.is_open())
     {

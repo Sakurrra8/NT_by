@@ -157,7 +157,7 @@ extern double Ei_Dion[80], InterscePoint[10][6], coeff_recyc_target, coeff_ercyc
 // extern vector<double> S_target, S_wall;
 extern double NumPar_wall_H[80], NumPar_wall_D[80], NumPar_wall_T[80];
 //  extern double Xrecyc[80][2]; //, theta[80][2];
-extern string name_Xlog, name_Vlog, Outputpath, Inputpath, Casepath;
+extern string name_Xlog, name_Vlog, Outputpath, Inputpath, Casepath, Databasepath;
 
 extern std::ofstream Xlog;
 extern std::ofstream Vlog;

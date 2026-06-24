@@ -10,6 +10,7 @@ std::mt19937 g_gen(rd());
 string Inputpath;            // path for Inputfiles
 string Casepath;             //
 string Outputpath;           // path for result Output
+string Databasepath;         // path for EIRENE database files
 string name_Xlog, name_Vlog; // path for log Output
 string DWTrimDatabase = "D_on_W";
 

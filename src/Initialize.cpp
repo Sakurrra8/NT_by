@@ -20,7 +20,18 @@ void Initialize(int Input, char *settingfile[]) {
     Outputpath = settingfile[2];
   }
 
+  Databasepath = Inputpath + "database/";
   std::getline(In, line);
+  std::streampos after_output = In.tellg();
+  if (In >> Inputstring) {
+    if (Inputstring == "Databasepath") {
+      In >> Databasepath;
+      std::getline(In, line);
+    } else {
+      In.clear();
+      In.seekg(after_output);
+    }
+  }
   In >> Inputstring >> N_poloidal;
   std::getline(In, line);
   In >> Inputstring >> N_radial;
