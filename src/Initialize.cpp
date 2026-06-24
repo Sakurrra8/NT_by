@@ -293,6 +293,9 @@ void Initialize(int Input, char *settingfile[]) {
   In >> Inputstring >> Num_CD4_pump;
   // std::cout << Num_CD4_pump << endl;
   std::getline(In, line);
+  K_Pump = ((K_D && Num_D2_pump > 0. && numPar_flight_D2 > 0) ||
+            (K_T && Num_T2_pump > 0. && numPar_flight_T2 > 0) ||
+            (K_Methane && Num_CD4_pump > 0. && numPar_flight_CD4 > 0));
   In >> Inputstring >> coeff_recyc_target;
   // std::cout << coeff_recyc_target << endl;
   std::getline(In, line);
