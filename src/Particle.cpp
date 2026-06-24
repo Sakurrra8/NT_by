@@ -3906,6 +3906,33 @@ void Particle::Caltrace_Tri()
 		{
 			if (!Grid4.Ifingrid(Tri_Index_, X_new_[0], X_new_[1]))
 			{
+				const int neighbor_indices[3] = {
+					Grid4.tris_[Tri_Index_].neigh[0],
+					Grid4.tris_[Tri_Index_].neigh[3],
+					Grid4.tris_[Tri_Index_].neigh[6]};
+				for (int neighbor : neighbor_indices)
+				{
+					if (neighbor >= 0 && static_cast<std::size_t>(neighbor) < Grid4.tris_.size() &&
+						Grid4.Ifingrid(neighbor, X_new_[0], X_new_[1]))
+					{
+						IfColl_ = 0;
+						boundary_start_ = 0;
+						dt_trace_ = dt_;
+						NumParStat();
+						Tri_Index_ = neighbor;
+						if (Zone_ < 6)
+						{
+							XY_[0] = Tri_B2_[Tri_Index_][0];
+							XY_[1] = Tri_B2_[Tri_Index_][1];
+						}
+						else
+						{
+							XY_[0] = -1;
+							XY_[1] = -1;
+						}
+						return;
+					}
+				}
 				if (K_D2Flight && isHydrogenMoleculeIon())
 				{
 					IfColl_ = 0;
@@ -3915,8 +3942,19 @@ void Particle::Caltrace_Tri()
 					Weight_ = 0.;
 					return;
 				}
-				std::cout << "nimadewsm?" << endl;
-				pause();
+				std::cerr << "Caltrace_Tri lost particle: name=" << name_
+						  << " charge=" << Charge_
+						  << " zone=" << Zone_
+						  << " tri=" << Tri_Index_
+						  << " x=" << X_[0] << "," << X_[1]
+						  << " x_new=" << X_new_[0] << "," << X_new_[1]
+						  << std::endl;
+				IfColl_ = 0;
+				boundary_start_ = 0;
+				IfFlightOut_ = 7;
+				Zone_ = 7;
+				Weight_ = 0.;
+				return;
 			}
 		IfColl_ = 1;
 		boundary_start_ = 0;
