@@ -2688,10 +2688,10 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 1.,
-																			   Ti[XY_[0]][XY_[1]] / 1.));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 1.,
-																			   Ti[XY_[0]][XY_[1]] / 1.));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 2.,
+																			   Ti[XY_[0]][XY_[1]] / 2.));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
+																			   Ti[XY_[0]][XY_[1]] / 2.));
 						if (K_DT)
 						{
 							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T / 2.,
