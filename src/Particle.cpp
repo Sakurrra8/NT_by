@@ -5871,9 +5871,13 @@ void Particle::Coll()
 					else
 					{
 						Charge_ = 1;
-						// Diagnostic audit: CX_D2 currently also preserves the
-						// pre-CX D2 neutral velocity in V_; it does not replace it
-						// with V_D_1_now before projecting into V_Charge_.
+						if (this == &D2)
+						{
+							V_[0] = V_D_1_now[0];
+							V_[1] = V_D_1_now[1];
+							V_[2] = V_D_1_now[2];
+							Tn_ = Ti[XY_[0]][XY_[1]];
+						}
 						VtoVcharge();
 						markD2pJustCreated(true);
 						// std::cout << name_ + " after CX V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
