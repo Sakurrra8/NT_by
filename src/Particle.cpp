@@ -8065,7 +8065,10 @@ void Particle::DumpD2pTrackLengthTri()
 			<< (weight > 0. ? D2p_initial_sum_weight_charge_energy_[source] / weight : 0.) << ','
 			<< D2p_initial_min_charge_speed_[source] << ','
 			<< D2p_initial_max_charge_speed_[source] << ','
-			<< "charged_parallel_projection_of_D2_neutral_velocity\n";
+			<< (source == 0
+					? "charged_parallel_projection_of_D2_neutral_velocity"
+					: "charged_parallel_projection_of_sampled_D_ion_velocity")
+			<< '\n';
 	}
 
 	ofstream velocity_counterfactual(
