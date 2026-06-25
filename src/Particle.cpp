@@ -5871,13 +5871,6 @@ void Particle::Coll()
 					else
 					{
 						Charge_ = 1;
-						if (this == &D2)
-						{
-							V_[0] = V_D_1_now[0];
-							V_[1] = V_D_1_now[1];
-							V_[2] = V_D_1_now[2];
-							Tn_ = Ti[XY_[0]][XY_[1]];
-						}
 						VtoVcharge();
 						markD2pJustCreated(true);
 						// std::cout << name_ + " after CX V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
@@ -8065,10 +8058,7 @@ void Particle::DumpD2pTrackLengthTri()
 			<< (weight > 0. ? D2p_initial_sum_weight_charge_energy_[source] / weight : 0.) << ','
 			<< D2p_initial_min_charge_speed_[source] << ','
 			<< D2p_initial_max_charge_speed_[source] << ','
-			<< (source == 0
-					? "charged_parallel_projection_of_D2_neutral_velocity"
-					: "charged_parallel_projection_of_sampled_D_ion_velocity")
-			<< '\n';
+			<< "charged_parallel_projection_of_D2_neutral_velocity\n";
 	}
 
 	ofstream velocity_counterfactual(
