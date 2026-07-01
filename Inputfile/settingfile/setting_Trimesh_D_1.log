@@ -19,7 +19,7 @@ K_Ar                0       # option: Ar pump near Target
 K_database          1       # option: 1: ADAS, 2: EIRENE
 K_database_Pra      1       # option: 1: ADAS, 2: EIRENE for H or D or T
 K_Maxwell           2       # option: 1: standard Maxwell, 2: fast Maxwell
-K_Ei                2       # option: 1: use SOLPS-ITER EI, 2: use Te and Ti, 3: use Ti;
+K_Ei                2       # retain the established target-energy model for this comparison
 K_WallRefl          1       # option: 1: Trim database, 2: Fixed parameters
 K_backScatter       1       # option: 1: Chance backing-scatter; 2: Real backing-scatter;
 K_MarColl           1       # option: 1: 2 Separate sub-reactions; 2: 1 Sum-reaction;
@@ -57,19 +57,24 @@ coeff_ercyc_wall    1       # recycling coefficient of wall
 coeff_puff          0.99    # recycling coefficient of puff location
 
 K_Roulette          0       # baseline: variance reduction disabled
-W_RouletteMin       0.05
-W_RouletteTarget    0.2
+W_RouletteMin       0.05    # roulette trigger weight
+W_RouletteTarget    0.2     # surviving particle weight
 K_Splitting         0       # baseline: regional importance sampling disabled
-W_SplitMax          2.0
-W_SplitTarget       1.0
-W_SplitMin          0.05
-MaxSplit            4
-MaxSplitDepth       1
-ImportanceOutside   1.0
-ImportanceDivertor  2.0
-ImportanceMainChamber 1.0
+W_SplitMax          2.0     # split trigger weight
+W_SplitTarget       1.0     # desired child weight
+W_SplitMin          0.05    # minimum child weight for regional splitting
+MaxSplit            4       # maximum children per split event
+MaxSplitDepth       1       # maximum split generations per source history
+ImportanceOutside   1.0     # outside the valid B2 mesh
+ImportanceDivertor  2.0     # divertor legs
+ImportanceMainChamber 1.0   # non-divertor/main-chamber cells
 ImportanceMainPoloidalBegin 25
 ImportanceMainPoloidalEnd   72
 K_H5Output          0       # option: write HDF5 output files
 MeshMode            3       # option: externmesh mode
-K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 D_on_W_5.53 distribution model
+K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
+K_DWTargetActualAngle 1     # use local B-to-target-normal incidence angle
+K_DTargetSourceMode 1       # 1 use recycled_neutral_flux_D; 2 use ni*abs(ua)*abs(b.normal)*target_area and TRIM split
+DWTrimDatabase      D_on_W # match EIRENE input TRIM D_on_W database
+SurfaceTemperature_eV 0.1   # EIRENE EWALL=-0.1: Maxwellian-flux wall temperature
+DWTrimERMIN_eV      1.0     # EIRENE ERMIN: disable fast reflection below 1 eV
