@@ -36,7 +36,7 @@ else
 CPPFLAGS += -O3 -DNDEBUG
 endif
 
-.PHONY: all clean dirs hdf5-links run-check
+.PHONY: all clean dirs hdf5-links run-check export-eirene-reactions
 
 all: $(BIN_DIR)/$(PRGM)
 
@@ -55,6 +55,11 @@ hdf5-links: dirs
 $(BIN_DIR)/$(PRGM): $(OBJS) | hdf5-links
 	$(CXX) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $@
 
+export-eirene-reactions: $(BIN_DIR)/export_eirene_reactions
+
+$(BIN_DIR)/export_eirene_reactions: tools/export_eirene_reactions.cpp src/EIRENE.cpp include/EIRENE.h | dirs
+	$(CXX) $(CXXSTD) -O2 -I$(INC_DIR) tools/export_eirene_reactions.cpp src/EIRENE.cpp -o $@
+
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp Makefile.local $(wildcard $(INC_DIR)/*.h) | dirs
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
@@ -62,4 +67,4 @@ run-check: $(BIN_DIR)/$(PRGM)
 	./$(BIN_DIR)/$(PRGM) $(SETTING)
 
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM)
+	rm -rf $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions

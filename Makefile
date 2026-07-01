@@ -46,6 +46,14 @@ all : $(BIN_DIR)/$(PRGM)
 
 $(BIN_DIR)/$(PRGM):$(OBJS)
 	$(LINKCC) $(addprefix $(OBJ_DIR)/, $(OBJS)) $(LIBS) -o $@
+
+export-eirene-reactions: $(BIN_DIR)/export_eirene_reactions
+
+$(BIN_DIR)/export_eirene_reactions: tools/export_eirene_reactions.cpp src/EIRENE.cpp include/EIRENE.h | $(BIN_DIR)
+	$(CCOMPILE) -I ./include tools/export_eirene_reactions.cpp src/EIRENE.cpp -o $@
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 	
 %.o:%.cpp Makefile $(wildcard $(INC_DIR)/*.h)
 	$(CCOMPILE) -c $(INCS) $(INCLUDE) $< -o $(OBJ_DIR)/$@
@@ -54,6 +62,6 @@ $(BIN_DIR)/$(PRGM):$(OBJS)
 	$(FCOMPILE) -c $(INCS) $< -o $@
 
 clean:
-	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) 
+	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions
 clean-data:
 	rm -f *~ *.txt *.dat *.nc errfile outfile
