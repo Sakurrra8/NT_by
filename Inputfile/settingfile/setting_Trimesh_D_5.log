@@ -45,13 +45,13 @@ K_Wallelement       1       # option: 1 for W wall, 2 for C wall
 dt                  1.e-8   # Time step
 t_max               10      # Max time for Particle
 numPar_flight       50000   # number of test flight from Grid
-numPar_flight_D2    0   # number of pumping D2
-numPar_flight_T2    0   # number of pumping T2
-numPar_flight_CD4   0   # number of test flight of Methane
+numPar_flight_D2    0       # number of pumping D2
+numPar_flight_T2    0       # number of pumping T2
+numPar_flight_CD4   0       # number of test flight of Methane
 numPar_flight_Target 50000  # sum of test flight from Wall recycling
-Num_D2_pump         0    # number of test flight of pumping D2 particle
-Num_T2_pump         0    # number of test flight of pumping T2 particle
-Num_CD4_pump        0    # sum of test flight for CD4 seeding
+Num_D2_pump         0       # number of test flight of pumping D2 particle
+Num_T2_pump         0       # number of test flight of pumping T2 particle
+Num_CD4_pump        0       # sum of test flight for CD4 seeding
 coeff_recyc_target  1       # recycling coefficient of target
 coeff_ercyc_wall    1       # recycling coefficient of wall
 coeff_puff          0.99    # recycling coefficient of puff location
@@ -75,6 +75,6 @@ MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
 K_DWTargetActualAngle 1     # use local B-to-target-normal incidence angle
 K_DTargetSourceMode 1       # 1 use recycled_neutral_flux_D; 2 use ni*abs(ua)*abs(b.normal)*target_area and TRIM split
-DWTrimDatabase      D_on_W # match EIRENE input TRIM D_on_W database
+DWTrimDatabase      D_on_W  # match EIRENE input TRIM D_on_W database
 SurfaceTemperature_eV 0.1   # EIRENE EWALL=-0.1: Maxwellian-flux wall temperature
 DWTrimERMIN_eV      1.0     # EIRENE ERMIN: disable fast reflection below 1 eV
