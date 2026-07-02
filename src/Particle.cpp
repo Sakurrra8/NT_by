@@ -575,7 +575,8 @@ void Particle::Init(int k, int z)
 	bool record_source_launch = false;
 	bool thermal_surface_emission = false;
 	bool prescribed_reflection_speed = false;
-	auto speedFromEnergy = [this](double energy_eV) {
+	auto speedFromEnergy = [this](double energy_eV)
+	{
 		return std::sqrt(2.0 * qe * std::max(0.0, energy_eV) / mass_);
 	};
 	if (k == 1 || k == 4 || k == 5 || k == 8)
@@ -749,8 +750,8 @@ void Particle::Init(int k, int z)
 		const bool use_dw_trim =
 			K_DWTrimReflection == 1 && this == &D && K_Wallelement == 1 && z == 0;
 		auto apply_dw_trim_velocity = [this, &speedFromEnergy](double wall_cos, double wall_sin,
-											 double incident_angle_deg,
-											 double &speed)
+															   double incident_angle_deg,
+															   double &speed)
 		{
 			const DWReflectionSample sample =
 				D_W_Trim.Sample(1.5 * Tn_, incident_angle_deg,
@@ -2032,8 +2033,8 @@ void Particle::track()
 		}
 		else if (K_D2Flight && isHydrogenMoleculeIon())
 		{
-				if (Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_ || Zone_ >= 6 ||
-					XY_[0] < 0 || XY_[1] < 0 || Grid4.if_in_plasmagrid(Tri_Index_) != 1)
+			if (Tri_Index_ < 0 || Tri_Index_ >= num_trimesh_ || Zone_ >= 6 ||
+				XY_[0] < 0 || XY_[1] < 0 || Grid4.if_in_plasmagrid(Tri_Index_) != 1)
 			{
 				if (this == &D2)
 				{

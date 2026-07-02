@@ -15,45 +15,45 @@ string name_Xlog, name_Vlog; // path for log Output
 string DWTrimDatabase = "D_on_W";
 
 /// OP
-bool K_log;                  // OP: Particle way log
-bool StepLog;                // OP: step log
-bool K_H2_elastic;           // OP: molecule elastic collision
-bool K_EcrossBDrift;         // E cross B Drift
-int K_Recyc;                 // OP: Plasma Recycling from Target
-int K_Rec;                   // OP: Plasma Recombination from Target
-int K_Pump;                  // OP: particle pump
-int K_Methane;               // OP: CD4 pump near Target
-int K_C;                     // OP: C pump near Target
-int K_Ar;                    // OP: Ar pump near Target
-int K_database;              // OP: 1: ADAS, 2: EIRENE
-int K_database_Pra;          // OP: 1: ADAS, 2: EIRENE for D
-int K_Maxwell;               // OP: 1: standard Maxwell, 2: fast Maxwell
-int K_Ei;                    // OP: 1: use SOLPS-ITER EI, 2: use Te and Ti, 3: use Ti;
-int K_WallRefl;              // OP: 1: Trim database, 2: Fixed parameters
-int K_backScatter;           // OP: 1: Chance backing-scatter; 2: Real backing-scatter;
-int K_MarColl;               // OP: 1: 2 Separate sub-reactions; 2: 1 Sum-reaction;
-int K_Prob;                  // OP: 1: add the cross-section; 2: add the collision probability
-int K_CX_impurity;           // OP: CX collision recation
-std::array<int, 5> K_Puff{}; // OP: Puff, 0 and 1 for different puff ports
-int K_D2Flight;              // OP: D2 flight
-int K_abnormal_transport;    // OP: abnormal transport
-int K_flight;                // OP: 1 for mean free path; 2 for fixed time step; 3 for
-int K_Reflect;               // OP: 1 for empirical formula; 2 for Trim database; 3 for calculate from Trim
-int K_DWTrimReflection = 0;  // OP: 0 for legacy D-W reflection; 1 for D_on_W_5.53 distributions
+bool K_log;                    // OP: Particle way log
+bool StepLog;                  // OP: step log
+bool K_H2_elastic;             // OP: molecule elastic collision
+bool K_EcrossBDrift;           // E cross B Drift
+int K_Recyc;                   // OP: Plasma Recycling from Target
+int K_Rec;                     // OP: Plasma Recombination from Target
+int K_Pump;                    // OP: particle pump
+int K_Methane;                 // OP: CD4 pump near Target
+int K_C;                       // OP: C pump near Target
+int K_Ar;                      // OP: Ar pump near Target
+int K_database;                // OP: 1: ADAS, 2: EIRENE
+int K_database_Pra;            // OP: 1: ADAS, 2: EIRENE for D
+int K_Maxwell;                 // OP: 1: standard Maxwell, 2: fast Maxwell
+int K_Ei;                      // OP: 1: use SOLPS-ITER EI, 2: use Te and Ti, 3: use Ti;
+int K_WallRefl;                // OP: 1: Trim database, 2: Fixed parameters
+int K_backScatter;             // OP: 1: Chance backing-scatter; 2: Real backing-scatter;
+int K_MarColl;                 // OP: 1: 2 Separate sub-reactions; 2: 1 Sum-reaction;
+int K_Prob;                    // OP: 1: add the cross-section; 2: add the collision probability
+int K_CX_impurity;             // OP: CX collision recation
+std::array<int, 5> K_Puff{};   // OP: Puff, 0 and 1 for different puff ports
+int K_D2Flight;                // OP: D2 flight
+int K_abnormal_transport;      // OP: abnormal transport
+int K_flight;                  // OP: 1 for mean free path; 2 for fixed time step; 3 for
+int K_Reflect;                 // OP: 1 for empirical formula; 2 for Trim database; 3 for calculate from Trim
+int K_DWTrimReflection = 0;    // OP: 0 for legacy D-W reflection; 1 for D_on_W_5.53 distributions
 int K_DWTargetActualAngle = 1; // OP: 0 fixed 60 deg; 1 local B-to-target-normal angle
-int K_DTargetSourceMode = 1; // OP: 1 use recycled_neutral_flux_D; 2 use ni*|ua|*target_area ion flux
-int K_ReflectDirection;      // OP: 1 for cosing distribution; 2 for forward-reflect distribution; 3 for mirror reflection
-bool backGridBoundry;        // OP: make Particles go back to Grid when Particle flight
-bool K_H;                    // OP: H calculation
-bool K_D;                    // OP: D calculation
-bool K_T;                    // OP: T calculation
-int K_back;                  // OP: plasma backgroung. 1 for H, 2 for D, 3 for T
-int K_dn;                    // OP: 1 for fixed 0.3; 2 file for reading from SOLPS
-double Ratio_T;              // OP: n_T / n_D
-int K_CX_DT;                 // OP: charge exchange collision between D and T
-int K_DT;                    // OP: 1 for CFEDR D-T simulation;
-int K_Wallelement;           // OP: 1 for W, 2 for C
-int K_T_array = 1;           // OP: energy hist in grid
+int K_DTargetSourceMode = 1;   // OP: 1 use recycled_neutral_flux_D; 2 use ni*|ua|*target_area ion flux
+int K_ReflectDirection;        // OP: 1 for cosing distribution; 2 for forward-reflect distribution; 3 for mirror reflection
+bool backGridBoundry;          // OP: make Particles go back to Grid when Particle flight
+bool K_H;                      // OP: H calculation
+bool K_D;                      // OP: D calculation
+bool K_T;                      // OP: T calculation
+int K_back;                    // OP: plasma backgroung. 1 for H, 2 for D, 3 for T
+int K_dn;                      // OP: 1 for fixed 0.3; 2 file for reading from SOLPS
+double Ratio_T;                // OP: n_T / n_D
+int K_CX_DT;                   // OP: charge exchange collision between D and T
+int K_DT;                      // OP: 1 for CFEDR D-T simulation;
+int K_Wallelement;             // OP: 1 for W, 2 for C
+int K_T_array = 1;             // OP: energy hist in grid
 
 /// simulate parameter
 double dt;                // Time step
@@ -110,8 +110,8 @@ double Dn[N_RADIAL_GRID];
 /// @brief Plasma and device parameter
 double InterscePoint[10][6] = {0}; // 0: distance of particle and interscePoint; 1,2: x,y index; 3: number of boundary; 4:types of intersection boundaries
 double NumPar_now = 0;
-double T_N = 0.1;    // Temperature of injected impurities
-double T_wall = 0.1; // Surface temperature (eV); configurable by SurfaceTemperature_eV
+double T_N = 0.1;         // Temperature of injected impurities
+double T_wall = 0.1;      // Surface temperature (eV); configurable by SurfaceTemperature_eV
 double DWTrimERMIN = 0.0; // Disable fast D-W reflection below this incident energy (eV)
 
 // 真空区域参数
@@ -389,8 +389,8 @@ EIRENE R2_1_8_H4(EIRENE_H4, 4329);   //$ H^+ + e = H(EIRENE_1s) $
 EIRENE R2_1_8_H10(EIRENE_H10, 7962); //$ H^+ + e = H(EIRENE_1s) $
 EIRENE R2_2_5g_H4(EIRENE_H4, 4571);  //$ e + H_2 = e + H + H  $
 EIRENE R2_2_10_H4(EIRENE_H4, 4679);  //$ e + H_2 = 2e + H + H^+  $
-EIRENE R3_2_3_H2(EIRENE_H2, 2253);   //$ p + H_2 = H + H_2^+  $
 
+EIRENE R3_2_3_H2(EIRENE_H2, 2253); //$ p + H_2 = H + H_2^+  $
 EIRENE R3_2_3_H3(EIRENE_H3, 3841); //$ p + H_2(EIRENE_v) = H + H_2^+  $
 EIRENE R3_1_8_H3(EIRENE_H3, 3683); //$ p + H(EIRENE_1s) = H(EIRENE_1s) + p   $
 EIRENE R0_3T_H3(EIRENE_H3, 2972);  //$ p + H_2 = p + H_2 ,\ $  elastic
