@@ -22,6 +22,27 @@ int ZonefromXY(int X, int Y);
 string fatename(int i);
 string sourcename(int i);
 
+enum class EireneDensitySource
+{
+	None = 0,
+	Electron,
+	HIon,
+	DIon,
+	TIon,
+	HNeutralTri,
+	H2NeutralTri,
+	DNeutralTri,
+	D2NeutralTri,
+	TNeutralTri,
+	T2NeutralTri
+};
+
+enum class EireneArgumentMode
+{
+	ElectronDensityTemperature = 0,
+	SameDensityTemperature
+};
+
 enum class SourceStratum
 {
 	Unknown = 0,
@@ -80,6 +101,15 @@ private:
 	double V_2_relative_;
 	double V_relative_2_;
 	int num_trimesh_;
+	EIRENE *eirene_rate_{nullptr};
+	EireneDensitySource eirene_density_source_{EireneDensitySource::None};
+	EireneArgumentMode eirene_argument_mode_{EireneArgumentMode::ElectronDensityTemperature};
+	double eirene_scale_{1.0};
+	double eireneDensity(int i, int j) const;
+	double eireneDensityTri(int tri) const;
+	double eireneTemperatureForDensityTri(int tri) const;
+	double eireneRate(int i, int j) const;
+	double eireneRateTri(int tri) const;
 
 	vector<double> Tri_cs_;
 	vector<double> Tri_Sn_;
@@ -140,6 +170,7 @@ public:
 	void SetCor_cs(double Cor_cs);
 	double Cor_cs();
 	double cs_now();
+	double EireneRate(double density, double arg1, double arg2) const;
 
 	void n_Add(int XY[], double Var);
 	void Mu_Add(int XY[], double Var);
@@ -164,7 +195,10 @@ public:
 
 	void initialize(int e_or_i, int num_trimesh);
 	void ADASInput(ADAS *ParColl, int Charge, int Par = 2, int cross_CX = 0);
-	void EIRENEInput(EIRENE *ParColl);
+	void EIRENEInput(EIRENE *ParColl,
+					 EireneDensitySource density_source = EireneDensitySource::Electron,
+					 EireneArgumentMode argument_mode = EireneArgumentMode::ElectronDensityTemperature,
+					 double scale = 1.0);
 
 	void Setcs_now(double cs);
 

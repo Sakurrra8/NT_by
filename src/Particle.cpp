@@ -2479,7 +2479,7 @@ void Particle::CalLambda()
 				Ion_[0].Setcs_now(Ion_[0].cs(XY_[0], XY_[1]));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(XY_[0], XY_[1]));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
-				CX_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_H, Ti[XY_[0]][XY_[1]]));
+				CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
 				Ela_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_H, Ti[XY_[0]][XY_[1]]));
 				lambda_now_ = 1. / (Ion_[0].cs_now() + Diss1_[0].cs_now() + Diss2_[0].cs_now() + CX_[0].cs_now() + Ela_[0].cs_now());
 			}
@@ -2498,27 +2498,25 @@ void Particle::CalLambda()
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
 				if (K_Vi == 1)
 				{
-					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 2.,
-																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
+					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
 					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
 																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
 					if (K_DT)
 					{
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T,
-																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
+						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
 						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
 					}
 				}
 				if (K_Vi == 2)
 				{
-					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
 					// Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 					// Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 					if (K_DT)
 					{
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
 						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 					}
 				}
@@ -2542,25 +2540,23 @@ void Particle::CalLambda()
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
 				if (K_Vi == 1)
 				{
-					CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy,
-																		   Ti[XY_[0]][XY_[1]]));
+					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
 					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
 																		   Ti[XY_[0]][XY_[1]]));
 					if (K_DT)
 					{
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T,
-																				  Ti[XY_[0]][XY_[1]]));
+						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
 						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
 																				  Ti[XY_[0]][XY_[1]]));
 					}
 				}
 				if (K_Vi == 2)
 				{
-					CX_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
 					Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 					if (K_DT)
 					{
-						CX_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
 						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 					}
 				}
@@ -2785,7 +2781,7 @@ void Particle::CalLambda()
 				Ion_[0].Setcs_now(Ion_[0].cs(Tri_Index_));
 				Diss1_[0].Setcs_now(Diss1_[0].cs(Tri_Index_));
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
-				CX_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_H, Ti[XY_[0]][XY_[1]]));
+				CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
 				Ela_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_H, Ti[XY_[0]][XY_[1]]));
 				if (K_NNCs)
 				{
@@ -2818,22 +2814,20 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy / 2.,
-																			   Ti[XY_[0]][XY_[1]] / 2.));
+						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
 						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
 																			   Ti[XY_[0]][XY_[1]] / 2.));
 						if (K_DT)
 						{
-							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T / 2.,
-																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
+							CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
 							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T / 2.,
 																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
 						}
 					}
 					if (K_Vi == 2)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
+						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
 						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 					}
@@ -2870,19 +2864,17 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy,
-																			   Ti[XY_[0]][XY_[1]] / coefficient_T));
+						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
 						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
 																			   Ti[XY_[0]][XY_[1]] / coefficient_T));
-						CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T,
-																				  Ti[XY_[0]][XY_[1]] / coefficient_D));
+						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
 						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_D));
 					}
 					if (K_Vi == 2)
 					{
-						CX_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
-						CX_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_2_3_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
+						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
 						// Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 						// Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 						Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
@@ -10740,6 +10732,10 @@ void PartoPar::ParChange()
 void ParCollCar::initialize(int e_or_i, int num_trimesh)
 {
 	e_or_i_ = e_or_i;
+	eirene_rate_ = nullptr;
+	eirene_density_source_ = EireneDensitySource::None;
+	eirene_argument_mode_ = EireneArgumentMode::ElectronDensityTemperature;
+	eirene_scale_ = 1.0;
 	for (int i = 0; i < N_poloidal; i++)
 		for (int j = 0; j < N_radial; j++)
 		{
@@ -10843,21 +10839,42 @@ void ParCollCar::ADASInput(ADAS *ParColl, int Charge, int Par, int cross_CX)
 	Cor_cs_ = ne_core * ParColl->cal(Te_core, ne_core, Charge);
 }
 
-void ParCollCar::EIRENEInput(EIRENE *ParColl)
+void ParCollCar::EIRENEInput(EIRENE *ParColl,
+							 EireneDensitySource density_source,
+							 EireneArgumentMode argument_mode,
+							 double scale)
 {
-	std::cerr << "ni in this function should be set." << endl;
-	/*if (e_or_i_ == 1)
+	eirene_rate_ = ParColl;
+	eirene_density_source_ = ParColl == nullptr ? EireneDensitySource::None : density_source;
+	eirene_argument_mode_ = argument_mode;
+	eirene_scale_ = scale;
+	if (ParColl == nullptr)
+	{
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)
-			{
-				cs_[i][j] = ne[i][j] * ParColl->cal(ne[i][j], Te[i][j]);
-			}
-	if (e_or_i_ == 2)
+				cs_[i][j] = 0.;
+		std::fill(Tri_cs_.begin(), Tri_cs_.end(), 0.);
+		Cor_cs_ = 0.;
+		return;
+	}
+	switch (density_source)
+	{
+	case EireneDensitySource::HNeutralTri:
+	case EireneDensitySource::H2NeutralTri:
+	case EireneDensitySource::DNeutralTri:
+	case EireneDensitySource::D2NeutralTri:
+	case EireneDensitySource::TNeutralTri:
+	case EireneDensitySource::T2NeutralTri:
+		for (int tri = 0; tri < num_trimesh_; ++tri)
+			Tri_cs_[tri] = eireneRateTri(tri);
+		break;
+	default:
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)
-			{
-				cs_[i][j] = ni[i][j] * ParColl->cal(ni[i][j], Te[i][j]);
-			}*/
+				cs_[i][j] = eireneRate(i, j);
+		SetCor_cs(EireneRate(ne_core, ne_core, Te_core));
+		break;
+	}
 }
 
 void ParCollCar::Setcs_now(double cs)
@@ -10914,6 +10931,130 @@ void ParCollCar::SetCor_cs(double Cor_cs)
 double ParCollCar::cs_now()
 {
 	return cs_now_;
+}
+
+double ParCollCar::EireneRate(double density, double arg1, double arg2) const
+{
+	if (eirene_rate_ == nullptr || density <= 0.)
+		return 0.;
+	return eirene_scale_ * density * eirene_rate_->cal(arg1, arg2);
+}
+
+double ParCollCar::eireneDensity(int i, int j) const
+{
+	if (i < 0 || i >= N_poloidal || j < 0 || j >= N_radial)
+		return 0.;
+	switch (eirene_density_source_)
+	{
+	case EireneDensitySource::Electron:
+		return ne[i][j];
+	case EireneDensitySource::HIon:
+		return n_H_1[i][j];
+	case EireneDensitySource::DIon:
+		return n_D_1[i][j];
+	case EireneDensitySource::TIon:
+		return n_T_1[i][j];
+	default:
+		return 0.;
+	}
+}
+
+double ParCollCar::eireneDensityTri(int tri) const
+{
+	if (tri < 0 || tri >= num_trimesh_)
+		return 0.;
+	if (Grid4.if_in_plasmagrid(tri))
+	{
+		const int i = Grid4.b2_index(tri, 0);
+		const int j = Grid4.b2_index(tri, 1);
+		switch (eirene_density_source_)
+		{
+		case EireneDensitySource::Electron:
+		case EireneDensitySource::HIon:
+		case EireneDensitySource::DIon:
+		case EireneDensitySource::TIon:
+			return eireneDensity(i, j);
+		default:
+			break;
+		}
+	}
+	switch (eirene_density_source_)
+	{
+	case EireneDensitySource::HNeutralTri:
+		return n_H_0_Tri[tri];
+	case EireneDensitySource::H2NeutralTri:
+		return n_H2_0_Tri[tri];
+	case EireneDensitySource::DNeutralTri:
+		return n_D_0_Tri[tri];
+	case EireneDensitySource::D2NeutralTri:
+		return n_D2_0_Tri[tri];
+	case EireneDensitySource::TNeutralTri:
+		return n_T_0_Tri[tri];
+	case EireneDensitySource::T2NeutralTri:
+		return n_T2_0_Tri[tri];
+	default:
+		return 0.;
+	}
+}
+
+double ParCollCar::eireneTemperatureForDensityTri(int tri) const
+{
+	if (tri < 0 || tri >= num_trimesh_)
+		return 0.;
+	switch (eirene_density_source_)
+	{
+	case EireneDensitySource::HNeutralTri:
+		return T_H_0_Tri[tri];
+	case EireneDensitySource::H2NeutralTri:
+		return T_H2_0_Tri[tri];
+	case EireneDensitySource::DNeutralTri:
+		return T_D_0_Tri[tri];
+	case EireneDensitySource::D2NeutralTri:
+		return T_D2_0_Tri[tri];
+	case EireneDensitySource::TNeutralTri:
+		return T_T_0_Tri[tri];
+	case EireneDensitySource::T2NeutralTri:
+		return T_T2_0_Tri[tri];
+	default:
+		return 0.;
+	}
+}
+
+double ParCollCar::eireneRate(int i, int j) const
+{
+	if (eirene_rate_ == nullptr)
+		return 0.;
+	const double density = eireneDensity(i, j);
+	if (density <= 0.)
+		return 0.;
+	double arg1 = ne[i][j];
+	double arg2 = Te[i][j];
+	if (eirene_argument_mode_ == EireneArgumentMode::SameDensityTemperature)
+	{
+		arg1 = density;
+		arg2 = Ti[i][j];
+	}
+	return EireneRate(density, arg1, arg2);
+}
+
+double ParCollCar::eireneRateTri(int tri) const
+{
+	if (eirene_rate_ == nullptr || tri < 0 || tri >= num_trimesh_)
+		return 0.;
+	const double density = eireneDensityTri(tri);
+	if (density <= 0.)
+		return 0.;
+	double arg1 = density;
+	double arg2 = eireneTemperatureForDensityTri(tri);
+	if (Grid4.if_in_plasmagrid(tri) &&
+		eirene_argument_mode_ == EireneArgumentMode::ElectronDensityTemperature)
+	{
+		const int i = Grid4.b2_index(tri, 0);
+		const int j = Grid4.b2_index(tri, 1);
+		arg1 = ne[i][j];
+		arg2 = Te[i][j];
+	}
+	return EireneRate(density, arg1, arg2);
 }
 
 std::size_t ParCollCar::statGridIndex(int i, int j) const
