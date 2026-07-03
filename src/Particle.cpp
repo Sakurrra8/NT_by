@@ -2407,6 +2407,7 @@ void Particle::track()
 				Tri_Index_ = start_tri;
 				XY_[0] = start_i;
 				XY_[1] = start_j;
+				CalTn();
 				const int channel = H2PCollCal();
 				if (this == &D2 && channel >= 0 && channel < 3)
 				{
@@ -2414,6 +2415,25 @@ void Particle::track()
 					++D2p_DS_events_[channel];
 					D2p_DS_weight_[channel] += event_weight;
 					Tri_D2p_DS_weight_[start_tri][channel] += event_weight;
+					if (channel == 1 || channel == 2)
+					{
+						const int product_index = channel - 1;
+						const double product_multiplier = channel == 1 ? 1. : 2.;
+						++D2p_secondary_D_events_[product_index];
+						D2p_secondary_D_weight_[product_index] += product_multiplier * event_weight;
+
+						Vector3 v_D2p(V_[0], V_[1], V_[2]);
+						const double E_FrankCondon = 3.0;
+						const Vector3 v_D =
+							calculate_dissociation_velocity(v_D2p, E_FrankCondon, Dmass);
+						P = &D;
+						P->Particlefrom(this, product_multiplier, 0);
+						P->V_[0] = v_D.x;
+						P->V_[1] = v_D.y;
+						P->V_[2] = v_D.z;
+						P->setfate(0, channel == 1 ? 11 : 12, Index_);
+						P->CalTn();
+					}
 				}
 				Weight_ = 0.;
 			}
@@ -8395,6 +8415,10 @@ void Particle::DumpD2pTrackLengthTri()
 		 << "D2p_DS1_events," << D2p_DS_weight_[0] << ',' << D2p_DS_events_[0] << '\n'
 		 << "D2p_DS2_events," << D2p_DS_weight_[1] << ',' << D2p_DS_events_[1] << '\n'
 		 << "D2p_DS3_events," << D2p_DS_weight_[2] << ',' << D2p_DS_events_[2] << '\n'
+		 << "D2p_secondary_neutral_D_from_DS2," << D2p_secondary_D_weight_[0] << ','
+		 << D2p_secondary_D_events_[0] << '\n'
+		 << "D2p_secondary_neutral_D_from_DS3," << D2p_secondary_D_weight_[1] << ','
+		 << D2p_secondary_D_events_[1] << '\n'
 		 << "D2p_boundary_loss," << D2p_boundary_loss_weight_ << ','
 		 << D2p_boundary_loss_ << '\n'
 		 << "D2p_max_steps_loss," << D2p_max_steps_loss_weight_ << ','
@@ -8548,6 +8572,10 @@ void Particle::Clear(int n)
 		D2p_DS_weight_[0] = 0.;
 		D2p_DS_weight_[1] = 0.;
 		D2p_DS_weight_[2] = 0.;
+		D2p_secondary_D_events_[0] = 0;
+		D2p_secondary_D_events_[1] = 0;
+		D2p_secondary_D_weight_[0] = 0.;
+		D2p_secondary_D_weight_[1] = 0.;
 		D2p_boundary_loss_weight_ = 0.;
 		D2p_max_steps_loss_weight_ = 0.;
 		D2p_sum_weight_segment_dt_ = 0.;

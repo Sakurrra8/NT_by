@@ -414,8 +414,12 @@ void D2pMesh3FlightAuditOutput()
         << "4. Triangle crossing updates Tri_Index_/XY_ before the next force evaluation.\n"
         << "5. DS1/DS2/DS3 are sampled after finite D2+ residence time using the local D2+ reaction rates.\n"
         << "6. The sampled DS event is tallied as a source/fate contribution and terminates the current D2+.\n"
-        << "7. Secondary D or D+ products from that DS event are not yet launched as new transported test particles.\n"
-        << "8. Leaving the plasma triangle mesh or producing non-finite/unphysical speed terminates that test ion as a boundary/numerical loss.\n\n"
+        << "7. DS1 creates two ion products and no neutral test particle is launched.\n"
+        << "8. DS2 launches one neutral D, and DS3 launches neutral D with twice the event weight.\n"
+        << "9. The secondary neutral D velocity uses the D2+ center-of-mass velocity plus a 3 eV isotropic Frank-Condon dissociation velocity.\n"
+        << "10. The secondary neutral D energy/temperature is recalculated with the D mass and then tracked by the normal neutral-D chain until ionization or another terminal fate.\n"
+        << "11. D+ products are accounted in the source/fate tallies; they are not launched as separate test ions.\n"
+        << "12. Leaving the plasma triangle mesh or producing non-finite/unphysical speed terminates that test ion as a boundary/numerical loss.\n\n"
         << "Speed guard:\n"
         << "D2pMaxAllowedSpeed=" << D2pMaxAllowedSpeed << " m/s.\n"
         << "This is a numerical sanity limit, not a physical velocity clamp for normal D2+ ions.\n"
@@ -428,7 +432,7 @@ void D2pMesh3FlightAuditOutput()
         << "MeshMode=" << MeshMode << '\n'
         << "K_D2Flight=" << K_D2Flight << '\n'
         << "D2p_transport=" << (transport_enabled ? "enabled" : "disabled") << '\n'
-        << "D2p_secondary_product_transport=not_implemented\n"
+        << "D2p_secondary_product_transport=neutral_D_from_DS2_DS3_tracked\n"
         << "D2p_max_allowed_speed_m_s=" << D2pMaxAllowedSpeed << '\n'
         << "density_reference="
         << (transport_enabled ? "transport_track_length" : "local_balance_P_over_L")
