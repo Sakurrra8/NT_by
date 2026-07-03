@@ -99,6 +99,53 @@ namespace
 		return -1;
 	}
 
+	bool nearestTriangleEdgeCrossing(int tri_index,
+									 double x0, double y0,
+									 double x1, double y1,
+									 int &edge_out,
+									 double &secx,
+									 double &secy,
+									 double &fraction)
+	{
+		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size())
+			return false;
+		const double dx = x1 - x0;
+		const double dy = y1 - y0;
+		if (std::hypot(dx, dy) <= 1.e-20)
+			return false;
+
+		bool found = false;
+		double best_t = std::numeric_limits<double>::max();
+		const auto &tri = Grid4.tris_[tri_index];
+		for (int edge = 0; edge < 3; ++edge)
+		{
+			const auto &a = Grid4.nodes_[tri.v[edge]];
+			const auto &b = Grid4.nodes_[tri.v[(edge + 1) % 3]];
+			const double ex = b.r - a.r;
+			const double ey = b.z - a.z;
+			const double denom = dx * ey - dy * ex;
+			if (std::abs(denom) < 1.e-20)
+				continue;
+			const double ax = a.r - x0;
+			const double ay = a.z - y0;
+			const double t = (ax * ey - ay * ex) / denom;
+			const double u = (ax * dy - ay * dx) / denom;
+			if (t <= 1.e-12 || t > 1.0 + 1.e-12 || u < -1.e-10 || u > 1.0 + 1.e-10)
+				continue;
+			if (t < best_t)
+			{
+				found = true;
+				best_t = t;
+				edge_out = edge;
+				secx = x0 + t * dx;
+				secy = y0 + t * dy;
+			}
+		}
+		if (found)
+			fraction = best_t;
+		return found;
+	}
+
 	std::pair<double, double> inwardTargetTangent(int target_index)
 	{
 		double target_cos = Grid4.Cos_Target(target_index);
@@ -4092,6 +4139,114 @@ void Particle::Caltrace_Tri()
 					}
 					return;
 				}
+			}
+			int fallback_edge = -1;
+			double fallback_x = 0.0;
+			double fallback_y = 0.0;
+			double fallback_fraction = 0.0;
+			if (nearestTriangleEdgeCrossing(Tri_Index_, X_[0], X_[1], X_new_[0], X_new_[1],
+											fallback_edge, fallback_x, fallback_y, fallback_fraction))
+			{
+				X_new_[0] = fallback_x;
+				X_new_[1] = fallback_y;
+				dt_trace_ = dt_ * fallback_fraction;
+				d_flight_ = d_flight_ * exp(-dt_trace_ / dt_);
+				if (K_flight == 1 && Rand_flight_ > d_flight_)
+				{
+					IfColl_ = 1;
+					boundary_start_ = 0;
+					const double previous_d_flight = d_flight_ / exp(-dt_trace_ / dt_);
+					if (log(Rand_flight_ / previous_d_flight) < -1)
+					{
+						std::cout << "error fallback in Caltrace_Tri()" << endl;
+						pause();
+					}
+					dt_trace_ = -dt_trace_ * log(Rand_flight_ / previous_d_flight);
+					for (int i = 0; i < 3; i++)
+						X_new_[i] = X_[i] + V_[i] * dt_trace_;
+					NumParStat();
+					return;
+				}
+
+				IfColl_ = 0;
+				boundary_start_ = 0;
+				NumParStat();
+				const int line_info = Grid4.lines_info(Tri_Index_, fallback_edge);
+				const int neighbor = Grid4.tris_[Tri_Index_].neigh[fallback_edge * 3];
+				if (line_info == 0)
+				{
+					Tri_Index_ = neighbor;
+					NeutralFluxStatistics(5, 1);
+				}
+				else if (line_info == -1 || line_info == -2)
+				{
+					IfFlightOut_ = 7;
+					NeutralFluxStatistics(2, 1);
+					InterscePoint[0][0] = 0;
+					InterscePoint[0][1] = fallback_x;
+					InterscePoint[0][2] = fallback_y;
+					InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(fallback_x, fallback_y);
+					InterscePoint[0][4] = 11;
+					InterscePoint[0][5] = fallback_edge;
+					Zone_ = 7;
+					return;
+				}
+				else if (line_info == 1)
+				{
+					NeutralFluxStatistics(4, 1);
+					IfFlightOut_ = 1;
+					InterscePoint[0][0] = 0;
+					InterscePoint[0][1] = fallback_x;
+					InterscePoint[0][2] = fallback_y;
+					InterscePoint[0][3] = XY_[0] >= 0 ? XY_[0] - 24 : 0;
+					InterscePoint[0][4] = 18;
+					InterscePoint[0][5] = fallback_edge;
+					XY_[0] = -1;
+					XY_[1] = -1;
+					Tri_Index_ = -1;
+					Zone_ = 1;
+					return;
+				}
+				else if (line_info == 2)
+				{
+					Tri_Index_ = neighbor;
+					if (Zone_ < 6)
+					{
+						Zone_ = 6;
+						NeutralFluxStatistics(1, 1);
+					}
+					else
+					{
+						Zone_ = 5;
+						NeutralFluxStatistics(1, 2);
+					}
+				}
+				else if (line_info == 3 || line_info == 4)
+				{
+					IfFlightOut_ = 7;
+					NeutralFluxStatistics(3, 1);
+					const int target_j = XY_[1] >= 0 ? XY_[1] : Grid4.tris_[Tri_Index_].neigh[10];
+					InterscePoint[0][0] = 0;
+					InterscePoint[0][1] = fallback_x;
+					InterscePoint[0][2] = fallback_y;
+					InterscePoint[0][3] = line_info == 3 ? target_j : target_j + N_radial;
+					InterscePoint[0][4] = 1;
+					InterscePoint[0][5] = fallback_edge;
+					Zone_ = 7;
+					return;
+				}
+
+				if (Tri_Index_ >= 0 && Tri_Index_ < num_trimesh_ && Zone_ < 6)
+				{
+					XY_[0] = Tri_B2_[Tri_Index_][0];
+					XY_[1] = Tri_B2_[Tri_Index_][1];
+				}
+				else
+				{
+					XY_[0] = -1;
+					XY_[1] = -1;
+				}
+				return;
 			}
 			if (K_D2Flight && isHydrogenMoleculeIon())
 			{
