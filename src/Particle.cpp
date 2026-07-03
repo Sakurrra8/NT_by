@@ -8456,6 +8456,40 @@ void Particle::DumpD2pTrackLengthTri()
 		<< (sum_p_total > 0. ? p_total_te_ge_5 / sum_p_total : 0.) << '\n';
 }
 
+void Particle::UseD2pTransportDensityForOutput()
+{
+	if (this != &D2 || MeshMode != 3 || K_D2Flight != 1)
+		return;
+
+	std::vector<std::vector<double>> b2_track_integral(
+		N_poloidal, std::vector<double>(N_radial, 0.0));
+	for (int i = 0; i < N_poloidal; ++i)
+		for (int j = 0; j < N_radial; ++j)
+			n_[i][j][1] = 0.0;
+
+	for (int tri = 0; tri < Grid4.num_tris(); ++tri)
+	{
+		const double volume = Grid4.triVolume(tri);
+		const double track_integral =
+			tri < static_cast<int>(Tri_D2p_track_time_.size())
+				? Tri_D2p_track_time_[tri]
+				: 0.0;
+		Tri_n_[tri][1] = volume > 0.0 ? track_integral / volume : 0.0;
+
+		if (!Grid4.if_in_plasmagrid(tri))
+			continue;
+		const int i = Grid4.b2_index(tri, 0);
+		const int j = Grid4.b2_index(tri, 1);
+		if (i >= 0 && i < N_poloidal && j >= 0 && j < N_radial)
+			b2_track_integral[i][j] += track_integral;
+	}
+
+	for (int i = 0; i < N_poloidal; ++i)
+		for (int j = 0; j < N_radial; ++j)
+			if (Volume[i][j] > 0.0)
+				n_[i][j][1] = b2_track_integral[i][j] / Volume[i][j];
+}
+
 void Particle::AppendSourceStratumSummary(std::ostream &out) const
 {
 	for (int charge = 0; charge <= MaxCharge_; ++charge)

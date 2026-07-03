@@ -691,6 +691,7 @@ public:
 	void DumpD2pBalance_Tri();
 	void DumpD2pPhysicsDecomposition_B2();
 	void DumpD2pTrackLengthTri();
+	void UseD2pTransportDensityForOutput();
 	void AppendSourceStratumSummary(std::ostream &out) const;
 	// void FluxCal_Grid();
 	void FluxCal_Target();

@@ -40,16 +40,19 @@ void Output()
     }
     if (K_D)
     {
+        D2.DumpD2pBalance_B2();
+        D2.DumpD2pBalance_Tri();
+        D2.DumpD2pPhysicsDecomposition_B2();
+        if (MeshMode == 3 && K_D2Flight == 1)
+        {
+            D2.DumpD2pTrackLengthTri();
+            D2.UseD2pTransportDensityForOutput();
+        }
         HydrogenOutput(&D, &D2);
         if (MeshMode == 3)
             HydrogenOutput_Tri(&D, &D2);
         D.Dump_Flux();
         D2.Dump_Flux();
-        D2.DumpD2pBalance_B2();
-        D2.DumpD2pBalance_Tri();
-        D2.DumpD2pPhysicsDecomposition_B2();
-        if (MeshMode == 3 && K_D2Flight == 1)
-            D2.DumpD2pTrackLengthTri();
         EireneD2pReactionAuditOutput();
         D2pMesh3FlightAuditOutput();
 
@@ -383,17 +386,21 @@ void D2pMesh3FlightAuditOutput()
           << "coll_immediate_charge1_branch_exists,official_Tri_D2p_density_estimator,"
           << "mesh3_D2p_flight_status,D2p_max_allowed_speed_m_s\n";
     audit << MeshMode << ',' << K_D2Flight << ',' << K_flight << ',' << K_Prob << ','
-          << "1,1,1,local_balance_P_over_L,"
+          << "1,1,1,"
+          << (transport_enabled ? "transport_track_length" : "local_balance_P_over_L") << ','
           << (transport_enabled ? "transport_enabled" : "transport_disabled")
           << ',' << D2pMaxAllowedSpeed << '\n';
 
     ofstream interpretation(Outputpath + "D2p_tri_density_interpretation.txt");
     interpretation
-        << "Official triangular-grid D2+ density definition:\n"
+        << "Triangular-grid D2+ local-balance definition:\n"
         << "Tri_n_[i][1] = (Ion_D2 + CX_D2 + optional CXDT_D2) / "
         << "(triVolume * ne * (k_2.2.11 + k_2.2.12 + k_2.2.14))\n\n"
-        << "This is a local balance estimate.\n"
-        << "It is not a D2+ track-length or residence-time density.\n";
+        << "When K_D2Flight=0, n_D2_1 and n_D2_1_Tri use this local balance estimate.\n"
+        << "When K_D2Flight=1, n_D2_1 and n_D2_1_Tri are overwritten with the "
+        << "D2+ track-length transport density before output.\n"
+        << "The local-balance density remains available in D2p_balance_Tri.csv and "
+        << "D2p_track_length_Tri.csv.\n";
 
     ofstream design(Outputpath + "D2p_mesh3_test_ion_tracking_design.txt");
     design
@@ -406,7 +413,9 @@ void D2pMesh3FlightAuditOutput()
         << "3. The step is limited by the current triangle size so a fixed-time charged step cannot skip many mesh cells.\n"
         << "4. Triangle crossing updates Tri_Index_/XY_ before the next force evaluation.\n"
         << "5. DS1/DS2/DS3 are sampled after finite D2+ residence time using the local D2+ reaction rates.\n"
-        << "6. Leaving the plasma triangle mesh or producing non-finite/unphysical speed terminates that test ion as a boundary/numerical loss.\n\n"
+        << "6. The sampled DS event is tallied as a source/fate contribution and terminates the current D2+.\n"
+        << "7. Secondary D or D+ products from that DS event are not yet launched as new transported test particles.\n"
+        << "8. Leaving the plasma triangle mesh or producing non-finite/unphysical speed terminates that test ion as a boundary/numerical loss.\n\n"
         << "Speed guard:\n"
         << "D2pMaxAllowedSpeed=" << D2pMaxAllowedSpeed << " m/s.\n"
         << "This is a numerical sanity limit, not a physical velocity clamp for normal D2+ ions.\n"
@@ -419,8 +428,11 @@ void D2pMesh3FlightAuditOutput()
         << "MeshMode=" << MeshMode << '\n'
         << "K_D2Flight=" << K_D2Flight << '\n'
         << "D2p_transport=" << (transport_enabled ? "enabled" : "disabled") << '\n'
+        << "D2p_secondary_product_transport=not_implemented\n"
         << "D2p_max_allowed_speed_m_s=" << D2pMaxAllowedSpeed << '\n'
-        << "density_reference=local_balance_P_over_L\n"
+        << "density_reference="
+        << (transport_enabled ? "transport_track_length" : "local_balance_P_over_L")
+        << '\n'
         << "track_length_outputs="
         << (transport_enabled ? "enabled" : "disabled") << '\n';
 
@@ -430,8 +442,8 @@ void D2pMesh3FlightAuditOutput()
         warning
             << "MeshMode=3 with K_D2Flight=1 enables D2+ test-ion tracking.\n"
             << "Particle::track() follows charged D2+ with fixed-time steps and triangle-index updates.\n"
-            << "Official Tri_n[D2+]=P/L local balance, not track-length density.\n"
-            << "Use track-length outputs as transport diagnostics and compare them against local balance.\n";
+            << "n_D2_1 and n_D2_1_Tri are D2+ track-length transport densities in this mode.\n"
+            << "Use D2p_balance_Tri.csv for the local P/L balance diagnostic.\n";
     }
 }
 
