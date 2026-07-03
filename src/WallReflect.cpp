@@ -7,6 +7,9 @@ void WallReflect()
     coeff_recyc = coeff_ercyc_wall;
     if (InterscePoint[0][4] == 1)
         coeff_recyc = coeff_recyc_target;
+    if (K_D2Flight && P == &D && (P->fate(0) == 11 || P->fate(0) == 12))
+        D2.AuditD2pSecondaryDBoundaryHit(P->fate(0), (int)InterscePoint[0][4],
+                                         P->collisionStatWeight());
 
     if (MeshMode == 3)
     {

@@ -8429,6 +8429,18 @@ void Particle::DumpD2pTrackLengthTri()
 		 << D2p_secondary_D_ionized_events_[0] << '\n'
 		 << "D2p_secondary_neutral_D_ionized_from_DS3," << D2p_secondary_D_ionized_weight_[1] << ','
 		 << D2p_secondary_D_ionized_events_[1] << '\n'
+		 << "D2p_secondary_neutral_D_wall_from_DS2," << D2p_secondary_D_wall_weight_[0] << ','
+		 << D2p_secondary_D_wall_events_[0] << '\n'
+		 << "D2p_secondary_neutral_D_wall_from_DS3," << D2p_secondary_D_wall_weight_[1] << ','
+		 << D2p_secondary_D_wall_events_[1] << '\n'
+		 << "D2p_secondary_neutral_D_target_from_DS2," << D2p_secondary_D_target_weight_[0] << ','
+		 << D2p_secondary_D_target_events_[0] << '\n'
+		 << "D2p_secondary_neutral_D_target_from_DS3," << D2p_secondary_D_target_weight_[1] << ','
+		 << D2p_secondary_D_target_events_[1] << '\n'
+		 << "D2p_secondary_neutral_D_boundary_other_from_DS2," << D2p_secondary_D_boundary_other_weight_[0] << ','
+		 << D2p_secondary_D_boundary_other_events_[0] << '\n'
+		 << "D2p_secondary_neutral_D_boundary_other_from_DS3," << D2p_secondary_D_boundary_other_weight_[1] << ','
+		 << D2p_secondary_D_boundary_other_events_[1] << '\n'
 		 << "D2p_boundary_loss," << D2p_boundary_loss_weight_ << ','
 		 << D2p_boundary_loss_ << '\n'
 		 << "D2p_max_steps_loss," << D2p_max_steps_loss_weight_ << ','
@@ -8524,6 +8536,32 @@ void Particle::UseD2pTransportDensityForOutput()
 				n_[i][j][1] = b2_track_integral[i][j] / Volume[i][j];
 }
 
+void Particle::AuditD2pSecondaryDBoundaryHit(int source_fate,
+											 int boundary_type,
+											 double represented_weight)
+{
+	if (this != &D2)
+		return;
+	const int product_index = source_fate == 11 ? 0 : (source_fate == 12 ? 1 : -1);
+	if (product_index < 0)
+		return;
+	if (boundary_type == 11)
+	{
+		++D2p_secondary_D_wall_events_[product_index];
+		D2p_secondary_D_wall_weight_[product_index] += represented_weight;
+	}
+	else if (boundary_type == 1)
+	{
+		++D2p_secondary_D_target_events_[product_index];
+		D2p_secondary_D_target_weight_[product_index] += represented_weight;
+	}
+	else
+	{
+		++D2p_secondary_D_boundary_other_events_[product_index];
+		D2p_secondary_D_boundary_other_weight_[product_index] += represented_weight;
+	}
+}
+
 void Particle::AppendSourceStratumSummary(std::ostream &out) const
 {
 	for (int charge = 0; charge <= MaxCharge_; ++charge)
@@ -8590,6 +8628,18 @@ void Particle::Clear(int n)
 		D2p_secondary_D_ionized_events_[1] = 0;
 		D2p_secondary_D_ionized_weight_[0] = 0.;
 		D2p_secondary_D_ionized_weight_[1] = 0.;
+		D2p_secondary_D_wall_events_[0] = 0;
+		D2p_secondary_D_wall_events_[1] = 0;
+		D2p_secondary_D_target_events_[0] = 0;
+		D2p_secondary_D_target_events_[1] = 0;
+		D2p_secondary_D_boundary_other_events_[0] = 0;
+		D2p_secondary_D_boundary_other_events_[1] = 0;
+		D2p_secondary_D_wall_weight_[0] = 0.;
+		D2p_secondary_D_wall_weight_[1] = 0.;
+		D2p_secondary_D_target_weight_[0] = 0.;
+		D2p_secondary_D_target_weight_[1] = 0.;
+		D2p_secondary_D_boundary_other_weight_[0] = 0.;
+		D2p_secondary_D_boundary_other_weight_[1] = 0.;
 		D2p_boundary_loss_weight_ = 0.;
 		D2p_max_steps_loss_weight_ = 0.;
 		D2p_sum_weight_segment_dt_ = 0.;
