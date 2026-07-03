@@ -69,6 +69,24 @@ def read_fate_summary(path):
         }
 
 
+def read_source_launch_summary(path):
+    launched = {"D0": 0.0, "D2": 0.0, "D_nuclei": 0.0}
+    if not path.exists():
+        return launched
+    with path.open(newline="") as handle:
+        for row in csv.DictReader(handle):
+            species = row["species"]
+            charge = int(row["charge"])
+            weight = float(row["launched_weight_s-1"])
+            if species == "D" and charge == 0:
+                launched["D0"] += weight
+                launched["D_nuclei"] += weight
+            elif species == "D2" and charge == 0:
+                launched["D2"] += weight
+                launched["D_nuclei"] += 2.0 * weight
+    return launched
+
+
 def write_csv(path, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
@@ -196,6 +214,23 @@ def main():
             [("+created", created), ("-tracked_fates", -lost)],
         )
 
+    launched = read_source_launch_summary(data_dir / "source_stratum_summary.csv")
+    add_row(
+        rows,
+        "reported_neutral_launch_D0_not_closure",
+        [("+launched_D0", launched["D0"])],
+    )
+    add_row(
+        rows,
+        "reported_neutral_launch_D2_not_closure",
+        [("+launched_D2", launched["D2"])],
+    )
+    add_row(
+        rows,
+        "reported_neutral_launch_D_nuclei_not_closure",
+        [("+launched_D_nuclei", launched["D_nuclei"])],
+    )
+
     csv_path = Path(args.csv) if args.csv else output / "fig" / "deuterium_conservation_check.csv"
     if not csv_path.is_absolute():
         csv_path = root / csv_path
@@ -210,7 +245,8 @@ def main():
         )
     print(
         "Note: neutral wall/target/pump closure is not included unless "
-        "species-resolved neutral fate diagnostics are written."
+        "species-resolved neutral fate diagnostics are written. Rows ending "
+        "in not_closure are launch magnitudes only."
     )
 
 
