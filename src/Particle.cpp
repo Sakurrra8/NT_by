@@ -99,6 +99,29 @@ namespace
 		return -1;
 	}
 
+	std::pair<double, double> inwardTargetTangent(int target_index)
+	{
+		double target_cos = Grid4.Cos_Target(target_index);
+		double target_sin = Grid4.Sin_Target(target_index);
+		const int tri_index = Grid4.targetIndex(target_index, 0);
+		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size())
+			return {target_cos, target_sin};
+
+		const double mid_x = Grid4.Mid_Target(target_index, 0);
+		const double mid_y = Grid4.Mid_Target(target_index, 1);
+		const auto &tri = Grid4.tris_[tri_index];
+		const double cx = (Grid4.nodes_[tri.v[0]].r + Grid4.nodes_[tri.v[1]].r + Grid4.nodes_[tri.v[2]].r) / 3.0;
+		const double cy = (Grid4.nodes_[tri.v[0]].z + Grid4.nodes_[tri.v[1]].z + Grid4.nodes_[tri.v[2]].z) / 3.0;
+		const double normal_x = -target_sin;
+		const double normal_y = target_cos;
+		if ((cx - mid_x) * normal_x + (cy - mid_y) * normal_y < 0.0)
+		{
+			target_cos = -target_cos;
+			target_sin = -target_sin;
+		}
+		return {target_cos, target_sin};
+	}
+
 	int zoneFromB2Index(int i, int j)
 	{
 		if (j >= N_radial / 2 && j <= radialLastIndex())
@@ -674,6 +697,9 @@ void Particle::Init(int k, int z)
 		else
 			Zone_ = 5;
 		GridIndex_ = XY_[0] * N_radial + XY_[1];
+		const auto target_tangent = inwardTargetTangent(z);
+		const double target_cos = target_tangent.first;
+		const double target_sin = target_tangent.second;
 
 		if (this == &H || this == &D || this == &T)
 		{
@@ -689,20 +715,19 @@ void Particle::Init(int k, int z)
 					B[XY_[0]][XY_[1]][0],
 					B[XY_[0]][XY_[1]][1],
 					B[XY_[0]][XY_[1]][2]};
-				setDWTrimDirection(V_, sample, Grid4.Cos_Target(z),
-								   Grid4.Sin_Target(z), reference_direction);
+				setDWTrimDirection(V_, sample, target_cos, target_sin, reference_direction);
 			}
 			else
 			{
 				Tn_ = T_Init_[z];
 				Tools::calculateReflectionVelocity(
-					V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 0);
+					V_, target_cos, target_sin, 0);
 			}
 		}
 		else if (this == &H2 || this == &D2 || this == &T2)
 		{
 			Tn_ = T_wall;
-			Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target(z), Grid4.Sin_Target(z), 0);
+			Tools::calculateReflectionVelocity(V_, target_cos, target_sin, 0);
 			thermal_surface_emission = true;
 		}
 		// Tools::AdjustIncidentVelocity(V_, B[XY_[0]][XY_[1]][0], B[XY_[0]][XY_[1]][1], B[XY_[0]][XY_[1]][2], Grid4.Cos_Target(z), Grid4.Cos_Target(z));
