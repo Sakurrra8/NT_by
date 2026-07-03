@@ -2158,13 +2158,14 @@ void Particle::track()
 							dt_ = -log(Tools::Random()) * lambda_min_[Charge_];
 						}
 					}
-					const double trace_dt = std::isfinite(dt_)
-												? dt_
-												: 1.e6 / std::max(
-															 std::sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])),
-															 1.);
+					if (!std::isfinite(dt_) || dt_ <= 0.)
+					{
+						dt_ = 1.e6 / std::max(
+										 std::sqrt(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])),
+										 1.);
+					}
 					for (int i = 0; i < 3; i++)
-						X_new_[i] = X_[i] + V_[i] * trace_dt;
+						X_new_[i] = X_[i] + V_[i] * dt_;
 					Caltrace_Tri();
 					if (!IfColl_ && Zone_ < 7)
 					{
