@@ -146,6 +146,21 @@ namespace
 		return found;
 	}
 
+	double segmentFraction(double x0, double y0, double x1, double y1, double x, double y)
+	{
+		const double dx = x1 - x0;
+		const double dy = y1 - y0;
+		const double denom = dx * dx + dy * dy;
+		if (!std::isfinite(denom) || denom <= 1.e-30)
+			return 0.0;
+		const double fraction = ((x - x0) * dx + (y - y0) * dy) / denom;
+		if (fraction < 0.0)
+			return 0.0;
+		if (fraction > 1.0)
+			return 1.0;
+		return fraction;
+	}
+
 	std::pair<double, double> inwardTargetTangent(int target_index)
 	{
 		double target_cos = Grid4.Cos_Target(target_index);
@@ -3561,6 +3576,24 @@ void Particle::Caltrace()
 /// @param tag 0 for collision in this grid, 1 for no collision in the grid
 void Particle::Caltrace_Tri()
 {
+	if (!std::isfinite(X_[0]) || !std::isfinite(X_[1]) || !std::isfinite(X_new_[0]) || !std::isfinite(X_new_[1]) ||
+		!std::isfinite(dt_) || dt_ <= 0.)
+	{
+		std::cerr << "Caltrace_Tri invalid state: name=" << name_
+				  << " charge=" << Charge_
+				  << " zone=" << Zone_
+				  << " tri=" << Tri_Index_
+				  << " x=" << X_[0] << "," << X_[1]
+				  << " x_new=" << X_new_[0] << "," << X_new_[1]
+				  << " dt=" << dt_
+				  << std::endl;
+		IfColl_ = 0;
+		boundary_start_ = 0;
+		IfFlightOut_ = 7;
+		Zone_ = 7;
+		Weight_ = 0.;
+		return;
+	}
 	/*if (!Grid4.Ifingrid(Tri_Index_, X_[0], X_[1]))
 	{
 		std::cout << "ni zai na?" << endl;
@@ -3607,9 +3640,10 @@ void Particle::Caltrace_Tri()
 		{
 			FindIt = 1;
 			boundary_start_ = 1;
+			const double trace_fraction = segmentFraction(X_[0], X_[1], X_new_[0], X_new_[1], secx, secy);
 			X_new_[0] = secx;
 			X_new_[1] = secy;
-			dt_trace_ = (X_new_[0] - X_[0]) / V_[0];
+			dt_trace_ = dt_ * trace_fraction;
 			d_flight_ = d_flight_ * exp(-dt_trace_ / dt_);
 			if (K_flight == 1)
 			{
@@ -3791,9 +3825,10 @@ void Particle::Caltrace_Tri()
 		{
 			FindIt = 1;
 			boundary_start_ = 2;
+			const double trace_fraction = segmentFraction(X_[0], X_[1], X_new_[0], X_new_[1], secx, secy);
 			X_new_[0] = secx;
 			X_new_[1] = secy;
-			dt_trace_ = (X_new_[0] - X_[0]) / V_[0];
+			dt_trace_ = dt_ * trace_fraction;
 			d_flight_ = d_flight_ * exp(-dt_trace_ / dt_);
 			if (K_flight == 1)
 			{
@@ -3975,9 +4010,10 @@ void Particle::Caltrace_Tri()
 		{
 			FindIt = 1;
 			boundary_start_ = 3;
+			const double trace_fraction = segmentFraction(X_[0], X_[1], X_new_[0], X_new_[1], secx, secy);
 			X_new_[0] = secx;
 			X_new_[1] = secy;
-			dt_trace_ = (X_new_[0] - X_[0]) / V_[0];
+			dt_trace_ = dt_ * trace_fraction;
 			d_flight_ = d_flight_ * exp(-dt_trace_ / dt_);
 			if (K_flight == 1)
 			{
