@@ -2117,6 +2117,7 @@ void Particle::track()
 				d_flight_ = 1.;
 				Rand_flight_ = Tools::Random();
 				unsigned long long neutral_tri_steps = 0;
+				unsigned int neutral_tri_stall_steps = 0;
 				while (!IfColl_ && Zone_ < 7)
 				{
 					if (++neutral_tri_steps > MaxNeutralTriSteps)
@@ -2132,6 +2133,8 @@ void Particle::track()
 						Zone_ = 7;
 						return;
 					}
+					const double x_before_trace = X_[0];
+					const double y_before_trace = X_[1];
 					if (K_Tn == 1)
 					{
 						CalLambda();
@@ -2163,12 +2166,37 @@ void Particle::track()
 					for (int i = 0; i < 3; i++)
 						X_new_[i] = X_[i] + V_[i] * trace_dt;
 					Caltrace_Tri();
+					if (!IfColl_ && Zone_ < 7)
+					{
+						const double step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
+						if (!std::isfinite(step_rz) || step_rz < 1.e-9)
+							++neutral_tri_stall_steps;
+						else
+							neutral_tri_stall_steps = 0;
+						if (neutral_tri_stall_steps > 8)
+						{
+							std::cerr << "MeshMode3 neutral stalled at triangle boundary: name=" << name_
+									  << " charge=" << Charge_
+									  << " zone=" << Zone_
+									  << " tri=" << Tri_Index_
+									  << " x=" << X_[0] << "," << X_[1]
+									  << " step_rz=" << step_rz
+									  << std::endl;
+							Weight_ = 0.;
+							Zone_ = 7;
+							return;
+						}
+					}
 					if (Zone_ == 1)
 					{
 						Weight_ = 0.;
 						return;
 					}
 					if (IfColl_ == 1)
+					{
+						return;
+					}
+					if (Weight_ <= 0.)
 					{
 						return;
 					}
