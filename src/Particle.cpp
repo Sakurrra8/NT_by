@@ -3662,8 +3662,7 @@ void Particle::Caltrace_Tri()
 	IfColl_ = 1;
 	double secx, secy, distance;
 	// judge if the particle cross through the FIRST boundry of grid
-	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, &secx, &secy) &&
-		segmentFraction(X_[0], X_[1], X_new_[0], X_new_[1], secx, secy) > 1.e-10)
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, &secx, &secy))
 	{
 		if (!Tools::PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, X_new_[0], X_new_[1]))
 		{
@@ -3848,8 +3847,7 @@ void Particle::Caltrace_Tri()
 	}
 
 	// judge if the particle cross through the SECOND boundry of grid
-	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, &secx, &secy) &&
-		segmentFraction(X_[0], X_[1], X_new_[0], X_new_[1], secx, secy) > 1.e-10)
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, &secx, &secy))
 	{
 		if (!Tools::PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, X_new_[0], X_new_[1]))
 		{
@@ -4034,8 +4032,7 @@ void Particle::Caltrace_Tri()
 	}
 
 	// judge if the particle cross through the THIRD boundry of grid
-	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, &secx, &secy) &&
-		segmentFraction(X_[0], X_[1], X_new_[0], X_new_[1], secx, secy) > 1.e-10)
+	if (!FindIt && Tools::get_line_intersection(X_[0], X_[1], X_new_[0], X_new_[1], Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, &secx, &secy))
 	{
 		if (!Tools::PointandLine(Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[2]].z, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r, Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z, X_new_[0], X_new_[1]))
 		{
