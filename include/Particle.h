@@ -368,6 +368,7 @@ private:
 	int split_depth_{0};	// Number of variance-reduction split generations
 	int importance_region_{-1}; // Last independently defined physical importance region
 	SourceStratum source_stratum_{SourceStratum::Unknown};
+	int D2p_origin_channel_{0};
 	int XY_[3];				// Particle position Grid Index in Tokamak
 	int GridIndex_;			// the mesh Index
 
@@ -568,6 +569,7 @@ public:
 		int fate[2];
 		int sourcePar[2];
 		int sourceGrid[2];
+		int D2pOriginChannel;
 		int Zone_old;
 		int GridIndex_old;
 		double X[3];
@@ -702,7 +704,7 @@ public:
 	void DumpD2pPhysicsDecomposition_B2();
 	void DumpD2pTrackLengthTri();
 	void UseD2pTransportDensityForOutput();
-	void AuditD2pSecondaryDBoundaryHit(int source_fate, int boundary_type,
+	void AuditD2pSecondaryDBoundaryHit(int origin_channel, int boundary_type,
 									   double represented_weight);
 	void AppendSourceStratumSummary(std::ostream &out) const;
 	// void FluxCal_Grid();
@@ -759,6 +761,8 @@ public:
 	void SetChargeTag(int i);
 	SourceStratum sourceStratum() const;
 	void setSourceStratum(SourceStratum source);
+	int D2pOriginChannel() const;
+	void setD2pOriginChannel(int channel);
 	double Weight();
 	void setname(string particle_name);
 	void setPar(string particle_name, double mass, int Charge);

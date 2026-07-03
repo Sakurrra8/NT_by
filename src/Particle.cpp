@@ -440,6 +440,7 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 
 	Tn_ = A->Tn();
 	source_stratum_ = A->sourceStratum();
+	D2p_origin_channel_ = A->D2pOriginChannel();
 	split_depth_ = A->split_depth_;
 	importance_region_ = A->importance_region_;
 
@@ -712,6 +713,8 @@ void Particle::Init(int k, int z)
 	bool record_source_launch = false;
 	bool thermal_surface_emission = false;
 	bool prescribed_reflection_speed = false;
+	if (k != 3 && k != 6 && k != 7)
+		D2p_origin_channel_ = 0;
 	auto speedFromEnergy = [this](double energy_eV)
 	{
 		return std::sqrt(2.0 * qe * std::max(0.0, energy_eV) / mass_);
@@ -2428,6 +2431,7 @@ void Particle::track()
 							calculate_dissociation_velocity(v_D2p, E_FrankCondon, Dmass);
 						P = &D;
 						P->Particlefrom(this, product_multiplier, 0);
+						P->setD2pOriginChannel(channel);
 						P->V_[0] = v_D.x;
 						P->V_[1] = v_D.y;
 						P->V_[2] = v_D.z;
@@ -4540,6 +4544,7 @@ Particle::State Particle::SaveState() const
 	state.splitDepth = split_depth_;
 	state.importanceRegion = importance_region_;
 	state.sourceStratum = source_stratum_;
+	state.D2pOriginChannel = D2p_origin_channel_;
 	state.lambda_now = lambda_now_;
 	state.d_flight = d_flight_;
 	state.Rand_flight = Rand_flight_;
@@ -4589,6 +4594,7 @@ void Particle::RestoreState(const State &state)
 	split_depth_ = state.splitDepth;
 	importance_region_ = state.importanceRegion;
 	source_stratum_ = state.sourceStratum;
+	D2p_origin_channel_ = state.D2pOriginChannel;
 	lambda_now_ = state.lambda_now;
 	d_flight_ = state.d_flight;
 	Rand_flight_ = state.Rand_flight;
@@ -5474,9 +5480,9 @@ void Particle::Coll()
 					}
 				}
 
-				if (K_D2Flight && this == &D && (fate_[0] == 11 || fate_[0] == 12))
+				if (K_D2Flight && this == &D && D2p_origin_channel_ >= 1 && D2p_origin_channel_ <= 2)
 				{
-					const int product_index = fate_[0] == 11 ? 0 : 1;
+					const int product_index = D2p_origin_channel_ - 1;
 					++D2.D2p_secondary_D_ionized_events_[product_index];
 					D2.D2p_secondary_D_ionized_weight_[product_index] += collisionStatWeight();
 				}
@@ -8536,13 +8542,14 @@ void Particle::UseD2pTransportDensityForOutput()
 				n_[i][j][1] = b2_track_integral[i][j] / Volume[i][j];
 }
 
-void Particle::AuditD2pSecondaryDBoundaryHit(int source_fate,
+void Particle::AuditD2pSecondaryDBoundaryHit(int origin_channel,
 											 int boundary_type,
 											 double represented_weight)
 {
 	if (this != &D2)
 		return;
-	const int product_index = source_fate == 11 ? 0 : (source_fate == 12 ? 1 : -1);
+	const int product_index =
+		origin_channel >= 1 && origin_channel <= 2 ? origin_channel - 1 : -1;
 	if (product_index < 0)
 		return;
 	if (boundary_type == 11)
@@ -8679,6 +8686,7 @@ void Particle::Clear(int n)
 		D2p_current_created_by_cx_ = false;
 		importance_region_ = -1;
 		source_stratum_ = SourceStratum::Unknown;
+		D2p_origin_channel_ = 0;
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)
 				for (int k = 0; k < MaxCharge_ + 1; k++)
@@ -9522,6 +9530,10 @@ void Particle::SetChargeTag(int i) { ChargeTag_ = i; }
 SourceStratum Particle::sourceStratum() const { return source_stratum_; }
 
 void Particle::setSourceStratum(SourceStratum source) { source_stratum_ = source; }
+
+int Particle::D2pOriginChannel() const { return D2p_origin_channel_; }
+
+void Particle::setD2pOriginChannel(int channel) { D2p_origin_channel_ = channel; }
 
 void Particle::setPar(string particle_name, double mass, int Charge)
 {
