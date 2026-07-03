@@ -469,6 +469,7 @@ private:
 	unsigned long long D2p_track_steps_{0};
 	unsigned long long D2p_DS_events_[3]{0, 0, 0};
 	unsigned long long D2p_secondary_D_events_[2]{0, 0};
+	unsigned long long D2p_secondary_D_ionized_events_[2]{0, 0};
 	unsigned long long D2p_boundary_loss_{0};
 	unsigned long long D2p_max_steps_loss_{0};
 	unsigned long long D2p_current_flight_steps_{0};
@@ -476,6 +477,7 @@ private:
 	double D2p_created_by_cx_weight_{0.};
 	double D2p_DS_weight_[3]{0., 0., 0.};
 	double D2p_secondary_D_weight_[2]{0., 0.};
+	double D2p_secondary_D_ionized_weight_[2]{0., 0.};
 	double D2p_boundary_loss_weight_{0.};
 	double D2p_max_steps_loss_weight_{0.};
 	double D2p_sum_weight_segment_dt_{0.};

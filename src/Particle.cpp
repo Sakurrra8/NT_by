@@ -5474,6 +5474,12 @@ void Particle::Coll()
 					}
 				}
 
+				if (K_D2Flight && this == &D && (fate_[0] == 11 || fate_[0] == 12))
+				{
+					const int product_index = fate_[0] == 11 ? 0 : 1;
+					++D2.D2p_secondary_D_ionized_events_[product_index];
+					D2.D2p_secondary_D_ionized_weight_[product_index] += collisionStatWeight();
+				}
 				setfate(1, 5, Index_);
 				Weight_ = 0;
 				// std::cout << Weight_ << endl;
@@ -8419,6 +8425,10 @@ void Particle::DumpD2pTrackLengthTri()
 		 << D2p_secondary_D_events_[0] << '\n'
 		 << "D2p_secondary_neutral_D_from_DS3," << D2p_secondary_D_weight_[1] << ','
 		 << D2p_secondary_D_events_[1] << '\n'
+		 << "D2p_secondary_neutral_D_ionized_from_DS2," << D2p_secondary_D_ionized_weight_[0] << ','
+		 << D2p_secondary_D_ionized_events_[0] << '\n'
+		 << "D2p_secondary_neutral_D_ionized_from_DS3," << D2p_secondary_D_ionized_weight_[1] << ','
+		 << D2p_secondary_D_ionized_events_[1] << '\n'
 		 << "D2p_boundary_loss," << D2p_boundary_loss_weight_ << ','
 		 << D2p_boundary_loss_ << '\n'
 		 << "D2p_max_steps_loss," << D2p_max_steps_loss_weight_ << ','
@@ -8576,6 +8586,10 @@ void Particle::Clear(int n)
 		D2p_secondary_D_events_[1] = 0;
 		D2p_secondary_D_weight_[0] = 0.;
 		D2p_secondary_D_weight_[1] = 0.;
+		D2p_secondary_D_ionized_events_[0] = 0;
+		D2p_secondary_D_ionized_events_[1] = 0;
+		D2p_secondary_D_ionized_weight_[0] = 0.;
+		D2p_secondary_D_ionized_weight_[1] = 0.;
 		D2p_boundary_loss_weight_ = 0.;
 		D2p_max_steps_loss_weight_ = 0.;
 		D2p_sum_weight_segment_dt_ = 0.;
