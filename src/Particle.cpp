@@ -46,6 +46,59 @@ namespace
 		return -1;
 	}
 
+	bool nudgePointInsideTriangle(int tri_index, double &x, double &y)
+	{
+		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size())
+			return false;
+		if (Grid4.Ifingrid(tri_index, x, y))
+			return true;
+
+		const auto &tri = Grid4.tris_[tri_index];
+		const double cx = (Grid4.nodes_[tri.v[0]].r + Grid4.nodes_[tri.v[1]].r + Grid4.nodes_[tri.v[2]].r) / 3.0;
+		const double cy = (Grid4.nodes_[tri.v[0]].z + Grid4.nodes_[tri.v[1]].z + Grid4.nodes_[tri.v[2]].z) / 3.0;
+		const double dx = cx - x;
+		const double dy = cy - y;
+		const double distance = std::hypot(dx, dy);
+		if (distance <= 1.e-20)
+			return false;
+
+		double min_edge = std::numeric_limits<double>::max();
+		for (int edge = 0; edge < 3; ++edge)
+		{
+			const auto &a = Grid4.nodes_[tri.v[edge]];
+			const auto &b = Grid4.nodes_[tri.v[(edge + 1) % 3]];
+			const double length = std::hypot(a.r - b.r, a.z - b.z);
+			if (length > 0.)
+				min_edge = std::min(min_edge, length);
+		}
+		if (!std::isfinite(min_edge) || min_edge == std::numeric_limits<double>::max())
+			min_edge = distance;
+
+		const double ux = dx / distance;
+		const double uy = dy / distance;
+		const double base_offset = std::max(1.e-8, 1.e-6 * min_edge);
+		for (double factor : {1.0, 10.0, 100.0, 1000.0})
+		{
+			const double offset = std::min(0.25 * distance, base_offset * factor);
+			const double x_try = x + ux * offset;
+			const double y_try = y + uy * offset;
+			if (Grid4.Ifingrid(tri_index, x_try, y_try))
+			{
+				x = x_try;
+				y = y_try;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	int findTriangleTowardCentroid(int tri_index, double x, double y)
+	{
+		if (nudgePointInsideTriangle(tri_index, x, y))
+			return tri_index;
+		return -1;
+	}
+
 	int zoneFromB2Index(int i, int j)
 	{
 		if (j >= N_radial / 2 && j <= radialLastIndex())
@@ -611,6 +664,7 @@ void Particle::Init(int k, int z)
 			XY_[1] = z - N_radial;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
 		}
+		nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 		if (XY_[1] >= N_radial / 2 && XY_[1] <= radialLastIndex())
 			Zone_ = 3;
 		else if (XY_[0] <= 24)
@@ -1938,12 +1992,17 @@ void Particle::track()
 			{
 				int tri = findTriangleContainingPoint(X_[0], X_[1]);
 				if (tri < 0)
+					tri = findTriangleTowardCentroid(Tri_Index_, X_[0], X_[1]);
+				if (tri < 0)
 					tri = findTriangleAlongRay(X_[0], X_[1], V_);
 				if (tri < 0)
 				{
 					std::cerr << "MeshMode3 neutral launch outside tri mesh: name=" << name_
 							  << " charge=" << Charge_
 							  << " zone=" << Zone_
+							  << " source_stratum=" << static_cast<int>(source_stratum_)
+							  << " grid_index=" << GridIndex_
+							  << " tri=" << Tri_Index_
 							  << " x=" << X_[0] << "," << X_[1]
 							  << " v=" << V_[0] << "," << V_[1] << "," << V_[2]
 							  << std::endl;
