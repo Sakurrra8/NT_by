@@ -3552,6 +3552,29 @@ void Particle::Caltrace_Tri()
 		std::cout << "ni zai na?" << endl;
 		pause();
 	}*/
+	if (Tri_Index_ >= 0 && Tri_Index_ < num_trimesh_ &&
+		!Grid4.Ifingrid(Tri_Index_, X_[0], X_[1]))
+	{
+		int tri = findTriangleContainingPoint(X_[0], X_[1]);
+		if (tri < 0 && nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
+			tri = Tri_Index_;
+		if (tri >= 0)
+		{
+			Tri_Index_ = tri;
+			if (Zone_ < 6 && Grid4.if_in_plasmagrid(Tri_Index_) == 1)
+			{
+				XY_[0] = Tri_B2_[Tri_Index_][0];
+				XY_[1] = Tri_B2_[Tri_Index_][1];
+			}
+			else if (Zone_ >= 6)
+			{
+				XY_[0] = -1;
+				XY_[1] = -1;
+			}
+			for (int i = 0; i < 3; ++i)
+				X_new_[i] = X_[i] + V_[i] * dt_;
+		}
+	}
 	bool Track_test = 0;
 	if (Track_test)
 	{
