@@ -52,6 +52,11 @@ export-eirene-reactions: $(BIN_DIR)/export_eirene_reactions
 $(BIN_DIR)/export_eirene_reactions: tools/export_eirene_reactions.cpp src/EIRENE.cpp include/EIRENE.h | $(BIN_DIR)
 	$(CCOMPILE) -I ./include tools/export_eirene_reactions.cpp src/EIRENE.cpp -o $@
 
+compare-eirene-323: $(BIN_DIR)/compare_eirene_323
+
+$(BIN_DIR)/compare_eirene_323: tools/compare_eirene_323.cpp src/EIRENE.cpp include/EIRENE.h | $(BIN_DIR)
+	$(CCOMPILE) -I ./include tools/compare_eirene_323.cpp src/EIRENE.cpp -o $@
+
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 	
@@ -62,6 +67,6 @@ $(BIN_DIR):
 	$(FCOMPILE) -c $(INCS) $< -o $@
 
 clean:
-	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions
+	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/compare_eirene_323
 clean-data:
 	rm -f *~ *.txt *.dat *.nc errfile outfile
