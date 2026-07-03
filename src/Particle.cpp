@@ -2170,7 +2170,26 @@ void Particle::track()
 					{
 						double step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
 						if ((!std::isfinite(step_rz) || step_rz < 1.e-9) &&
-							nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
+							(nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]) ||
+							 [&]() {
+								 int tri = findTriangleContainingPoint(X_[0], X_[1]);
+								 if (tri < 0)
+									 tri = findTriangleAlongRay(X_[0], X_[1], V_);
+								 if (tri < 0)
+									 return false;
+								 Tri_Index_ = tri;
+								 if (Zone_ < 6)
+								 {
+									 XY_[0] = Tri_B2_[Tri_Index_][0];
+									 XY_[1] = Tri_B2_[Tri_Index_][1];
+								 }
+								 else
+								 {
+									 XY_[0] = -1;
+									 XY_[1] = -1;
+								 }
+								 return nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
+							 }()))
 						{
 							step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
 						}
