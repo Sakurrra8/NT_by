@@ -50,8 +50,7 @@ namespace
 	{
 		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size())
 			return false;
-		if (Grid4.Ifingrid(tri_index, x, y))
-			return true;
+		const bool already_inside = Grid4.Ifingrid(tri_index, x, y);
 
 		const auto &tri = Grid4.tris_[tri_index];
 		const double cx = (Grid4.nodes_[tri.v[0]].r + Grid4.nodes_[tri.v[1]].r + Grid4.nodes_[tri.v[2]].r) / 3.0;
@@ -89,7 +88,7 @@ namespace
 				return true;
 			}
 		}
-		return false;
+		return already_inside;
 	}
 
 	int findTriangleTowardCentroid(int tri_index, double x, double y)
