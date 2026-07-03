@@ -2168,7 +2168,12 @@ void Particle::track()
 					Caltrace_Tri();
 					if (!IfColl_ && Zone_ < 7)
 					{
-						const double step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
+						double step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
+						if ((!std::isfinite(step_rz) || step_rz < 1.e-9) &&
+							nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
+						{
+							step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
+						}
 						if (!std::isfinite(step_rz) || step_rz < 1.e-9)
 							++neutral_tri_stall_steps;
 						else
