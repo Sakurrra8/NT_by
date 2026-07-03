@@ -506,6 +506,7 @@ private:
 	double D2p_low_charge_speed_weight_dt_[4]{0., 0., 0., 0.};
 	bool D2p_current_created_by_cx_{false};
 	static constexpr unsigned long long MaxD2pFlightSteps = 100000;
+	static constexpr unsigned long long MaxNeutralTriSteps = 200000;
 
 	double *V_Grid_CX_Ion_Be_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];
 	double *V_Grid_CX_Ion_Af_[N_POLOIDAL_GRID][N_RADIAL_GRID][4];

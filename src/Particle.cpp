@@ -2101,8 +2101,22 @@ void Particle::track()
 				IfColl_ = 0;
 				d_flight_ = 1.;
 				Rand_flight_ = Tools::Random();
+				unsigned long long neutral_tri_steps = 0;
 				while (!IfColl_ && Zone_ < 7)
 				{
+					if (++neutral_tri_steps > MaxNeutralTriSteps)
+					{
+						std::cerr << "MeshMode3 neutral exceeded max triangle steps: name=" << name_
+								  << " charge=" << Charge_
+								  << " zone=" << Zone_
+								  << " tri=" << Tri_Index_
+								  << " x=" << X_[0] << "," << X_[1]
+								  << " x_new=" << X_new_[0] << "," << X_new_[1]
+								  << std::endl;
+						Weight_ = 0.;
+						Zone_ = 7;
+						return;
+					}
 					if (K_Tn == 1)
 					{
 						CalLambda();
@@ -3641,6 +3655,7 @@ void Particle::Caltrace_Tri()
 					if (Grid4.lines_info(Tri_Index_, 0) == 0) // next
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[0];
+						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						NeutralFluxStatistics(5, 1);
 					}
 					else if (Grid4.lines_info(Tri_Index_, 0) == -1 || Grid4.lines_info(Tri_Index_, 0) == -2) // Wall
@@ -3710,6 +3725,7 @@ void Particle::Caltrace_Tri()
 					else if (Grid4.lines_info(Tri_Index_, 0) == 2) // Plasma Boundary
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[0];
+						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						if (Zone_ < 6)
 						{
 							Zone_ = 6;
@@ -3823,6 +3839,7 @@ void Particle::Caltrace_Tri()
 					if (Grid4.lines_info(Tri_Index_, 1) == 0) // next
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[3];
+						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						NeutralFluxStatistics(5, 1);
 					}
 					else if (Grid4.lines_info(Tri_Index_, 1) == -1 || Grid4.lines_info(Tri_Index_, 1) == -2) // Wall
@@ -3892,6 +3909,7 @@ void Particle::Caltrace_Tri()
 					else if (Grid4.lines_info(Tri_Index_, 1) == 2) // Plasma Boundary
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[3];
+						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						if (Zone_ < 6)
 						{
 							Zone_ = 6;
@@ -4005,6 +4023,7 @@ void Particle::Caltrace_Tri()
 					if (Grid4.lines_info(Tri_Index_, 2) == 0) // next
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[6];
+						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						NeutralFluxStatistics(5, 1);
 					}
 					else if (Grid4.lines_info(Tri_Index_, 2) == -1 || Grid4.lines_info(Tri_Index_, 2) == -2) // Wall
@@ -4074,6 +4093,7 @@ void Particle::Caltrace_Tri()
 					else if (Grid4.lines_info(Tri_Index_, 2) == 2) // Plasma Boundary
 					{
 						Tri_Index_ = Grid4.tris_[Tri_Index_].neigh[6];
+						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						if (Zone_ < 6)
 						{
 							Zone_ = 6;
@@ -4199,6 +4219,7 @@ void Particle::Caltrace_Tri()
 				if (line_info == 0)
 				{
 					Tri_Index_ = neighbor;
+					nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 					NeutralFluxStatistics(5, 1);
 				}
 				else if (line_info == -1 || line_info == -2)
@@ -4233,6 +4254,7 @@ void Particle::Caltrace_Tri()
 				else if (line_info == 2)
 				{
 					Tri_Index_ = neighbor;
+					nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 					if (Zone_ < 6)
 					{
 						Zone_ = 6;
