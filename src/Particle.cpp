@@ -197,9 +197,19 @@ namespace
 	void setDWTrimDirection(std::vector<double> &velocity,
 							const DWReflectionSample &sample,
 							double wall_cos, double wall_sin,
-							const double reference_direction[3])
+							const double reference_direction[3],
+							bool orient_normal_against_reference = false)
 	{
-		const double normal[3] = {-wall_sin, wall_cos, 0.0};
+		double normal[3] = {-wall_sin, wall_cos, 0.0};
+		if (orient_normal_against_reference &&
+			reference_direction[0] * normal[0] +
+					reference_direction[1] * normal[1] +
+					reference_direction[2] * normal[2] >
+				0.0)
+		{
+			for (double &component : normal)
+				component = -component;
+		}
 		const double normal_projection =
 			reference_direction[0] * normal[0] +
 			reference_direction[1] * normal[1] +
@@ -902,7 +912,7 @@ void Particle::Init(int k, int z)
 			Tn_ = (2.0 / 3.0) * sample.energy_eV;
 			speed = speedFromEnergy(sample.energy_eV);
 			const double incident_direction[3] = {V_[0], V_[1], V_[2]};
-			setDWTrimDirection(V_, sample, wall_cos, wall_sin, incident_direction);
+			setDWTrimDirection(V_, sample, wall_cos, wall_sin, incident_direction, true);
 		};
 
 		if (InterscePoint[0][4] == 11)
