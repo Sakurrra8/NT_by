@@ -2426,9 +2426,9 @@ void Particle::track()
 						D2p_secondary_D_weight_[product_index] += product_multiplier * event_weight;
 
 						Vector3 v_D2p(V_[0], V_[1], V_[2]);
-						const double E_FrankCondon = 3.0;
+						const double neutral_d_energy_eV = channel == 1 ? 4.3 : 16.0;
 						const Vector3 v_D =
-							calculate_dissociation_velocity(v_D2p, E_FrankCondon, Dmass);
+							calculate_dissociation_velocity(v_D2p, 2.0 * neutral_d_energy_eV, Dmass);
 						P = &D;
 						P->Particlefrom(this, product_multiplier, 0);
 						P->setD2pOriginChannel(channel);
@@ -6033,9 +6033,10 @@ void Particle::Coll()
 					else if (this == &T2)
 						P = &T;
 
-					Vector3 v_H2(V_[0], V_[1], V_[2]);									// 假设分子沿 X 轴运动
-					double E_FrankCondon = 3.0;											// 3 eV
-					Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
+					Vector3 v_H2(V_[0], V_[1], V_[2]); // 假设分子沿 X 轴运动
+					const double neutral_mass = this == &D2 ? Dmass : (this == &T2 ? Tmass : Hmass);
+					const double neutral_d_energy_eV = 3.0;
+					Vector3 v_H = calculate_dissociation_velocity(v_H2, 2.0 * neutral_d_energy_eV, neutral_mass); // 模拟一次分裂
 					V_[0] = v_H.x;
 					V_[1] = v_H.y;
 					V_[2] = v_H.z;
@@ -6086,8 +6087,9 @@ void Particle::Coll()
 					if (MeshMode == 3)
 					{
 						Vector3 v_H2(V_[0], V_[1], V_[2]);
-						double E_FrankCondon = 3.0;											// 3 eV
-						Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
+						const double neutral_mass = this == &D2 ? Dmass : (this == &T2 ? Tmass : Hmass);
+						const double neutral_d_energy_eV = 5.0;
+						Vector3 v_H = calculate_dissociation_velocity(v_H2, 2.0 * neutral_d_energy_eV, neutral_mass); // 模拟一次分裂
 						V_[0] = v_H.x;
 						V_[1] = v_H.y;
 						V_[2] = v_H.z;

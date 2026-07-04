@@ -16,7 +16,7 @@ K_Rec               1       # option: Plasma Recombination from Target
 K_Methane           0       # option: CD4 pump near Target
 K_C                 0       # option: C pump near Target
 K_Ar                0       # option: Ar pump near Target
-K_database          1       # option: 1: ADAS, 2: EIRENE
+K_database          2       # option: 1: ADAS, 2: EIRENE
 K_database_Pra      1       # option: 1: ADAS, 2: EIRENE for H or D or T
 K_Maxwell           2       # option: 1: standard Maxwell, 2: fast Maxwell
 K_Ei                2       # retain the established target-energy model for this comparison
