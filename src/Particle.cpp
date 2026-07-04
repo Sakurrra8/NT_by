@@ -2977,7 +2977,7 @@ void Particle::CalLambda()
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
 					else
 						CX_DT_[0].Setcs_now(CS_Vacuum);
-					lambda_now_ = 1. / (Ion_[0].cs_now() + CX_[0].cs_now() + CX_DT_[0].cs_now() + R_with_H_[0].cs_now() + R_with_H_[0].cs_now());
+					lambda_now_ = 1. / (Ion_[0].cs_now() + CX_[0].cs_now() + CX_DT_[0].cs_now() + R_with_H_[0].cs_now() + R_with_H2_[0].cs_now());
 				}
 				else if (K_database == 2)
 				{
@@ -3030,7 +3030,7 @@ void Particle::CalLambda()
 					R_with_H_[0].Setcs_now(0);
 					R_with_H2_[0].Setcs_now(0);
 				}
-				lambda_now_ = 1. / (Ion_[0].cs_now() + Diss1_[0].cs_now() + Diss2_[0].cs_now() + CX_[0].cs_now() + Ela_[0].cs_now() + R_with_H_[0].cs_now() + R_with_H_[0].cs_now());
+				lambda_now_ = 1. / (Ion_[0].cs_now() + Diss1_[0].cs_now() + Diss2_[0].cs_now() + CX_[0].cs_now() + Ela_[0].cs_now() + R_with_H_[0].cs_now() + R_with_H2_[0].cs_now());
 			}
 			else if (this == &D2)
 			{
@@ -3129,7 +3129,7 @@ void Particle::CalLambda()
 				DS_[1][1].Setcs_now(DS_[1][1].cs(Tri_Index_));
 				DS_[1][2].Setcs_now(DS_[1][2].cs(Tri_Index_));
 				lambda_now_ = 1. / (Ion_[0].cs_now() + Diss1_[0].cs_now() + Diss2_[0].cs_now() +
-									CX_[0].cs_now() + Ela_[0].cs_now() + CX_DT_[0].cs_now() + Ela_DT_[0].cs_now() + R_with_H_[0].cs_now() + R_with_H_[0].cs_now());
+									CX_[0].cs_now() + Ela_[0].cs_now() + CX_DT_[0].cs_now() + Ela_DT_[0].cs_now() + R_with_H_[0].cs_now() + R_with_H2_[0].cs_now());
 			}
 		}
 	}
@@ -6269,21 +6269,35 @@ void Particle::Coll()
 					}
 					else
 					{
-						Charge_ = 1;
-						VtoVcharge();
-						markD2pJustCreated(true);
+						const double sample_probability = 0.5;
+						if (Tools::Random() < sample_probability)
+						{
+							Weight_ /= sample_probability;
+							Charge_ = 1;
+							VtoVcharge();
+							markD2pJustCreated(true);
+						}
+						else
+						{
+							Weight_ /= (1.0 - sample_probability);
+							if (this == &H2)
+								P = &H;
+							else if (this == &D2)
+								P = &D;
+							else if (this == &T2)
+								P = &T;
+							P->Particlefrom(this, 1, 0);
+							for (int i = 0; i < 3; ++i)
+								P->SetV(i, V_2[i]);
+							P->setfate(0, 1, Index_);
+							P->CalTn();
+							return;
+						}
 						// std::cout << name_ + " after CX V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
 						if (K_test1 || K_test2)
 						{
 							std::cout << "CX: " << X_[0] << ',' << X_[1] << '\t' << X_new_[0] << ',' << X_new_[1] << endl;
 						}
-						// std::cout << Index_ << endl;
-						if (this == &H2)
-							PartoPar_Temp.store(this, 1, &H, V_2, 1, Index_, 0);
-						else if (this == &D2)
-							PartoPar_Temp.store(this, 1, &D, V_2, 1, Index_, 0);
-						else if (this == &T2)
-							PartoPar_Temp.store(this, 1, &T, V_2, 1, Index_, 0);
 						if (K_test1)
 						{
 							std::cout << "coll_5 CX" << endl;
@@ -6447,19 +6461,33 @@ void Particle::Coll()
 					setfate(0, 1, Index_);
 					Init(7, 1);
 					CalTn();
-					Charge_ = 1;
+					const double sample_probability = 0.5;
+					if (Tools::Random() < sample_probability)
+					{
+						Weight_ /= sample_probability;
+						Charge_ = 1;
+					}
+					else
+					{
+						Weight_ /= (1.0 - sample_probability);
+						if (this == &H2)
+							P = &H;
+						else if (this == &D2)
+							P = &T;
+						else if (this == &T2)
+							P = &D;
+						P->Particlefrom(this, 1, 0);
+						for (int i = 0; i < 3; ++i)
+							P->SetV(i, V_2[i]);
+						P->setfate(0, 1, Index_);
+						P->CalTn();
+						return;
+					}
 					// std::cout << name_ + " after CX_DT V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
 					if (K_test1 || K_test2)
 					{
 						std::cout << "CX: " << X_[0] << ',' << X_[1] << '\t' << X_new_[0] << ',' << X_new_[1] << endl;
 					}
-					// std::cout << Index_ << endl;
-					if (this == &H2)
-						PartoPar_Temp.store(this, 1, &H, V_2, 1, Index_, 0);
-					else if (this == &D2)
-						PartoPar_Temp.store(this, 1, &T, V_2, 1, Index_, 0);
-					else if (this == &T2)
-						PartoPar_Temp.store(this, 1, &D, V_2, 1, Index_, 0);
 					if (K_test1)
 					{
 						std::cout << "coll_7 CX_DT" << endl;
