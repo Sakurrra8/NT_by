@@ -1,5 +1,45 @@
 #include "Particle.h"
 
+namespace
+{
+void accumulateDWallOrTargetImpact()
+{
+    const int surface_type = static_cast<int>(InterscePoint[0][4]);
+    const int surface_index = static_cast<int>(InterscePoint[0][3]);
+    int stats_index = -1;
+    double x1 = 0.;
+    double y1 = 0.;
+    double x2 = 0.;
+    double y2 = 0.;
+
+    if (surface_type == 11)
+    {
+        stats_index = surface_index;
+        x1 = Grid1.Wall(surface_index, 0);
+        y1 = Grid1.Wall(surface_index, 1);
+        x2 = Grid1.Wall(surface_index + 1, 0);
+        y2 = Grid1.Wall(surface_index + 1, 1);
+    }
+    else if (surface_type == 1 && MeshMode == 3)
+    {
+        stats_index = Grid1.Wall_num() + surface_index;
+        x1 = Grid4.Target(surface_index, 0);
+        y1 = Grid4.Target(surface_index, 1);
+        x2 = Grid4.Target(surface_index, 2);
+        y2 = Grid4.Target(surface_index, 3);
+    }
+    else
+    {
+        return;
+    }
+
+    D_W_sputtered.accumulate(
+        stats_index, 1.5 * D.Tn(),
+        cosIncidence3D(x1, y1, x2, y2, D.V(0), D.V(1), D.V(2)),
+        D.Gamma());
+}
+}
+
 void WallReflect()
 {
     // coeff_recyc is recycling from Wall & target, coeff_reflect is from Trim database
@@ -81,11 +121,12 @@ void WallReflect()
             if (InterscePoint[0][4] == 11)
             {
                 P->AddWallEro(InterscePoint[0][3]);
-                D_W_sputtered.accumulate(InterscePoint[0][3], 1.5 * D.Tn(), cosIncidence3D(Grid1.Wall(InterscePoint[0][3], 0), Grid1.Wall(InterscePoint[0][3], 1), Grid1.Wall(InterscePoint[0][3] + 1, 0), Grid1.Wall(InterscePoint[0][3] + 1, 1), D.V(0), D.V(1), D.V(2)), D.Gamma());
+                accumulateDWallOrTargetImpact();
             }
             else if (InterscePoint[0][4] == 1)
             {
                 P->AddTargetEro(InterscePoint[0][3]);
+                accumulateDWallOrTargetImpact();
             }
 
             if (Tools::Random() < coeff_reflect / coeff_recyc)
@@ -275,11 +316,12 @@ void WallReflect()
                 if (InterscePoint[0][4] == 11)
                 {
                     P->AddWallEro(InterscePoint[0][3]);
-                    D_W_sputtered.accumulate(InterscePoint[0][3], 1.5 * D.Tn(), cosIncidence3D(Grid1.Wall(InterscePoint[0][3], 0), Grid1.Wall(InterscePoint[0][3], 1), Grid1.Wall(InterscePoint[0][3] + 1, 0), Grid1.Wall(InterscePoint[0][3] + 1, 1), D.V(0), D.V(1), D.V(2)), D.Gamma());
+                    accumulateDWallOrTargetImpact();
                 }
                 else if (InterscePoint[0][4] == 1)
                 {
                     P->AddTargetEro(InterscePoint[0][3]);
+                    accumulateDWallOrTargetImpact();
                 }
 
                 if (Tools::Random() < coeff_reflect / coeff_recyc)

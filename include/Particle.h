@@ -422,6 +422,18 @@ private:
 	std::vector<double> pendingCxNeutralBefore_, pendingCxNeutralAfter_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> launchedWeightByStratum_;
 	std::vector<std::array<unsigned long long, static_cast<std::size_t>(SourceStratum::Count)>> launchedEventsByStratum_;
+	unsigned long long neutral_stall_loss_events_{0};
+	double neutral_stall_loss_weight_{0.};
+	unsigned long long core_loss_events_{0};
+	double core_loss_weight_{0.};
+	unsigned long long neutral_launch_outside_loss_events_{0};
+	double neutral_launch_outside_loss_weight_{0.};
+	unsigned long long caltrace_lost_loss_events_{0};
+	double caltrace_lost_loss_weight_{0.};
+	unsigned long long caltrace_invalid_loss_events_{0};
+	double caltrace_invalid_loss_weight_{0.};
+	unsigned long long wall_nearest_fallback_events_{0};
+	double wall_nearest_fallback_weight_{0.};
 	std::size_t gridScalarIndex(int i, int j, int charge) const;
 	std::size_t gridVectorIndex(int i, int j, int component, int charge) const;
 	std::size_t triScalarIndex(int tri, int charge) const;

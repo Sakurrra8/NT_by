@@ -2302,6 +2302,7 @@ namespace eirene
         b2_find();
         lines_find();
         target_find(N_poloidal, N_radial);
+        build_wall_candidates_by_tri();
     }
 
     int TriMesh::b2_index(int i, int j)
@@ -2416,6 +2417,31 @@ namespace eirene
     int TriMesh::lines_info(int i, int j)
     {
         return lines_info_[i][j];
+    }
+
+    const std::vector<int> &TriMesh::WallCandidatesForTri(int tri) const
+    {
+        static const std::vector<int> empty;
+        if (tri < 0 || tri >= static_cast<int>(wall_candidates_by_tri_.size()))
+            return empty;
+        return wall_candidates_by_tri_[tri];
+    }
+
+    void TriMesh::build_wall_candidates_by_tri()
+    {
+        wall_candidates_by_tri_.assign(num_tris_, {});
+        constexpr double padding = 1.e-8;
+        for (int tri = 0; tri < num_tris_; ++tri)
+        {
+            const Node &a = nodes_[tris_[tri].v[0]];
+            const Node &b = nodes_[tris_[tri].v[1]];
+            const Node &c = nodes_[tris_[tri].v[2]];
+            const double min_x = std::min({a.r, b.r, c.r}) - padding;
+            const double max_x = std::max({a.r, b.r, c.r}) + padding;
+            const double min_y = std::min({a.z, b.z, c.z}) - padding;
+            const double max_y = std::max({a.z, b.z, c.z}) + padding;
+            Wall_.CandidateSegments(min_x, max_x, min_y, max_y, wall_candidates_by_tri_[tri]);
+        }
     }
 
     /// @brief if the triangle grid in the plasma region
@@ -2819,10 +2845,18 @@ namespace eirene
     double TriMesh::Vol_Target(int i) { return Vol_Target_[i]; }
     double TriMesh::Sin_trimesh(int i, int j)
     {
+        if (i < 0 || i >= static_cast<int>(Sin_trimesh_.size()) ||
+            j < 0 || j >= static_cast<int>(Sin_trimesh_[i].size()))
+            throw std::out_of_range("Sin_trimesh index out of range: tri=" + std::to_string(i) +
+                                    " edge=" + std::to_string(j));
         return Sin_trimesh_[i][j];
     }
     double TriMesh::Cos_trimesh(int i, int j)
     {
+        if (i < 0 || i >= static_cast<int>(Cos_trimesh_.size()) ||
+            j < 0 || j >= static_cast<int>(Cos_trimesh_[i].size()))
+            throw std::out_of_range("Cos_trimesh index out of range: tri=" + std::to_string(i) +
+                                    " edge=" + std::to_string(j));
         return Cos_trimesh_[i][j];
     }
     double sign(double p1x, double p1y, double p2x, double p2y, double p3x, double p3y)

@@ -44,9 +44,17 @@ bool WallImpactTracker::init(int nWall,
     sputterEnergyHist_.assign(NWALL_, std::vector<double>(NBIN_E_, 0.0));
     sputterAngleHist_.assign(NWALL_, std::vector<double>(NBIN_MU_, 0.0));
     totalSputter_.assign(NWALL_, 0.0);
+    physicalWallCount_ = nWall;
+    targetCount_ = 0;
 
     inited_ = true;
     return true;
+}
+
+void WallImpactTracker::setSurfaceCounts(int physicalWallCount, int targetCount)
+{
+    physicalWallCount_ = std::max(0, physicalWallCount);
+    targetCount_ = std::max(0, targetCount);
 }
 
 // ④ 变更墙段数（可保留已有统计）
@@ -359,6 +367,8 @@ void WallImpactTracker::writeH5(const std::string &filename, const std::string &
     DataSpace scalar_space(H5S_SCALAR);
     g.createAttribute("inited", PredType::NATIVE_HBOOL, scalar_space).write(PredType::NATIVE_HBOOL, &inited_);
     g.createAttribute("NWALL", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &NWALL_);
+    g.createAttribute("physical_wall_count", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &physicalWallCount_);
+    g.createAttribute("target_count", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &targetCount_);
     g.createAttribute("NBIN_E", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &NBIN_E_);
     g.createAttribute("NBIN_MU", PredType::NATIVE_INT, scalar_space).write(PredType::NATIVE_INT, &NBIN_MU_);
     g.createAttribute("E_min", PredType::NATIVE_DOUBLE, scalar_space).write(PredType::NATIVE_DOUBLE, &E_MIN_);

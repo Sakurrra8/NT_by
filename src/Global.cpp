@@ -66,6 +66,9 @@ int numPar_flight_Target; // sum of test flight from Wall recycling
 double Num_CD4_pump;      //
 double Num_D2_pump;       //
 double Num_T2_pump;       // number of test flight of pumping particle
+double EireneRateArgumentScale = 1.0; // Diagnostic isotope-energy scale for EIRENE rate arguments.
+double EireneElectronTemperatureScale = 1.0;
+double EireneHeavyEnergyScale = 1.0;
 
 int K_GRID = 1;
 int K_test1 = 0;

@@ -23,6 +23,7 @@ public:
 
     // ④ 若墙段数后续改变：可扩/缩容；preserve=true 时保留已有统计数据，否则清零
     bool resizeWalls(int nWall, bool preserve = false);
+    void setSurfaceCounts(int physicalWallCount, int targetCount);
 
     // ⑤ 清零当前所有统计（维度不变）
     void zero();
@@ -41,6 +42,8 @@ private:
     int NWALL_{0}, NBIN_E_{0}, NBIN_MU_{0};
     double E_MIN_{0}, E_MAX_{0}, MU_MIN_{0}, MU_MAX_{0};
     bool inited_{false};
+    int physicalWallCount_{0};
+    int targetCount_{0};
 
     // 每段墙的直方图/总量：[NWALL][NBIN]
     std::vector<std::vector<double>> energyHist_;        // [NWALL][NBIN_E]

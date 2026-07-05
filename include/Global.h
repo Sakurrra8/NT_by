@@ -80,6 +80,7 @@ extern int K_H5Output, MaxSplit, MaxSplitDepth;
 extern int ImportanceMainPoloidalBegin, ImportanceMainPoloidalEnd;
 extern double dt, Te_core, ne_core, NumPar_now, Tn_core, T_N, T_wall, DWTrimERMIN, Num_D2_pump, Num_T2_pump, coefficient_D, coefficient_T;
 extern double Num_CD4_pump, t_max, Ratio_T, Ratio_D_Coll, Ratio_T_Coll, Ratio_DT_Coll, coeff_puff;
+extern double EireneRateArgumentScale, EireneElectronTemperatureScale, EireneHeavyEnergyScale;
 extern double W_RouletteMin, W_RouletteTarget, W_SplitMax, W_SplitTarget, W_SplitMin;
 extern std::array<double, 3> RegionImportance;
 extern unsigned long long RouletteTrials, RouletteSurvived, RouletteKilled;

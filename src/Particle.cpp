@@ -160,6 +160,51 @@ namespace
 		return fraction;
 	}
 
+	bool earliestWallHitInTri(int tri_index,
+							  double x0, double y0,
+							  double x1, double y1,
+							  int &wall_index,
+							  double &hit_x,
+							  double &hit_y,
+							  double &fraction)
+	{
+		const auto &candidates = Grid4.WallCandidatesForTri(tri_index);
+		if (candidates.empty())
+			return false;
+		const double min_x = std::min(x0, x1);
+		const double max_x = std::max(x0, x1);
+		const double min_y = std::min(y0, y1);
+		const double max_y = std::max(y0, y1);
+		bool found = false;
+		double best_fraction = std::numeric_limits<double>::max();
+		for (int candidate : candidates)
+		{
+			const auto &bounds = Grid4.Wall_.Bounds(candidate);
+			if (max_x < bounds[0] || bounds[1] < min_x || max_y < bounds[2] || bounds[3] < min_y)
+				continue;
+			const auto &wall = Grid4.Wall_.Segment(candidate);
+			double secx = 0.;
+			double secy = 0.;
+			if (!Tools::getLineSegmentIntersection(x0, y0, x1, y1, wall[0], wall[1], wall[2], wall[3], secx, secy))
+				continue;
+			if (!Grid4.Ifingrid(tri_index, secx, secy))
+				continue;
+			const double candidate_fraction = segmentFraction(x0, y0, x1, y1, secx, secy);
+			if (candidate_fraction <= 1.e-10 || candidate_fraction > 1.0)
+				continue;
+			if (candidate_fraction < best_fraction)
+			{
+				found = true;
+				best_fraction = candidate_fraction;
+				wall_index = candidate;
+				hit_x = secx;
+				hit_y = secy;
+				fraction = candidate_fraction;
+			}
+		}
+		return found;
+	}
+
 	std::pair<double, double> inwardTargetTangent(int target_index)
 	{
 		double target_cos = Grid4.Cos_Target(target_index);
@@ -1028,8 +1073,23 @@ void Particle::Init(int k, int z)
 		}
 		else if (MeshMode == 3)
 		{
-			double Cos_temp = Grid4.Cos_trimesh(Tri_Index_, (int)InterscePoint[0][5]);
-			double Sin_temp = Grid4.Sin_trimesh(Tri_Index_, (int)InterscePoint[0][5]);
+			double Cos_temp = 0.;
+			double Sin_temp = 0.;
+			if (InterscePoint[0][4] == 11)
+			{
+				Cos_temp = Grid4.Wall_.Cos_Wall((int)InterscePoint[0][3]);
+				Sin_temp = Grid4.Wall_.Sin_Wall((int)InterscePoint[0][3]);
+			}
+			else if (InterscePoint[0][4] == 1)
+			{
+				Cos_temp = Grid4.Cos_Target((int)InterscePoint[0][3]);
+				Sin_temp = Grid4.Sin_Target((int)InterscePoint[0][3]);
+			}
+			else
+			{
+				Cos_temp = Grid4.Cos_trimesh(Tri_Index_, (int)InterscePoint[0][5]);
+				Sin_temp = Grid4.Sin_trimesh(Tri_Index_, (int)InterscePoint[0][5]);
+			}
 			// std::cout << "test Cos: " << Tri_Index_ << "\t" << (int)InterscePoint[0][5] << endl;
 			if (K_Wallelement == 1)
 			{
@@ -2096,6 +2156,8 @@ void Particle::track()
 					tri = findTriangleAlongRay(X_[0], X_[1], V_);
 				if (tri < 0)
 				{
+					++neutral_launch_outside_loss_events_;
+					neutral_launch_outside_loss_weight_ += diagnosticEventWeight();
 					std::cerr << "MeshMode3 neutral launch outside tri mesh: name=" << name_
 							  << " charge=" << Charge_
 							  << " zone=" << Zone_
@@ -2212,6 +2274,8 @@ void Particle::track()
 							neutral_tri_stall_steps = 0;
 						if (neutral_tri_stall_steps > 8)
 						{
+							++neutral_stall_loss_events_;
+							neutral_stall_loss_weight_ += diagnosticEventWeight();
 							std::cerr << "MeshMode3 neutral stalled at triangle boundary: name=" << name_
 									  << " charge=" << Charge_
 									  << " zone=" << Zone_
@@ -2226,6 +2290,8 @@ void Particle::track()
 					}
 					if (Zone_ == 1)
 					{
+						++core_loss_events_;
+						core_loss_weight_ += diagnosticEventWeight();
 						Weight_ = 0.;
 						return;
 					}
@@ -2406,9 +2472,12 @@ void Particle::track()
 				return;
 			}
 
-			const double nu1 = DS_[1][0].cs(start_tri);
-			const double nu2 = DS_[1][1].cs(start_tri);
-			const double nu3 = DS_[1][2].cs(start_tri);
+			const int reaction_tri = Tri_Index_;
+			const int reaction_i = XY_[0];
+			const int reaction_j = XY_[1];
+			const double nu1 = DS_[1][0].cs(reaction_tri);
+			const double nu2 = DS_[1][1].cs(reaction_tri);
+			const double nu3 = DS_[1][2].cs(reaction_tri);
 			const double nu_total = nu1 + nu2 + nu3;
 			const double collision_probability =
 				nu_total > 0. ? 1. - std::exp(-nu_total * segment_dt) : 0.;
@@ -2417,9 +2486,9 @@ void Particle::track()
 				DS_factor[0] = nu1;
 				DS_factor[1] = nu2;
 				DS_factor[2] = nu3;
-				Tri_Index_ = start_tri;
-				XY_[0] = start_i;
-				XY_[1] = start_j;
+				Tri_Index_ = reaction_tri;
+				XY_[0] = reaction_i;
+				XY_[1] = reaction_j;
 				CalTn();
 				const int channel = H2PCollCal();
 				if (this == &D2 && channel >= 0 && channel < 3)
@@ -2427,7 +2496,7 @@ void Particle::track()
 					const double event_weight = diagnosticEventWeight();
 					++D2p_DS_events_[channel];
 					D2p_DS_weight_[channel] += event_weight;
-					Tri_D2p_DS_weight_[start_tri][channel] += event_weight;
+					Tri_D2p_DS_weight_[reaction_tri][channel] += event_weight;
 					if (channel == 1 || channel == 2)
 					{
 						const int product_index = channel - 1;
@@ -2497,10 +2566,26 @@ void Particle::SampleIonVelocity(int isotope)
 
 void Particle::CalLambda()
 {
-	const bool valid_plasma_cell =
+	bool valid_plasma_cell =
 		Zone_ < 6 &&
 		XY_[0] >= 0 && XY_[0] < N_poloidal &&
 		XY_[1] >= 0 && XY_[1] < N_radial;
+	if (MeshMode == 3 && Zone_ < 6)
+	{
+		if (Tri_Index_ >= 0 && Tri_Index_ < num_trimesh_ &&
+			Grid4.if_in_plasmagrid(Tri_Index_) == 1)
+		{
+			XY_[0] = Grid4.b2_index(Tri_Index_, 0);
+			XY_[1] = Grid4.b2_index(Tri_Index_, 1);
+			valid_plasma_cell =
+				XY_[0] >= 0 && XY_[0] < N_poloidal &&
+				XY_[1] >= 0 && XY_[1] < N_radial;
+		}
+		else
+		{
+			valid_plasma_cell = false;
+		}
+	}
 	const auto H3_energy_relative_to_ion_flow = [this](double parallel_flow)
 	{
 		return 0.5 * mass_ *
@@ -2816,7 +2901,7 @@ void Particle::CalLambda()
 	}
 	else if (MeshMode == 3)
 	{
-		if (Zone_ >= 6)
+		if (Zone_ >= 6 || !valid_plasma_cell)
 		{
 			Ion_[0].Setcs_now(0.);
 			CX_[0].Setcs_now(0.);
@@ -3665,6 +3750,8 @@ void Particle::Caltrace_Tri()
 	if (!std::isfinite(X_[0]) || !std::isfinite(X_[1]) || !std::isfinite(X_new_[0]) || !std::isfinite(X_new_[1]) ||
 		!std::isfinite(dt_) || dt_ <= 0.)
 	{
+		++caltrace_invalid_loss_events_;
+		caltrace_invalid_loss_weight_ += diagnosticEventWeight();
 		std::cerr << "Caltrace_Tri invalid state: name=" << name_
 				  << " charge=" << Charge_
 				  << " zone=" << Zone_
@@ -3714,6 +3801,48 @@ void Particle::Caltrace_Tri()
 		std::cout << "tiaoshi1: " << name_ << "\t" << Tri_Index_ << "\t" << X_[0] << ", " << X_[1] << "\t" << X_[2] << "\t";
 		std::cout << X_new_[0] << ", " << X_new_[1] << "\t" << X_new_[2] << endl;
 		std::cout << Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].r << ", " << Grid4.nodes_[Grid4.tris_[Tri_Index_].v[0]].z << ", " << Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].r << ", " << Grid4.nodes_[Grid4.tris_[Tri_Index_].v[1]].z << endl;
+	}
+	int true_wall_index = -1;
+	double true_wall_x = 0.;
+	double true_wall_y = 0.;
+	double true_wall_fraction = 0.;
+	if (earliestWallHitInTri(Tri_Index_, X_[0], X_[1], X_new_[0], X_new_[1],
+							 true_wall_index, true_wall_x, true_wall_y, true_wall_fraction))
+	{
+		X_new_[0] = true_wall_x;
+		X_new_[1] = true_wall_y;
+		dt_trace_ = dt_ * true_wall_fraction;
+		d_flight_ = d_flight_ * exp(-dt_trace_ / dt_);
+		if (K_flight == 1 && Rand_flight_ > d_flight_)
+		{
+			IfColl_ = 1;
+			boundary_start_ = 0;
+			const double previous_d_flight = d_flight_ / exp(-dt_trace_ / dt_);
+			if (log(Rand_flight_ / previous_d_flight) < -1)
+			{
+				std::cout << "error true wall in Caltrace_Tri()" << endl;
+				pause();
+			}
+			dt_trace_ = -dt_trace_ * log(Rand_flight_ / previous_d_flight);
+			for (int i = 0; i < 3; i++)
+				X_new_[i] = X_[i] + V_[i] * dt_trace_;
+			NumParStat();
+			return;
+		}
+
+		IfColl_ = 0;
+		boundary_start_ = 0;
+		IfFlightOut_ = 7;
+		NeutralFluxStatistics(2, 1);
+		NumParStat();
+		InterscePoint[0][0] = 0;
+		InterscePoint[0][1] = true_wall_x;
+		InterscePoint[0][2] = true_wall_y;
+		InterscePoint[0][3] = true_wall_index;
+		InterscePoint[0][4] = 11;
+		InterscePoint[0][5] = 0;
+		Zone_ = 7;
+		return;
 	}
 	int FindIt = 0;
 	boundary_start_ = 0;
@@ -3814,6 +3943,8 @@ void Particle::Caltrace_Tri()
 						}
 						if (num_intersect < 1)
 						{
+							++wall_nearest_fallback_events_;
+							wall_nearest_fallback_weight_ += diagnosticEventWeight();
 							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
 							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
 							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
@@ -3999,6 +4130,8 @@ void Particle::Caltrace_Tri()
 						}
 						if (num_intersect < 1)
 						{
+							++wall_nearest_fallback_events_;
+							wall_nearest_fallback_weight_ += diagnosticEventWeight();
 							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
 							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
 							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
@@ -4184,6 +4317,8 @@ void Particle::Caltrace_Tri()
 						}
 						if (num_intersect < 1)
 						{
+							++wall_nearest_fallback_events_;
+							wall_nearest_fallback_weight_ += diagnosticEventWeight();
 							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
 							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
 							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
@@ -4348,6 +4483,8 @@ void Particle::Caltrace_Tri()
 				{
 					IfFlightOut_ = 7;
 					NeutralFluxStatistics(2, 1);
+					++wall_nearest_fallback_events_;
+					wall_nearest_fallback_weight_ += diagnosticEventWeight();
 					InterscePoint[0][0] = 0;
 					InterscePoint[0][1] = fallback_x;
 					InterscePoint[0][2] = fallback_y;
@@ -4431,6 +4568,8 @@ void Particle::Caltrace_Tri()
 					  << " x=" << X_[0] << "," << X_[1]
 					  << " x_new=" << X_new_[0] << "," << X_new_[1]
 					  << std::endl;
+			++caltrace_lost_loss_events_;
+			caltrace_lost_loss_weight_ += diagnosticEventWeight();
 			IfColl_ = 0;
 			boundary_start_ = 0;
 			IfFlightOut_ = 7;
@@ -4905,7 +5044,28 @@ void Particle::NumParStat()
 	X_[1] = X_new_[1];
 	X_[2] = X_new_[2];
 	// std::cout << "dt_trace: " << dt_trace_ << endl;
-	if (Zone_ < 6 && Zone_ > 1)
+	bool valid_b2_stat_cell =
+		Zone_ < 6 && Zone_ > 1 &&
+		XY_[0] > 0 && XY_[0] < N_poloidal - 1 &&
+		XY_[1] > 0 && XY_[1] < N_radial - 1;
+	if (MeshMode == 3 && Zone_ < 6 && Zone_ > 1)
+	{
+		valid_b2_stat_cell = false;
+		if (Tri_Index_ >= 0 && Tri_Index_ < num_trimesh_ &&
+			Grid4.if_in_plasmagrid(Tri_Index_) == 1)
+		{
+			const int b2_i = Grid4.b2_index(Tri_Index_, 0);
+			const int b2_j = Grid4.b2_index(Tri_Index_, 1);
+			if (b2_i > 0 && b2_i < N_poloidal - 1 &&
+				b2_j > 0 && b2_j < N_radial - 1)
+			{
+				XY_[0] = b2_i;
+				XY_[1] = b2_j;
+				valid_b2_stat_cell = true;
+			}
+		}
+	}
+	if (valid_b2_stat_cell)
 	{
 		if (Charge_ == 0)
 		{
@@ -8724,6 +8884,18 @@ void Particle::Clear(int n)
 			D2p_low_charge_speed_weight_dt_[threshold] = 0.;
 		}
 		D2p_current_created_by_cx_ = false;
+		neutral_stall_loss_events_ = 0;
+		neutral_stall_loss_weight_ = 0.;
+		core_loss_events_ = 0;
+		core_loss_weight_ = 0.;
+		neutral_launch_outside_loss_events_ = 0;
+		neutral_launch_outside_loss_weight_ = 0.;
+		caltrace_lost_loss_events_ = 0;
+		caltrace_lost_loss_weight_ = 0.;
+		caltrace_invalid_loss_events_ = 0;
+		caltrace_invalid_loss_weight_ = 0.;
+		wall_nearest_fallback_events_ = 0;
+		wall_nearest_fallback_weight_ = 0.;
 		importance_region_ = -1;
 		source_stratum_ = SourceStratum::Unknown;
 		D2p_origin_channel_ = 0;
@@ -9428,10 +9600,14 @@ double Particle::CalAngle(int num_wall)
 	}
 	else if (MeshMode == 3)
 	{
+		const double speed = sqrt(
+			Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
+		if (speed <= 0.0)
+			return 0.0;
 		if (InterscePoint[0][4] == 11)
-			return 180 / pi * acos(abs(V_[0] * Grid4.Sin_trimesh(Tri_Index_, num_wall) - V_[1] * Grid4.Cos_trimesh(Tri_Index_, num_wall)) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]))));
+			return 180 / pi * acos(std::max(0.0, std::min(1.0, abs(V_[0] * Grid4.Wall_.Sin_Wall(num_wall) - V_[1] * Grid4.Wall_.Cos_Wall(num_wall)) / speed)));
 		else if (InterscePoint[0][4] == 1)
-			return 180 / pi * acos(abs(V_[0] * Grid4.Sin_trimesh(Tri_Index_, num_wall) - V_[1] * Grid4.Cos_trimesh(Tri_Index_, num_wall)) / sqrt((Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]))));
+			return 180 / pi * acos(std::max(0.0, std::min(1.0, abs(V_[0] * Grid4.Sin_Target(num_wall) - V_[1] * Grid4.Cos_Target(num_wall)) / speed)));
 		else
 			throw std::logic_error("angle calculation of reflect have some problem in Calangle()");
 	}
@@ -9650,6 +9826,16 @@ void Particle::Dump_Flux()
 		out << EneFlux_Target_r[i][0] << '\t' << EneFlux_Target_r[i][1] << endl;
 	out.close();*/
 	FluxOutput();
+	pathout = Outputpath + name_ + "_" + "transport_loss_summary.csv";
+	out.open(pathout);
+	out << "species,loss_type,events,weight_s-1\n";
+	out << name_ << ",neutral_stalled," << neutral_stall_loss_events_ << "," << neutral_stall_loss_weight_ << "\n";
+	out << name_ << ",core_loss," << core_loss_events_ << "," << core_loss_weight_ << "\n";
+	out << name_ << ",neutral_launch_outside," << neutral_launch_outside_loss_events_ << "," << neutral_launch_outside_loss_weight_ << "\n";
+	out << name_ << ",caltrace_lost," << caltrace_lost_loss_events_ << "," << caltrace_lost_loss_weight_ << "\n";
+	out << name_ << ",caltrace_invalid," << caltrace_invalid_loss_events_ << "," << caltrace_invalid_loss_weight_ << "\n";
+	out << name_ << ",wall_nearest_fallback," << wall_nearest_fallback_events_ << "," << wall_nearest_fallback_weight_ << "\n";
+	out.close();
 	if (K_H5Output)
 		FT_.write_H5(Outputpath + name_ + "_FluxZone.h5");
 }
@@ -11583,7 +11769,19 @@ double ParCollCar::eireneRate(int i, int j) const
 	if (eirene_argument_mode_ == EireneArgumentMode::SameDensityTemperature)
 	{
 		arg1 = density;
-		arg2 = Ti[i][j];
+		arg2 = Ti[i][j] * EireneHeavyEnergyScale;
+		if (eirene_rate_->fit() == 3)
+			arg1 *= EireneHeavyEnergyScale;
+	}
+	else if (eirene_density_source_ == EireneDensitySource::Electron)
+	{
+		arg2 *= EireneElectronTemperatureScale;
+	}
+	else
+	{
+		arg2 = Ti[i][j] * EireneHeavyEnergyScale;
+		if (eirene_rate_->fit() == 3)
+			arg1 *= EireneHeavyEnergyScale;
 	}
 	return EireneRate(density, arg1, arg2);
 }
@@ -11596,15 +11794,20 @@ double ParCollCar::eireneRateTri(int tri) const
 	if (density <= 0.)
 		return 0.;
 	double arg1 = density;
-	double arg2 = eireneTemperatureForDensityTri(tri);
+	double arg2 = eireneTemperatureForDensityTri(tri) * EireneHeavyEnergyScale;
 	if (Grid4.if_in_plasmagrid(tri) &&
 		eirene_argument_mode_ == EireneArgumentMode::ElectronDensityTemperature)
 	{
 		const int i = Grid4.b2_index(tri, 0);
 		const int j = Grid4.b2_index(tri, 1);
 		arg1 = ne[i][j];
-		arg2 = Te[i][j];
+		if (eirene_density_source_ == EireneDensitySource::Electron)
+			arg2 = Te[i][j] * EireneElectronTemperatureScale;
+		else
+			arg2 = Ti[i][j] * EireneHeavyEnergyScale;
 	}
+	if (eirene_rate_->fit() == 3 && eirene_density_source_ != EireneDensitySource::Electron)
+		arg1 *= EireneHeavyEnergyScale;
 	return EireneRate(density, arg1, arg2);
 }
 

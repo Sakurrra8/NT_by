@@ -227,7 +227,9 @@ void Prepare()
 	D_Be.SetReflect(D_Be_n_a, D_Be_E_a, D_Be_n_b, D_Be_E_b, D_Be_epsilon_L);
 	T_Be.SetReflect(T_Be_n_a, T_Be_E_a, T_Be_n_b, T_Be_E_b, T_Be_epsilon_L);
 
-	D_W_sputtered.init(Grid1.Wall_num(), 200, 0.0, 1500, 50, 0.0, 1.0);
+	const int target_stats_count = MeshMode == 3 ? Grid4.Num_Target() : 0;
+	D_W_sputtered.init(Grid1.Wall_num() + target_stats_count, 200, 0.0, 1500, 50, 0.0, 1.0);
+	D_W_sputtered.setSurfaceCounts(Grid1.Wall_num(), target_stats_count);
 	D_W_sputtered.loadYieldTable("Inputfile/database/D_W_sputtered.data");
 	/*for (int j = 0; j < 9; j++)
 	{

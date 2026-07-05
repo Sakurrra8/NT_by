@@ -343,6 +343,7 @@ namespace eirene
         void mesh_find(int N_poloidal, int N_radial);
         int b2_index(int i, int j);
         int lines_info(int i, int j);
+        const std::vector<int> &WallCandidatesForTri(int tri) const;
         int if_in_plasmagrid(int i);
         int Num_Target();
         double Target(int i, int j);
@@ -372,10 +373,12 @@ namespace eirene
         /// lines information: 1st parameter represent if the line is special;
         // 2nd: 0-nothing; 1-outer parget; 2-inner target; 3-other wall; 4-plasma boundrary; 5-core region. 6-PFR wall
         std::vector<std::vector<int>> lines_info_;
+        std::vector<std::vector<int>> wall_candidates_by_tri_;
 
         void b2_find();
         void target_find(int N_poloidal, int N_radial);
         void lines_find();
+        void build_wall_candidates_by_tri();
 
         // 小工具
         static void require(bool cond, const std::string &msg);

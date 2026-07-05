@@ -348,6 +348,14 @@ void Initialize(int Input, char *settingfile[]) {
       iss >> ImportanceMainPoloidalBegin;
     else if (Inputstring == "ImportanceMainPoloidalEnd")
       iss >> ImportanceMainPoloidalEnd;
+    else if (Inputstring == "EireneRateArgumentScale") {
+      iss >> EireneRateArgumentScale;
+      EireneElectronTemperatureScale = EireneRateArgumentScale;
+      EireneHeavyEnergyScale = EireneRateArgumentScale;
+    } else if (Inputstring == "EireneElectronTemperatureScale")
+      iss >> EireneElectronTemperatureScale;
+    else if (Inputstring == "EireneHeavyEnergyScale")
+      iss >> EireneHeavyEnergyScale;
   }
   if (!mesh_mode_read)
     MeshMode = 1;

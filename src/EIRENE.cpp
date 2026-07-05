@@ -215,6 +215,11 @@ double EIRENE::data(int i)
     return data_[i];
 }
 
+int EIRENE::fit() const
+{
+    return Fit_;
+}
+
 void EIRENE::out()
 {
     cout << Fit_ << '\t' << Num_ << '\t';
