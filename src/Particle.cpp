@@ -2307,6 +2307,29 @@ void Particle::track()
 					Zone_ = 6;
 				}
 			}
+			if (Grid4.if_in_plasmagrid(Tri_Index_) == 1)
+			{
+				const int b2_i = Grid4.b2_index(Tri_Index_, 0);
+				const int b2_j = Grid4.b2_index(Tri_Index_, 1);
+				if (b2_i >= 0 && b2_i < N_poloidal && b2_j >= 0 && b2_j < N_radial)
+				{
+					XY_[0] = b2_i;
+					XY_[1] = b2_j;
+					Zone_ = zoneFromB2Index(b2_i, b2_j);
+				}
+				else
+				{
+					XY_[0] = -1;
+					XY_[1] = -1;
+					Zone_ = 6;
+				}
+			}
+			else
+			{
+				XY_[0] = -1;
+				XY_[1] = -1;
+				Zone_ = 6;
+			}
 			if (K_flight == 1 || K_flight == 3)
 			{
 				IfColl_ = 0;
