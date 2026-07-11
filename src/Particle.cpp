@@ -2174,7 +2174,8 @@ void Particle::track()
 						double step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
 						if ((!std::isfinite(step_rz) || step_rz < 1.e-9) &&
 							(nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]) ||
-							 [&]() {
+							 [&]()
+							 {
 								 int tri = findTriangleContainingPoint(X_[0], X_[1]);
 								 if (tri < 0)
 									 tri = findTriangleAlongRay(X_[0], X_[1], V_);
@@ -2736,12 +2737,12 @@ void Particle::CalLambda()
 				if (K_Vi == 1)
 				{
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy / 2.,
 																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
 					}
 				}
@@ -2750,11 +2751,11 @@ void Particle::CalLambda()
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
 					// Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 					// Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 					}
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(XY_[0], XY_[1]));
@@ -2778,23 +2779,23 @@ void Particle::CalLambda()
 				if (K_Vi == 1)
 				{
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy,
 																		   Ti[XY_[0]][XY_[1]]));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T,
 																				  Ti[XY_[0]][XY_[1]]));
 					}
 				}
 				if (K_Vi == 2)
 				{
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
-					Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+					Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 					}
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(XY_[0], XY_[1]));
@@ -2924,11 +2925,11 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy / 1.,
-																				   Ti[XY_[0]][XY_[1]] / 1));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy,
+																				   Ti[XY_[0]][XY_[1]]));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T / 1.,
-																						  Ti[XY_[0]][XY_[1]] / 1));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T,
+																						  Ti[XY_[0]][XY_[1]]));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
@@ -2942,9 +2943,9 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]]));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]]));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
@@ -3052,21 +3053,21 @@ void Particle::CalLambda()
 					if (K_Vi == 1)
 					{
 						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
-																			   Ti[XY_[0]][XY_[1]] / 2.));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy,
+																			   Ti[XY_[0]][XY_[1]]));
 						if (K_DT)
 						{
 							CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
-							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T / 2.,
-																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
+							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T,
+																					  Ti[XY_[0]][XY_[1]]));
 						}
 					}
 					if (K_Vi == 2)
 					{
 						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]]));
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]]));
 					}
 				}
 				else
@@ -3102,10 +3103,10 @@ void Particle::CalLambda()
 					if (K_Vi == 1)
 					{
 						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy,
 																			   Ti[XY_[0]][XY_[1]] / coefficient_T));
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T,
 																				  Ti[XY_[0]][XY_[1]] / coefficient_D));
 					}
 					if (K_Vi == 2)
@@ -3114,8 +3115,8 @@ void Particle::CalLambda()
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
 						// Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
 						// Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
-						Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
-						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+						Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
 					}
 				}
 				else

@@ -26,7 +26,7 @@ K_MarColl           1       # option: 1: 2 Separate sub-reactions; 2: 1 Sum-reac
 K_flight            1       # option: 1: mean free path; 2: fixed time step;
 K_CX_impurity       1       # option: stwich for impurity particle
 K_Puff              0   0   0   0   0   # option
-K_D2Flight          1       # option: D2+ flight
+K_D2Flight          0       # option: D2+ flight
 K_abnormal_transport    1   # option
 K_Rflect            2       # option: 1 for empirical formula of W. Eckstein; 2 for database of Trim; 3 for calculate from Trim
 K_RflectDirection   3       # option: 1: Cosine distribution; 2: Half cosine distribution; 3: Specular reflection
@@ -73,7 +73,7 @@ ImportanceMainPoloidalEnd   72
 K_H5Output          0       # option: write HDF5 output files
 MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
-K_DWTargetActualAngle 1     # use local B-to-target-normal incidence angle
+K_DWTargetActualAngle 0     # use local B-to-target-normal incidence angle
 K_DTargetSourceMode 1       # 1 use recycled_neutral_flux_D; 2 use ni*abs(ua)*abs(b.normal)*target_area and TRIM split
 DWTrimDatabase      D_on_W # match EIRENE input TRIM D_on_W database
 SurfaceTemperature_eV 0.1   # EIRENE EWALL=-0.1: Maxwellian-flux wall temperature
