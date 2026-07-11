@@ -659,7 +659,6 @@ restart_particle_tri:
             WallReflect();
             if (P->Weight() == 0)
                 FINISH_SPLIT_STATE(restart_particle_tri);
-            P->track();
             PP = P;
         }
     }
