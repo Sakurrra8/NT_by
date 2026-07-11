@@ -15,14 +15,15 @@
 # 接收传递的输入文件路径
 input_file=$1
 
-cd $SLURM_SUBMIT_DIR
+# Keep Slurm's working directory so that sbatch --chdir can select the repo.
+repo_dir=$PWD
 
 mkdir -p log
 mkdir -p Outputfile
 
 export LD_LIBRARY_PATH=/data/leuven/379/vsc37950/nt/opt/hdf5/lib:/vsc-hard-mounts/leuven-apps/rocky9/skylake/2025b/software/GCCcore/14.3.0/lib64:$LD_LIBRARY_PATH
 
-workdir=$PWD/$SLURM_JOBID
+workdir=$repo_dir/$SLURM_JOBID
 
 mkdir -p $workdir
 mkdir -p $workdir/data
