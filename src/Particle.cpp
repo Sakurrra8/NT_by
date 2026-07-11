@@ -3997,7 +3997,7 @@ void Particle::Caltrace_Tri()
 				std::cout << "error true wall in Caltrace_Tri()" << endl;
 				pause();
 			}
-			dt_trace_ = -dt_trace_ * log(Rand_flight_ / previous_d_flight);
+			dt_trace_ = -dt_ * log(Rand_flight_ / previous_d_flight);
 			for (int i = 0; i < 3; i++)
 				X_new_[i] = X_[i] + V_[i] * dt_trace_;
 			NumParStat();
@@ -4050,7 +4050,7 @@ void Particle::Caltrace_Tri()
 						std::cout << "error 1 in Caltrace_Tri()" << endl;
 						pause();
 					}
-					dt_trace_ = -dt_trace_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
+					dt_trace_ = -dt_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
 					/*if (this == &D2)
 						std::cout << "dt_trace4: " << dt_trace_ << endl;*/
 					for (int i = 0; i < 3; i++)
@@ -4234,7 +4234,7 @@ void Particle::Caltrace_Tri()
 						std::cout << "error 2 in Caltrace_Tri()" << endl;
 						pause();
 					}
-					dt_trace_ = -dt_trace_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
+					dt_trace_ = -dt_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
 					/*if (this == &D2)
 						std::cout << "dt_trace4: " << dt_trace_ << endl;*/
 					for (int i = 0; i < 3; i++)
@@ -4418,7 +4418,7 @@ void Particle::Caltrace_Tri()
 						std::cout << "error 3 in Caltrace_Tri()" << endl;
 						pause();
 					}
-					dt_trace_ = -dt_trace_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
+					dt_trace_ = -dt_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
 					/*if (this == &D2)
 						std::cout << "dt_trace4: " << dt_trace_ << endl;*/
 					for (int i = 0; i < 3; i++)
@@ -4578,33 +4578,6 @@ void Particle::Caltrace_Tri()
 	{
 		if (!Grid4.Ifingrid(Tri_Index_, X_new_[0], X_new_[1]))
 		{
-			const int neighbor_indices[3] = {
-				Grid4.tris_[Tri_Index_].neigh[0],
-				Grid4.tris_[Tri_Index_].neigh[3],
-				Grid4.tris_[Tri_Index_].neigh[6]};
-			for (int neighbor : neighbor_indices)
-			{
-				if (neighbor >= 0 && static_cast<std::size_t>(neighbor) < Grid4.tris_.size() &&
-					Grid4.Ifingrid(neighbor, X_new_[0], X_new_[1]))
-				{
-					IfColl_ = 0;
-					boundary_start_ = 0;
-					dt_trace_ = dt_;
-					NumParStat();
-					Tri_Index_ = neighbor;
-					if (Zone_ < 6)
-					{
-						XY_[0] = Tri_B2_[Tri_Index_][0];
-						XY_[1] = Tri_B2_[Tri_Index_][1];
-					}
-					else
-					{
-						XY_[0] = -1;
-						XY_[1] = -1;
-					}
-					return;
-				}
-			}
 			int fallback_edge = -1;
 			double fallback_x = 0.0;
 			double fallback_y = 0.0;
@@ -4626,7 +4599,7 @@ void Particle::Caltrace_Tri()
 						std::cout << "error fallback in Caltrace_Tri()" << endl;
 						pause();
 					}
-					dt_trace_ = -dt_trace_ * log(Rand_flight_ / previous_d_flight);
+					dt_trace_ = -dt_ * log(Rand_flight_ / previous_d_flight);
 					for (int i = 0; i < 3; i++)
 						X_new_[i] = X_[i] + V_[i] * dt_trace_;
 					NumParStat();
@@ -4767,7 +4740,7 @@ void Particle::Caltrace_Tri()
 					std::cout << "error 4 in Caltrace_Tri()" << endl;
 					pause();
 				}
-				dt_trace_ = -dt_trace_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
+				dt_trace_ = -dt_ * log(Rand_flight_ / (d_flight_ / exp(-dt_trace_ / dt_)));
 				for (int i = 0; i < 3; i++)
 				{
 					X_new_[i] = X_[i] + V_[i] * dt_trace_;
@@ -4784,6 +4757,7 @@ void Particle::Caltrace_Tri()
 				}
 				// std::cout << "no collision: " << Rand_flight_ << " " << d_flight_ << endl;
 				IfColl_ = 0;
+				NumParStat();
 			}
 		}
 	}
