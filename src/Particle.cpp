@@ -367,6 +367,26 @@ namespace
 		return 5;
 	}
 
+	void synchronizeMesh3LocationFromTriangle(int tri_index, int xy[3], int &zone)
+	{
+		if (tri_index >= 0 && static_cast<std::size_t>(tri_index) < Grid4.tris_.size() &&
+			Grid4.if_in_plasmagrid(tri_index) == 1)
+		{
+			const int b2_i = Grid4.b2_index(tri_index, 0);
+			const int b2_j = Grid4.b2_index(tri_index, 1);
+			if (b2_i >= 0 && b2_i < N_poloidal && b2_j >= 0 && b2_j < N_radial)
+			{
+				xy[0] = b2_i;
+				xy[1] = b2_j;
+				zone = zoneFromB2Index(b2_i, b2_j);
+				return;
+			}
+		}
+		xy[0] = -1;
+		xy[1] = -1;
+		zone = 6;
+	}
+
 	void setDWTrimDirection(std::vector<double> &velocity,
 							const DWReflectionSample &sample,
 							double wall_cos, double wall_sin,
@@ -2307,29 +2327,7 @@ void Particle::track()
 					Zone_ = 6;
 				}
 			}
-			if (Grid4.if_in_plasmagrid(Tri_Index_) == 1)
-			{
-				const int b2_i = Grid4.b2_index(Tri_Index_, 0);
-				const int b2_j = Grid4.b2_index(Tri_Index_, 1);
-				if (b2_i >= 0 && b2_i < N_poloidal && b2_j >= 0 && b2_j < N_radial)
-				{
-					XY_[0] = b2_i;
-					XY_[1] = b2_j;
-					Zone_ = zoneFromB2Index(b2_i, b2_j);
-				}
-				else
-				{
-					XY_[0] = -1;
-					XY_[1] = -1;
-					Zone_ = 6;
-				}
-			}
-			else
-			{
-				XY_[0] = -1;
-				XY_[1] = -1;
-				Zone_ = 6;
-			}
+			synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
 			if (K_flight == 1 || K_flight == 3)
 			{
 				IfColl_ = 0;
@@ -2339,6 +2337,7 @@ void Particle::track()
 				unsigned int neutral_tri_stall_steps = 0;
 				while (!IfColl_ && Zone_ < 7)
 				{
+					synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
 					if (++neutral_tri_steps > MaxNeutralTriSteps)
 					{
 						std::cerr << "MeshMode3 neutral exceeded max triangle steps: name=" << name_
