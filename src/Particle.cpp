@@ -2,6 +2,75 @@
 
 namespace
 {
+	double isotropicPolarAngle()
+	{
+		return std::acos(std::clamp(2.0 * Tools::Random() - 1.0, -1.0, 1.0));
+	}
+
+	double isotopeMassScale(int isotope)
+	{
+		if (isotope == 2)
+			return 0.5 * EireneHeavyEnergyScale;
+		if (isotope == 3)
+			return EireneHeavyEnergyScale / 3.0;
+		return 1.0;
+	}
+
+	double densitySourceMassScale(EireneDensitySource source)
+	{
+		switch (source)
+		{
+		case EireneDensitySource::DIon:
+		case EireneDensitySource::DNeutralTri:
+		case EireneDensitySource::D2NeutralTri:
+			return isotopeMassScale(2);
+		case EireneDensitySource::TIon:
+		case EireneDensitySource::TNeutralTri:
+		case EireneDensitySource::T2NeutralTri:
+			return isotopeMassScale(3);
+		default:
+			return 1.0;
+		}
+	}
+
+	std::array<double, 3> sampleThermalVelocity(double temperature_eV,
+											 double particle_mass,
+											 const std::vector<double> &flow)
+	{
+		const double theta = 2.0 * pi * Tools::Random();
+		const double phi = isotropicPolarAngle();
+		double speed = 0.0;
+		if (K_Maxwell == 1)
+			speed = Tools::Maxwell(temperature_eV, particle_mass);
+		else if (K_Maxwell == 2)
+			speed = std::sqrt(3.0 * qe * temperature_eV / particle_mass);
+
+		std::array<double, 3> velocity{
+			speed * std::sin(phi) * std::cos(theta),
+			speed * std::sin(phi) * std::sin(theta),
+			speed * std::cos(phi)};
+		for (int component = 0; component < 3 && component < static_cast<int>(flow.size()); ++component)
+			velocity[component] += flow[component];
+		return velocity;
+	}
+
+	void samplePointInTriangle(int tri_index, double &r, double &z)
+	{
+		const auto &tri = Grid4.tris_[tri_index];
+		double u = Tools::Random();
+		double v = Tools::Random();
+		if (u + v > 1.0)
+		{
+			u = 1.0 - u;
+			v = 1.0 - v;
+		}
+		const auto &a = Grid4.nodes_[tri.v[0]];
+		const auto &b = Grid4.nodes_[tri.v[1]];
+		const auto &c = Grid4.nodes_[tri.v[2]];
+		r = a.r + u * (b.r - a.r) + v * (c.r - a.r);
+		z = a.z + u * (b.z - a.z) + v * (c.z - a.z);
+	}
+
 	double triangleStepLimit(int tri_index, double speed, double requested_dt)
 	{
 		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size() || speed <= 0.)
@@ -129,15 +198,28 @@ namespace
 			const double ay = a.z - y0;
 			const double t = (ax * ey - ay * ex) / denom;
 			const double u = (ax * dy - ay * dx) / denom;
-			if (t <= 1.e-12 || t > 1.0 + 1.e-12 || u < -1.e-10 || u > 1.0 + 1.e-10)
+			if (t < -1.e-10 || t > 1.0 + 1.e-12 || u < -1.e-10 || u > 1.0 + 1.e-10)
 				continue;
-			if (t < best_t)
+			double candidate_t = t;
+			if (candidate_t <= 1.e-12)
+			{
+				const double cx =
+					(Grid4.nodes_[tri.v[0]].r + Grid4.nodes_[tri.v[1]].r + Grid4.nodes_[tri.v[2]].r) / 3.0;
+				const double cy =
+					(Grid4.nodes_[tri.v[0]].z + Grid4.nodes_[tri.v[1]].z + Grid4.nodes_[tri.v[2]].z) / 3.0;
+				const double inside_side = ex * (cy - a.z) - ey * (cx - a.r);
+				const double endpoint_side = ex * (y1 - a.z) - ey * (x1 - a.r);
+				if (inside_side * endpoint_side >= 0.0)
+					continue;
+				candidate_t = 0.0;
+			}
+			if (candidate_t < best_t)
 			{
 				found = true;
-				best_t = t;
+				best_t = candidate_t;
 				edge_out = edge;
-				secx = x0 + t * dx;
-				secy = y0 + t * dy;
+				secx = x0 + candidate_t * dx;
+				secy = y0 + candidate_t * dy;
 			}
 		}
 		if (found)
@@ -226,6 +308,52 @@ namespace
 			target_sin = -target_sin;
 		}
 		return {target_cos, target_sin};
+	}
+
+	int resolveTargetIndex(int tri_index, int line_info,
+						   double hit_x, double hit_y, int radial_hint)
+	{
+		if (line_info != 3 && line_info != 4)
+			throw std::logic_error("resolveTargetIndex requires a target boundary");
+
+		const int first_target = line_info == 3 ? 0 : N_radial;
+		const int last_target = std::min(first_target + N_radial, Grid4.Num_Target());
+		const int hinted_target =
+			radial_hint >= 0 && radial_hint < N_radial &&
+					first_target + radial_hint < last_target
+				? first_target + radial_hint
+				: -1;
+		if (hinted_target >= 0 && Grid4.targetIndex(hinted_target, 0) == tri_index)
+			return hinted_target;
+
+		int nearest_target = -1;
+		double nearest_distance2 = std::numeric_limits<double>::infinity();
+		auto consider = [&](int target)
+		{
+			const double dx = hit_x - Grid4.Mid_Target(target, 0);
+			const double dy = hit_y - Grid4.Mid_Target(target, 1);
+			const double distance2 = dx * dx + dy * dy;
+			if (distance2 < nearest_distance2)
+			{
+				nearest_distance2 = distance2;
+				nearest_target = target;
+			}
+		};
+
+		for (int target = first_target; target < last_target; ++target)
+			if (Grid4.targetIndex(target, 0) == tri_index)
+				consider(target);
+		if (nearest_target >= 0)
+			return nearest_target;
+
+		if (hinted_target >= 0)
+			return hinted_target;
+
+		for (int target = first_target; target < last_target; ++target)
+			consider(target);
+		if (nearest_target < 0)
+			throw std::logic_error("No target segment is available for target boundary");
+		return nearest_target;
 	}
 
 	int zoneFromB2Index(int i, int j)
@@ -761,7 +889,7 @@ void Particle::ParInit(vector<int> &K_collision, const std::vector<std::vector<i
 	RectoPlasmaBoundary_.begin()->WallEroInit(Grid1.PLasma_Grid_Boundry_num(), N_poloidal, N_radial);
 }
 
-void Particle::Init(int k, int z)
+void Particle::Init(int k, int z, double scattering_cosine)
 {
 	double vel = 0.;
 	double deltaX, deltaY, deltaL, cosCX, sinCX;
@@ -898,7 +1026,7 @@ void Particle::Init(int k, int z)
 		else // if the calculate is needful
 		{
 			pause();
-			const double Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp1 = isotropicPolarAngle();
 			const double Rand_temp2 = 2.0 * pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
@@ -914,7 +1042,9 @@ void Particle::Init(int k, int z)
 		}
 		double Vtheta, Vphi;
 		Vtheta = 2 * pi * Tools::Random();
-		Vphi = pi * Tools::Random();
+		Vphi = scattering_cosine >= -1.0 && scattering_cosine <= 1.0
+				   ? std::acos(scattering_cosine)
+				   : isotropicPolarAngle();
 		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) + Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
 		// z = 1 for particle B, z = 2 for particle A
 		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
@@ -1205,7 +1335,7 @@ void Particle::Init(int k, int z)
 		fate_[0] = 4;
 		sourcePar_[0] = 12;
 		double Vtheta = 2 * pi * Tools::Random();
-		double Vphi = pi * Tools::Random();
+		double Vphi = isotropicPolarAngle();
 
 		/*VtoVcharge();
 		VchargetoV();*/
@@ -1222,8 +1352,7 @@ void Particle::Init(int k, int z)
 			Weight_ = Weight_Grid_[a][b];
 			NumPar_now = Tri_NumPar_Grid_[z];
 			// std::cout << "Weight: " << Weight_ << endl;
-			X_[0] = (Grid4.nodes_[Grid4.tris_[z].v[0]].r + Grid4.nodes_[Grid4.tris_[z].v[1]].r + Grid4.nodes_[Grid4.tris_[z].v[2]].r) / 3.;
-			X_[1] = (Grid4.nodes_[Grid4.tris_[z].v[0]].z + Grid4.nodes_[Grid4.tris_[z].v[1]].z + Grid4.nodes_[Grid4.tris_[z].v[2]].z) / 3.;
+			samplePointInTriangle(z, X_[0], X_[1]);
 			X_[2] = 0;
 			XY_[0] = a;
 			XY_[1] = b;
@@ -1464,7 +1593,7 @@ void Particle::Init(int k, int z)
 		else
 		{
 			pause();
-			const double Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp1 = isotropicPolarAngle();
 			const double Rand_temp2 = 2.0 * pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
@@ -1487,7 +1616,7 @@ void Particle::Init(int k, int z)
 					  << 1. / 2. * m_B * (Tools::sqr(V_temp[0]) + Tools::sqr(V_temp[1]) + Tools::sqr(V_temp[2])) / qe << endl;
 		}
 		Vtheta = 2 * pi * Tools::Random();
-		Vphi = pi * Tools::Random();
+		Vphi = isotropicPolarAngle();
 		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) +
 					   Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
 		// z = 1 for particle B, z = 2 for particle A
@@ -1559,53 +1688,49 @@ void Particle::Init(int k, int z)
 	{
 		/*m_A for Ion, m_B for Neutral, R is the same
 		unit vector with a random direction			*/
-		double V_ion[3], V_temp[3], m_A, m_B, Modules;
+		double V_ion[3], V_temp[3], m_A = 0.0, m_B, Modules;
 		if (z == 1)
 		{
-			if (this == &D || this == &D2)
+			std::array<double, 3> sampled_velocity{};
+			if (this == &H || this == &H2)
+			{
+				m_A = Hmass;
+				sampled_velocity = sampleThermalVelocity(T_H_0_Tri[Tri_Index_], Hmass, ua_H_0_Tri[Tri_Index_]);
+			}
+			else if (this == &D || this == &D2)
 			{
 				m_A = Dmass;
-				if (K_Vi == 1)
-				{
-					V_ion[0] = V_D_0_now[0];
-					V_ion[1] = V_D_0_now[0];
-					V_ion[2] = V_D_0_now[0];
-				}
+				sampled_velocity = sampleThermalVelocity(T_D_0_Tri[Tri_Index_], Dmass, ua_D_0_Tri[Tri_Index_]);
 			}
-			if (this == &T || this == &T2)
+			else if (this == &T || this == &T2)
 			{
 				m_A = Tmass;
-				if (K_Vi == 1)
-				{
-					V_ion[0] = V_T_0_now[0];
-					V_ion[1] = V_T_0_now[0];
-					V_ion[2] = V_T_0_now[0];
-				}
+				sampled_velocity = sampleThermalVelocity(T_T_0_Tri[Tri_Index_], Tmass, ua_T_0_Tri[Tri_Index_]);
 			}
+			std::copy(sampled_velocity.begin(), sampled_velocity.end(), V_ion);
 		}
 		else if (z == 2)
 		{
-			if (this == &D || this == &D2)
+			std::array<double, 3> sampled_velocity{};
+			if (this == &H || this == &H2)
+			{
+				m_A = H2mass;
+				sampled_velocity = sampleThermalVelocity(T_H2_0_Tri[Tri_Index_], H2mass, ua_H2_0_Tri[Tri_Index_]);
+			}
+			else if (this == &D || this == &D2)
 			{
 				m_A = D2mass;
-				if (K_Vi == 1)
-				{
-					V_ion[0] = V_D2_0_now[0];
-					V_ion[1] = V_D2_0_now[0];
-					V_ion[2] = V_D2_0_now[0];
-				}
+				sampled_velocity = sampleThermalVelocity(T_D2_0_Tri[Tri_Index_], D2mass, ua_D2_0_Tri[Tri_Index_]);
 			}
-			if (this == &T || this == &T2)
+			else if (this == &T || this == &T2)
 			{
 				m_A = T2mass;
-				if (K_Vi == 1)
-				{
-					V_ion[0] = V_T2_0_now[0];
-					V_ion[1] = V_T2_0_now[0];
-					V_ion[2] = V_T2_0_now[0];
-				}
+				sampled_velocity = sampleThermalVelocity(T_T2_0_Tri[Tri_Index_], T2mass, ua_T2_0_Tri[Tri_Index_]);
 			}
+			std::copy(sampled_velocity.begin(), sampled_velocity.end(), V_ion);
 		}
+		if (m_A <= 0.0)
+			throw std::logic_error("Unsupported isotope in neutral-neutral collision");
 		m_B = mass_;
 		if (Charge_ == 0)
 			for (int i = 0; i < 3; i++)
@@ -1614,7 +1739,7 @@ void Particle::Init(int k, int z)
 		{
 			std::cout << "The Cahrge_ is wrong!" << endl;
 			pause();
-			const double Rand_temp1 = pi * Tools::Random();
+			const double Rand_temp1 = isotropicPolarAngle();
 			const double Rand_temp2 = 2.0 * pi * Tools::Random();
 			double V_temp1[3], V_temp2[3];
 			V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
@@ -1637,7 +1762,7 @@ void Particle::Init(int k, int z)
 					  << 1. / 2. * m_B * (Tools::sqr(V_temp[0]) + Tools::sqr(V_temp[1]) + Tools::sqr(V_temp[2])) / qe << endl;
 		}
 		Vtheta = 2 * pi * Tools::Random();
-		Vphi = pi * Tools::Random();
+		Vphi = isotropicPolarAngle();
 		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) + Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
 		// z = 1 for particle B, z = 2 for particle A
 		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
@@ -1653,15 +1778,12 @@ void Particle::Init(int k, int z)
 			std::cout << "2V of ion: " << V_2[0] << ", " << V_2[1] << ", " << V_2[2] << " T:"
 					  << 1. / 2. * m_A * (Tools::sqr(V_2[0]) + Tools::sqr(V_2[1]) + Tools::sqr(V_2[2])) / qe << endl;
 		}
-		if (z == 1)
+		// z selects an atomic or molecular background. The tracked test
+		// particle is B, so both cases must retain the V_1 branch.
+		if (z == 1 || z == 2)
 		{
 			for (int i = 0; i < 3; i++)
 				V_[i] = V_1[i];
-		}
-		if (z == 2)
-		{
-			for (int i = 0; i < 3; i++)
-				V_[i] = V_2[i];
 		}
 		// setfate(0, "rec", "D");
 		vel = 1.;
@@ -1730,7 +1852,7 @@ void Particle::VtoVcharge()
 
 void Particle::VchargetoV()
 {
-	const double Rand_temp1 = pi * Tools::Random();
+	const double Rand_temp1 = isotropicPolarAngle();
 	const double Rand_temp2 = 2.0 * pi * Tools::Random();
 	double V_temp1[3], V_temp2[3];
 	V_temp1[0] = sin(Rand_temp1) * sin(Rand_temp2);
@@ -2552,7 +2674,7 @@ void Particle::SampleIonVelocity(int isotope)
 	}
 
 	const double Vtheta = 2 * pi * Tools::Random();
-	const double Vphi = pi * Tools::Random();
+	const double Vphi = isotropicPolarAngle();
 	double speed = 0.;
 	if (K_Maxwell == 1)
 		speed = Tools::Maxwell(Ti[XY_[0]][XY_[1]], ion_mass);
@@ -2562,6 +2684,42 @@ void Particle::SampleIonVelocity(int isotope)
 	ion_velocity[0] = speed * sin(Vphi) * cos(Vtheta) + parallel_flow * B[XY_[0]][XY_[1]][0];
 	ion_velocity[1] = speed * sin(Vphi) * sin(Vtheta) + parallel_flow * B[XY_[0]][XY_[1]][1];
 	ion_velocity[2] = speed * cos(Vphi) + parallel_flow * B[XY_[0]][XY_[1]][2];
+}
+
+double Particle::D2ElasticScatteringCosine(int isotope) const
+{
+	if (XY_[0] < 0 || XY_[0] >= N_poloidal || XY_[1] < 0 || XY_[1] >= N_radial)
+		return 0.0;
+
+	double parallel_flow = 0.0;
+	if (isotope == 1)
+		parallel_flow = ua_H_1[XY_[0]][XY_[1]];
+	else if (isotope == 2)
+		parallel_flow = ua_D_1[XY_[0]][XY_[1]];
+	else if (isotope == 3)
+		parallel_flow = ua_T_1[XY_[0]][XY_[1]];
+	else
+		return 0.0;
+
+	const int projectile_isotope = this == &D2 ? 2 : (this == &T2 ? 3 : 1);
+	const double projectile_scale = isotopeMassScale(projectile_isotope);
+	const double background_scale = isotopeMassScale(isotope);
+	const double energy_eV =
+		0.5 * mass_ *
+		(Tools::sqr(V_[0] - parallel_flow * B[XY_[0]][XY_[1]][0]) +
+		 Tools::sqr(V_[1] - parallel_flow * B[XY_[0]][XY_[1]][1]) +
+		 Tools::sqr(V_[2] - parallel_flow * B[XY_[0]][XY_[1]][2])) /
+		qe * projectile_scale;
+	const double temperature_eV = Ti[XY_[0]][XY_[1]] * background_scale;
+	const double total_rate = R0_3T_H3.cal(energy_eV, temperature_eV);
+	const double diffusion_rate = R0_3D_H3.cal(energy_eV, temperature_eV);
+	if (!(total_rate > 0.0) || !std::isfinite(total_rate) || !std::isfinite(diffusion_rate))
+		return 0.0;
+
+	// Match the first angular moment of EIRENE's 0.3T/0.3D data while
+	// retaining the total 0.3T event frequency.
+	const double mean_one_minus_cosine = std::clamp(diffusion_rate / total_rate, 0.0, 2.0);
+	return 1.0 - mean_one_minus_cosine;
 }
 
 void Particle::CalLambda()
@@ -2621,7 +2779,7 @@ void Particle::CalLambda()
 		if (K_H)
 		{
 					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
+					Vphi = isotropicPolarAngle();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
 						vel = Tools::Maxwell(T_H_0_Tri[Tri_Index_], Hmass);
@@ -2632,7 +2790,7 @@ void Particle::CalLambda()
 					V_H_0_now[2] = vel * cos(Vphi) + ua_H_0_Tri[Tri_Index_][2];
 
 					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
+					Vphi = isotropicPolarAngle();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
 						vel = Tools::Maxwell(T_H2_0_Tri[Tri_Index_], H2mass);
@@ -2645,7 +2803,7 @@ void Particle::CalLambda()
 		if (K_D)
 		{
 					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
+					Vphi = isotropicPolarAngle();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
 						vel = Tools::Maxwell(T_D_0_Tri[Tri_Index_], Dmass);
@@ -2656,7 +2814,7 @@ void Particle::CalLambda()
 					V_D_0_now[2] = vel * cos(Vphi) + ua_D_0_Tri[Tri_Index_][2];
 
 					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
+					Vphi = isotropicPolarAngle();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
 						vel = Tools::Maxwell(T_D2_0_Tri[Tri_Index_], D2mass);
@@ -2670,7 +2828,7 @@ void Particle::CalLambda()
 		if (K_T)
 		{
 					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
+					Vphi = isotropicPolarAngle();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
 						vel = Tools::Maxwell(T_T_0_Tri[Tri_Index_], Tmass);
@@ -2681,7 +2839,7 @@ void Particle::CalLambda()
 					V_T_0_now[2] = vel * cos(Vphi) + ua_T_0_Tri[Tri_Index_][2];
 
 					Vtheta = 2 * pi * Tools::Random();
-					Vphi = pi * Tools::Random();
+					Vphi = isotropicPolarAngle();
 					// std::cout << Vtheta << '\t' << Vphi << '\t' << Vtheta / Vphi << endl;
 					if (K_Maxwell == 1)
 						vel = Tools::Maxwell(T_T2_0_Tri[Tri_Index_], T2mass);
@@ -2741,19 +2899,19 @@ void Particle::CalLambda()
 					Ion_[0].Setcs_now(Ion_[0].cs(XY_[0], XY_[1]));
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy,
-																			   Ti[XY_[0]][XY_[1]]));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(2),
+																   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 						if (K_CX_DT)
-							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T,
-																					  Ti[XY_[0]][XY_[1]]));
+							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2),
+																	  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 						else
 							CX_DT_[0].Setcs_now(0.);
 					}
 					if (K_Vi == 2)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 						if (K_CX_DT)
-							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 						else
 							CX_DT_[0].Setcs_now(0.);
 					}
@@ -2780,20 +2938,20 @@ void Particle::CalLambda()
 				{
 					if (K_Vi == 1)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy,
-																			   Ti[XY_[0]][XY_[1]]));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(3),
+																		   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 						if (K_CX_DT)
-							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T,
-																					  Ti[XY_[0]][XY_[1]]));
+							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3),
+																			  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 						else
 							CX_DT_[0].Setcs_now(0.);
 					}
 					Ion_[0].Setcs_now(Ion_[0].cs(XY_[0], XY_[1]));
 					if (K_Vi == 2)
 					{
-						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 						if (K_CX_DT)
-							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_D));
+							CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 						else
 							CX_DT_[0].Setcs_now(0.);
 					}
@@ -2831,26 +2989,29 @@ void Particle::CalLambda()
 				if (K_Vi == 1)
 				{
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
-																		   Ti[XY_[0]][XY_[1]] / coefficient_D));
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(2),
+															   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
-																				  Ti[XY_[0]][XY_[1]] / coefficient_T));
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2),
+																	  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 					}
 				}
 				if (K_Vi == 2)
 				{
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
-					// Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
-					// Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 					}
+				}
+				if (!K_DT)
+				{
+					CX_DT_[0].Setcs_now(0.0);
+					Ela_DT_[0].Setcs_now(0.0);
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(XY_[0], XY_[1]));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(XY_[0], XY_[1]));
@@ -2873,24 +3034,29 @@ void Particle::CalLambda()
 				if (K_Vi == 1)
 				{
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
-					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
-																		   Ti[XY_[0]][XY_[1]]));
+					Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(3),
+															   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
-																				  Ti[XY_[0]][XY_[1]]));
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3),
+																	  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 					}
 				}
 				if (K_Vi == 2)
 				{
 					CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
-					Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+					Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 					if (K_DT)
 					{
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(XY_[0], XY_[1]));
-						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 					}
+				}
+				if (!K_DT)
+				{
+					CX_DT_[0].Setcs_now(0.0);
+					Ela_DT_[0].Setcs_now(0.0);
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(XY_[0], XY_[1]));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(XY_[0], XY_[1]));
@@ -3019,11 +3185,11 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy / 1.,
-																				   Ti[XY_[0]][XY_[1]] / 1));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(2),
+																	   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T / 1.,
-																						  Ti[XY_[0]][XY_[1]] / 1));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2),
+																			  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
@@ -3037,9 +3203,9 @@ void Particle::CalLambda()
 					{
 						if (Zone_ < 6)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
@@ -3080,19 +3246,19 @@ void Particle::CalLambda()
 					{
 						if (K_Vi == 1)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy,
-																				   Ti[XY_[0]][XY_[1]] / coefficient_T));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(3),
+																			   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T,
-																						  Ti[XY_[0]][XY_[1]] / coefficient_D));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3),
+																				  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
 						else if (K_Vi == 2)
 						{
-							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_T));
+							CX_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 							if (K_CX_DT)
-								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_D));
+								CX_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R3_1_8_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 							else
 								CX_DT_[0].Setcs_now(CS_Vacuum);
 						}
@@ -3147,21 +3313,21 @@ void Particle::CalLambda()
 					if (K_Vi == 1)
 					{
 						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy / 2.,
-																			   Ti[XY_[0]][XY_[1]] / 2.));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(2),
+																   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 						if (K_DT)
 						{
 							CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
-							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T / 2.,
-																					  Ti[XY_[0]][XY_[1]] / coefficient_T));
+							Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2),
+																		  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 						}
 					}
 					if (K_Vi == 2)
 					{
 						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(2), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 					}
 				}
 				else
@@ -3170,6 +3336,11 @@ void Particle::CalLambda()
 					CX_DT_[0].Setcs_now(CS_Vacuum);
 					Ela_[0].Setcs_now(CS_Vacuum);
 					Ela_DT_[0].Setcs_now(CS_Vacuum);
+				}
+				if (!K_DT)
+				{
+					CX_DT_[0].Setcs_now(0.0);
+					Ela_DT_[0].Setcs_now(0.0);
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(Tri_Index_));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(Tri_Index_));
@@ -3197,20 +3368,18 @@ void Particle::CalLambda()
 					if (K_Vi == 1)
 					{
 						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
-						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy,
-																			   Ti[XY_[0]][XY_[1]] / coefficient_T));
+						Ela_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(3),
+																   Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
-						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T,
-																				  Ti[XY_[0]][XY_[1]] / coefficient_D));
+						Ela_DT_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3),
+																	  Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
 					}
 					if (K_Vi == 2)
 					{
 						CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
 						CX_DT_[0].Setcs_now(CX_DT_[0].cs(Tri_Index_));
-						// Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
-						// Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
-						Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy_T, Ti[XY_[0]][XY_[1]] / coefficient_T));
-						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3D_H3.cal(H3_test_particle_energy, Ti[XY_[0]][XY_[1]] / coefficient_D));
+						Ela_[0].Setcs_now(n_T_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_T * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(3)));
+						Ela_DT_[0].Setcs_now(n_D_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy * isotopeMassScale(3), Ti[XY_[0]][XY_[1]] * isotopeMassScale(2)));
 					}
 				}
 				else
@@ -3219,6 +3388,11 @@ void Particle::CalLambda()
 					CX_DT_[0].Setcs_now(CS_Vacuum);
 					Ela_[0].Setcs_now(CS_Vacuum);
 					Ela_DT_[0].Setcs_now(CS_Vacuum);
+				}
+				if (!K_DT)
+				{
+					CX_DT_[0].Setcs_now(0.0);
+					Ela_DT_[0].Setcs_now(0.0);
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(Tri_Index_));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(Tri_Index_));
@@ -3998,12 +4172,9 @@ void Particle::Caltrace_Tri()
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						if (Grid4.lines_info(Tri_Index_, 0) == 3)
-							InterscePoint[0][3] = XY_[1];
-						else if (Grid4.lines_info(Tri_Index_, 0) == 4)
-							InterscePoint[0][3] = XY_[1] + N_radial;
-						else
-							std::cerr << "not targer_1" << endl;
+						InterscePoint[0][3] = resolveTargetIndex(
+							Tri_Index_, Grid4.lines_info(Tri_Index_, 0),
+							secx, secy, XY_[1]);
 						InterscePoint[0][4] = 1;
 						InterscePoint[0][5] = 0;
 						Zone_ = 7;
@@ -4185,12 +4356,9 @@ void Particle::Caltrace_Tri()
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						if (Grid4.lines_info(Tri_Index_, 1) == 3)
-							InterscePoint[0][3] = XY_[1];
-						else if (Grid4.lines_info(Tri_Index_, 1) == 4)
-							InterscePoint[0][3] = XY_[1] + N_radial;
-						else
-							std::cerr << "not targer_2" << endl;
+						InterscePoint[0][3] = resolveTargetIndex(
+							Tri_Index_, Grid4.lines_info(Tri_Index_, 1),
+							secx, secy, XY_[1]);
 						InterscePoint[0][4] = 1;
 						InterscePoint[0][5] = 1;
 						Zone_ = 7;
@@ -4372,12 +4540,9 @@ void Particle::Caltrace_Tri()
 						InterscePoint[0][0] = 0;
 						InterscePoint[0][1] = secx;
 						InterscePoint[0][2] = secy;
-						if (Grid4.lines_info(Tri_Index_, 2) == 3)
-							InterscePoint[0][3] = XY_[1];
-						else if (Grid4.lines_info(Tri_Index_, 2) == 4)
-							InterscePoint[0][3] = XY_[1] + N_radial;
-						else
-							std::cerr << "not targer_3" << endl;
+						InterscePoint[0][3] = resolveTargetIndex(
+							Tri_Index_, Grid4.lines_info(Tri_Index_, 2),
+							secx, secy, XY_[1]);
 						InterscePoint[0][4] = 1;
 						InterscePoint[0][5] = 2;
 						Zone_ = 7;
@@ -4529,11 +4694,11 @@ void Particle::Caltrace_Tri()
 				{
 					IfFlightOut_ = 7;
 					NeutralFluxStatistics(3, 1);
-					const int target_j = XY_[1] >= 0 ? XY_[1] : Grid4.tris_[Tri_Index_].neigh[10];
 					InterscePoint[0][0] = 0;
 					InterscePoint[0][1] = fallback_x;
 					InterscePoint[0][2] = fallback_y;
-					InterscePoint[0][3] = line_info == 3 ? target_j : target_j + N_radial;
+					InterscePoint[0][3] = resolveTargetIndex(
+						Tri_Index_, line_info, fallback_x, fallback_y, XY_[1]);
 					InterscePoint[0][4] = 1;
 					InterscePoint[0][5] = fallback_edge;
 					Zone_ = 7;
@@ -4552,8 +4717,26 @@ void Particle::Caltrace_Tri()
 				}
 				return;
 			}
-			if (K_D2Flight && isHydrogenMoleculeIon())
+			if (!Grid4.Ifingrid(Tri_Index_, X_new_[0], X_new_[1]))
 			{
+				if (K_D2Flight && isHydrogenMoleculeIon())
+				{
+					IfColl_ = 0;
+					boundary_start_ = 0;
+					IfFlightOut_ = 7;
+					Zone_ = 7;
+					Weight_ = 0.;
+					return;
+				}
+				std::cerr << "Caltrace_Tri lost particle: name=" << name_
+						  << " charge=" << Charge_
+						  << " zone=" << Zone_
+						  << " tri=" << Tri_Index_
+						  << " x=" << X_[0] << "," << X_[1]
+						  << " x_new=" << X_new_[0] << "," << X_new_[1]
+						  << std::endl;
+				++caltrace_lost_loss_events_;
+				caltrace_lost_loss_weight_ += diagnosticEventWeight();
 				IfColl_ = 0;
 				boundary_start_ = 0;
 				IfFlightOut_ = 7;
@@ -4561,21 +4744,6 @@ void Particle::Caltrace_Tri()
 				Weight_ = 0.;
 				return;
 			}
-			std::cerr << "Caltrace_Tri lost particle: name=" << name_
-					  << " charge=" << Charge_
-					  << " zone=" << Zone_
-					  << " tri=" << Tri_Index_
-					  << " x=" << X_[0] << "," << X_[1]
-					  << " x_new=" << X_new_[0] << "," << X_new_[1]
-					  << std::endl;
-			++caltrace_lost_loss_events_;
-			caltrace_lost_loss_weight_ += diagnosticEventWeight();
-			IfColl_ = 0;
-			boundary_start_ = 0;
-			IfFlightOut_ = 7;
-			Zone_ = 7;
-			Weight_ = 0.;
-			return;
 		}
 		IfColl_ = 1;
 		boundary_start_ = 0;
@@ -6127,8 +6295,9 @@ void Particle::Coll()
 					T_D_0_temp = 0;
 					if (!K_D2Flight)
 					{
-						double beilv = 0 + H2PCollCal();
-						if (beilv == 0)
+						double neutral_energy_eV = 0.0;
+						const int neutral_multiplicity = H2PCollCal(&neutral_energy_eV);
+						if (neutral_multiplicity <= 0)
 						{
 							Weight_ = 0;
 							return;
@@ -6141,13 +6310,14 @@ void Particle::Coll()
 						else if (this == &T2)
 							P = &T;
 
+						const double neutral_mass = this == &D2 ? Dmass : (this == &T2 ? Tmass : Hmass);
 						Vector3 v_H2(V_[0], V_[1], V_[2]);
-						double E_FrankCondon = 3.0;											// 3 eV
-						Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
+						Vector3 v_H = calculate_dissociation_velocity(
+							v_H2, 2.0 * neutral_energy_eV, neutral_mass);
 						V_[0] = v_H.x;
 						V_[1] = v_H.y;
 						V_[2] = v_H.z;
-						P->Particlefrom(this, beilv, 0);
+						P->Particlefrom(this, neutral_multiplicity, 0);
 						return;
 					}
 					else
@@ -6391,7 +6561,14 @@ void Particle::Coll()
 
 					if (!K_D2Flight)
 					{
-						double beilv = 1 + H2PCollCal();
+						double neutral_energy_eV = 0.0;
+						const int d2p_neutral_multiplicity = H2PCollCal(&neutral_energy_eV);
+						if (d2p_neutral_multiplicity < 0)
+						{
+							Weight_ = 0.0;
+							return;
+						}
+						const int neutral_multiplicity = 1 + d2p_neutral_multiplicity;
 
 						if (this == &H2)
 							P = &H;
@@ -6400,7 +6577,7 @@ void Particle::Coll()
 						else if (this == &T2)
 							P = &T;
 
-						if (Tools::Random() * beilv < 1)
+						if (Tools::Random() * neutral_multiplicity < 1)
 						{
 							if (this == &H2)
 							{
@@ -6426,14 +6603,15 @@ void Particle::Coll()
 						}
 						else
 						{
+							const double neutral_mass = this == &D2 ? Dmass : (this == &T2 ? Tmass : Hmass);
 							Vector3 v_H2(V_[0], V_[1], V_[2]);
-							double E_FrankCondon = 3.0;											// 3 eV
-							Vector3 v_H = calculate_dissociation_velocity(v_H2, E_FrankCondon); // 模拟一次分裂
+							Vector3 v_H = calculate_dissociation_velocity(
+								v_H2, 2.0 * neutral_energy_eV, neutral_mass);
 							V_[0] = v_H.x;
 							V_[1] = v_H.y;
 							V_[2] = v_H.z;
 						}
-						P->Particlefrom(this, beilv, 0);
+						P->Particlefrom(this, neutral_multiplicity, 0);
 						P->CalTn();
 						return;
 					}
@@ -6518,7 +6696,7 @@ void Particle::Coll()
 						}
 						setfate(0, 9, Index_);
 						// std::cout << name_ + " before Ela V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
-						Init(2, 1);
+						Init(2, 1, D2ElasticScatteringCosine(this == &D2 ? 2 : (this == &T2 ? 3 : 1)));
 						if (K_mu == 2)
 						{
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2];
@@ -6564,20 +6742,20 @@ void Particle::Coll()
 					else if (MeshMode == 3)
 					{
 						Ela_[0].n_Add(XY_, collisionStatWeight());
-						Ela_[0].Mu_Add(XY_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
+						Ela_[0].Mu_Add(XY_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
 						Ela_[0].E_Add(XY_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (Tools::sqr(V_D_1_now[0]) + Tools::sqr(V_D_1_now[1]) + Tools::sqr(V_D_1_now[2]))) * collisionStatWeight());
 
 						Ela_[0].n_Add(Tri_Index_, collisionStatWeight());
-						Ela_[0].Mu_Add(Tri_Index_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]));
+						Ela_[0].Mu_Add(Tri_Index_, -Dmass * (V_D_1_now[0] * B[XY_[0]][XY_[1]][0] + V_D_1_now[1] * B[XY_[0]][XY_[1]][1] + V_D_1_now[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
 						Ela_[0].E_Add(Tri_Index_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (Tools::sqr(V_D_1_now[0]) + Tools::sqr(V_D_1_now[1]) + Tools::sqr(V_D_1_now[2]))) * collisionStatWeight());
 
 						setfate(0, 9, Index_);
-						Init(2, 1);
+						Init(2, 1, D2ElasticScatteringCosine(this == &D2 ? 2 : (this == &T2 ? 3 : 1)));
 
-						Ela_[0].Mu_Add(XY_, Dmass * (V_2[0] * B[XY_[0]][XY_[1]][0] + V_2[1] * B[XY_[0]][XY_[1]][1] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
+						Ela_[0].Mu_Add(XY_, Dmass * (V_2[0] * B[XY_[0]][XY_[1]][0] + V_2[1] * B[XY_[0]][XY_[1]][1] + V_2[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
 						Ela_[0].E_Add(XY_, +(0.5 * Dmass * (V_2[0] * V_2[0] + V_2[1] * V_2[1] + V_2[2] * V_2[2]) * collisionStatWeight()));
 
-						Ela_[0].Mu_Add(Tri_Index_, Dmass * (V_2[0] * B[XY_[0]][XY_[1]][0] + V_2[1] * B[XY_[0]][XY_[1]][1] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
+						Ela_[0].Mu_Add(Tri_Index_, Dmass * (V_2[0] * B[XY_[0]][XY_[1]][0] + V_2[1] * B[XY_[0]][XY_[1]][1] + V_2[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
 						Ela_[0].E_Add(Tri_Index_, +(0.5 * Dmass * (V_2[0] * V_2[0] + V_2[1] * V_2[1] + V_2[2] * V_2[2]) * collisionStatWeight()));
 					}
 					CalTn();
@@ -6752,56 +6930,48 @@ void Particle::Coll()
 				{
 					if (MeshMode == 3)
 					{
-						if (this == &D)
-						{
-							R_with_H_[0].n_Add(Tri_Index_, collisionStatWeight());
-							R_with_H_[0].Mu_Add(Tri_Index_, -collisionStatWeight() * Dmass * V_[0], -collisionStatWeight() * Dmass * V_[0], -collisionStatWeight() * Dmass * V_[0]);
-							R_with_H_[0].E_Add(Tri_Index_, -(0.5 * Dmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-							setfate(0, 9, 3); // CX with D
-							// std::cout << name_ + " before CX_DT V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
-							Init(9, 1);
-							R_with_H_[0].Mu_Add(Tri_Index_, +collisionStatWeight() * Dmass * V_[0], +collisionStatWeight() * Dmass * V_[0], +collisionStatWeight() * Dmass * V_[0]);
-							R_with_H_[0].E_Add(Tri_Index_, +(0.5 * Dmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-						}
-						if (this == &T)
-						{
-							R_with_H_[0].n_Add(Tri_Index_, collisionStatWeight());
-							R_with_H_[0].Mu_Add(Tri_Index_, -collisionStatWeight() * Tmass * V_[0], -collisionStatWeight() * Tmass * V_[0], -collisionStatWeight() * Tmass * V_[0]);
-							R_with_H_[0].E_Add(Tri_Index_, -(0.5 * Tmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-							setfate(0, 9, 15); // CX with D
-							// std::cout << name_ + " before CX_DT V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
-							Init(9, 1);
-							R_with_H_[0].Mu_Add(Tri_Index_, +collisionStatWeight() * Tmass * V_[0], +collisionStatWeight() * Tmass * V_[0], +collisionStatWeight() * Tmass * V_[0]);
-							R_with_H_[0].E_Add(Tri_Index_, +(0.5 * Tmass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-						}
+						const double stat_weight = collisionStatWeight();
+						const int background_source =
+							(this == &H || this == &H2) ? 13 : ((this == &D || this == &D2) ? 3 : 15);
+						R_with_H_[0].n_Add(Tri_Index_, stat_weight);
+						R_with_H_[0].Mu_Add(Tri_Index_, -stat_weight * mass_ * V_[0],
+												 -stat_weight * mass_ * V_[1],
+												 -stat_weight * mass_ * V_[2]);
+						R_with_H_[0].E_Add(Tri_Index_, -0.5 * mass_ *
+							(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * stat_weight);
+						setfate(0, 9, background_source);
+						Init(9, 1);
+						R_with_H_[0].Mu_Add(Tri_Index_, stat_weight * mass_ * V_[0],
+												 stat_weight * mass_ * V_[1],
+												 stat_weight * mass_ * V_[2]);
+						R_with_H_[0].E_Add(Tri_Index_, 0.5 * mass_ *
+							(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * stat_weight);
+						CalTn();
+						return;
 					}
 				}
 				else if (rand_one < Sum_factor[9] / Sum_factor[Num_Collision_D2 - 1])
 				{
 					if (MeshMode == 3)
 					{
-						if (this == &D)
-						{
-							R_with_H2_[0].n_Add(Tri_Index_, collisionStatWeight());
-							R_with_H2_[0].Mu_Add(Tri_Index_, -collisionStatWeight() * D2mass * V_[0], -collisionStatWeight() * D2mass * V_[0], -collisionStatWeight() * D2mass * V_[0]);
-							R_with_H2_[0].E_Add(Tri_Index_, -(0.5 * D2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-							setfate(0, 9, 4); // CX with D
-							// std::cout << name_ + " before CX_DT V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
-							Init(9, 2);
-							R_with_H2_[0].Mu_Add(Tri_Index_, +collisionStatWeight() * D2mass * V_[0], +collisionStatWeight() * D2mass * V_[0], +collisionStatWeight() * D2mass * V_[0]);
-							R_with_H2_[0].E_Add(Tri_Index_, +(0.5 * D2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-						}
-						if (this == &T)
-						{
-							R_with_H2_[0].n_Add(Tri_Index_, collisionStatWeight());
-							R_with_H2_[0].Mu_Add(Tri_Index_, -collisionStatWeight() * T2mass * V_[0], -collisionStatWeight() * T2mass * V_[0], -collisionStatWeight() * T2mass * V_[0]);
-							R_with_H2_[0].E_Add(Tri_Index_, -(0.5 * T2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-							setfate(0, 9, 16); // CX with D
-							// std::cout << name_ + " before CX_DT V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
-							Init(9, 2);
-							R_with_H2_[0].Mu_Add(Tri_Index_, +collisionStatWeight() * T2mass * V_[0], +collisionStatWeight() * T2mass * V_[0], +collisionStatWeight() * T2mass * V_[0]);
-							R_with_H2_[0].E_Add(Tri_Index_, +(0.5 * T2mass * (V_[0] * V_[0] + V_[1] * V_[1] + V_[2] * V_[2]) * collisionStatWeight()));
-						}
+						const double stat_weight = collisionStatWeight();
+						const int background_source =
+							(this == &H || this == &H2) ? 14 : ((this == &D || this == &D2) ? 4 : 16);
+						R_with_H2_[0].n_Add(Tri_Index_, stat_weight);
+						R_with_H2_[0].Mu_Add(Tri_Index_, -stat_weight * mass_ * V_[0],
+												  -stat_weight * mass_ * V_[1],
+												  -stat_weight * mass_ * V_[2]);
+						R_with_H2_[0].E_Add(Tri_Index_, -0.5 * mass_ *
+							(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * stat_weight);
+						setfate(0, 9, background_source);
+						Init(9, 2);
+						R_with_H2_[0].Mu_Add(Tri_Index_, stat_weight * mass_ * V_[0],
+												  stat_weight * mass_ * V_[1],
+												  stat_weight * mass_ * V_[2]);
+						R_with_H2_[0].E_Add(Tri_Index_, 0.5 * mass_ *
+							(Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2])) * stat_weight);
+						CalTn();
+						return;
 					}
 				}
 			}
@@ -7621,17 +7791,20 @@ void Particle::Coll()
 	}
 }
 
-int Particle::H2PCollCal()
+int Particle::H2PCollCal(double *neutral_energy_eV)
 {
 	// std::cout << X_[0] << '\t' << X_[1] << '\t' << name_ << '\t';
 	// std::cout << XY_[0] << '\t' << XY_[1] << '\t' << Zone_ << endl;
-	addDensityStatGrid(XY_[0], XY_[1], Charge_, collisionStatWeight() * dt_);
+	if (neutral_energy_eV != nullptr)
+		*neutral_energy_eV = 0.0;
 	double Sum_factor[10] = {0.}, rand_one = Tools::Random(), rand_temp;
 	double E_new;
 	int Num_Collision_D2 = 3;
 	Sum_factor[0] = DS_factor[0];
 	Sum_factor[1] = Sum_factor[0] + DS_factor[1];
 	Sum_factor[2] = Sum_factor[1] + DS_factor[2];
+	if (!(Sum_factor[2] > 0.0))
+		return -1;
 	/*for (int i = 0; i < 3; i++)
 	{
 		std::cout << Sum_factor[i] << " ";
@@ -7707,6 +7880,8 @@ int Particle::H2PCollCal()
 	}
 	else if (rand_one < Sum_factor[1] / Sum_factor[Num_Collision_D2 - 1])
 	{
+		if (neutral_energy_eV != nullptr)
+			*neutral_energy_eV = 4.3;
 		DS_[1][1].n_Add(XY_, collisionStatWeight());
 		if (K_mu == 1)
 		{
@@ -7762,6 +7937,8 @@ int Particle::H2PCollCal()
 	}
 	else if (rand_one < Sum_factor[2] / Sum_factor[Num_Collision_D2 - 1])
 	{
+		if (neutral_energy_eV != nullptr)
+			*neutral_energy_eV = 16.0;
 		DS_[1][2].n_Add(XY_, collisionStatWeight());
 		if (K_mu == 1)
 		{
@@ -11766,12 +11943,13 @@ double ParCollCar::eireneRate(int i, int j) const
 		return 0.;
 	double arg1 = ne[i][j];
 	double arg2 = Te[i][j];
+	const double heavy_scale = densitySourceMassScale(eirene_density_source_);
 	if (eirene_argument_mode_ == EireneArgumentMode::SameDensityTemperature)
 	{
 		arg1 = density;
-		arg2 = Ti[i][j] * EireneHeavyEnergyScale;
+		arg2 = Ti[i][j] * heavy_scale;
 		if (eirene_rate_->fit() == 3)
-			arg1 *= EireneHeavyEnergyScale;
+			arg1 *= heavy_scale;
 	}
 	else if (eirene_density_source_ == EireneDensitySource::Electron)
 	{
@@ -11779,9 +11957,9 @@ double ParCollCar::eireneRate(int i, int j) const
 	}
 	else
 	{
-		arg2 = Ti[i][j] * EireneHeavyEnergyScale;
+		arg2 = Ti[i][j] * heavy_scale;
 		if (eirene_rate_->fit() == 3)
-			arg1 *= EireneHeavyEnergyScale;
+			arg1 *= heavy_scale;
 	}
 	return EireneRate(density, arg1, arg2);
 }
@@ -11794,7 +11972,8 @@ double ParCollCar::eireneRateTri(int tri) const
 	if (density <= 0.)
 		return 0.;
 	double arg1 = density;
-	double arg2 = eireneTemperatureForDensityTri(tri) * EireneHeavyEnergyScale;
+	const double heavy_scale = densitySourceMassScale(eirene_density_source_);
+	double arg2 = eireneTemperatureForDensityTri(tri) * heavy_scale;
 	if (Grid4.if_in_plasmagrid(tri) &&
 		eirene_argument_mode_ == EireneArgumentMode::ElectronDensityTemperature)
 	{
@@ -11804,10 +11983,10 @@ double ParCollCar::eireneRateTri(int tri) const
 		if (eirene_density_source_ == EireneDensitySource::Electron)
 			arg2 = Te[i][j] * EireneElectronTemperatureScale;
 		else
-			arg2 = Ti[i][j] * EireneHeavyEnergyScale;
+			arg2 = Ti[i][j] * heavy_scale;
 	}
 	if (eirene_rate_->fit() == 3 && eirene_density_source_ != EireneDensitySource::Electron)
-		arg1 *= EireneHeavyEnergyScale;
+		arg1 *= heavy_scale;
 	return EireneRate(density, arg1, arg2);
 }
 

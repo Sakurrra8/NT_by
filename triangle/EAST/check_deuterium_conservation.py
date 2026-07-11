@@ -9,9 +9,8 @@ when such diagnostics are available.
 
 import argparse
 import csv
+import math
 from pathlib import Path
-
-import numpy as np
 
 
 def read_array(data_dir, name, template=None):
@@ -19,20 +18,19 @@ def read_array(data_dir, name, template=None):
     if not path.exists():
         if template is None:
             return None
-        return np.zeros_like(template)
-    return np.loadtxt(path)
+        return [0.0] * len(template)
+    return [float(value) for value in path.read_text().split()]
 
 
 def require_array(data_dir, name):
     path = data_dir / name
     if not path.exists():
         raise FileNotFoundError(f"missing required file: {path}")
-    return np.loadtxt(path)
+    return [float(value) for value in path.read_text().split()]
 
 
 def finite_sum(array):
-    array = np.asarray(array)
-    return float(np.sum(array[np.isfinite(array)]))
+    return sum(value for value in array if math.isfinite(value))
 
 
 def relerr(value, scale):

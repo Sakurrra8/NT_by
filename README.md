@@ -63,7 +63,10 @@ submits the sweep.
 The EAST triangular settings are intentionally kept simple for manual testing:
 
 - `MeshMode=3`
-- `K_D2Flight=1`
+- `K_D2Flight=0`
+- `K_NNCs=1`
+- `K_database_Pra=2`
+- `K_Maxwell=1`
 - `K_Puff=0`
 - `Num_D2_pump=0`
 - `numPar_flight_D2=0`
@@ -71,9 +74,11 @@ The EAST triangular settings are intentionally kept simple for manual testing:
 - `K_Splitting=0`
 - `Databasepath Inputfile/database/`
 
-This means D2+ is not injected as a separate source.  It is created only when
-tracked D2 undergoes electron-impact ionization or D2-D+ charge exchange during
-neutral transport.
+This matches the reference EIRENE species card (`NFOL=-1`). D2+ is created by
+D2 electron-impact ionization or D2-D+ charge exchange, destroyed immediately
+through the local DS branching ratios, and reported with the local `P/L`
+density estimator. It is neither injected nor transported as a finite-orbit
+test ion in the validation inputs.
 
 ## Physical Model
 
@@ -87,7 +92,21 @@ database reaction rates.  For the EAST D2 case, the main molecular channels are:
 - molecular dissociation channels
 - D2-D+ charge exchange
 - molecular elastic collisions where enabled
+- AMMONX D-D, D-D2, D2-D, and D2-D2 collisions against the fixed EIRENE
+  neutral background profiles
 - target and wall recycling/re-emission
+
+The D2-D+ elastic event frequency uses AMJUEL H.3 `0.3T`, as requested by the
+EIRENE input. Its effective scattering angle matches the first angular moment
+from `0.3D/0.3T`; `0.3D` is not used as the total event rate. Heavy-particle
+H.2/H.3 arguments are converted automatically from D or T velocities to the H
+database mass scale, while electron temperature is left unchanged.
+
+AMMONX collisions are real kinematic events for both atomic and molecular test
+particles. The collision samples the matching local atom or molecule background
+velocity, updates all three velocity components, and recalculates the test
+particle energy after the event. The validation inputs use the full Maxwell
+speed distribution rather than the fixed RMS-speed shortcut.
 
 The current EIRENE-matching surface model uses D-on-W TRIM-style reflection,
 local target incidence angle, and thermal wall re-emission consistent with the
@@ -114,10 +133,11 @@ The D2+ loss channels are AMJUEL H.4:
 The local balance output is useful as a collision-rate closure check, but it is
 not a finite-orbit residence-time estimator.
 
-### D2+ Test-Ion Transport
+### Optional D2+ Test-Ion Transport
 
-`K_D2Flight=1` enables D2+ test-ion tracking in triangular mesh mode.  The
-transport principle is:
+`K_D2Flight=1` retains the experimental finite-orbit D2+ implementation for
+separate studies, but it is intentionally disabled in the EIRENE validation
+inputs because the reference case uses `NFOL=-1`. Its transport principle is:
 
 1. D2 ionization or D2-D+ charge exchange converts the current D2 test particle
    into a charged D2+ test ion.
@@ -205,6 +225,26 @@ recycling source -> D2 density -> D2 ionization/CX -> D2+ loss and residence
 Do not tune D2+ transport in isolation before confirming the D2 source and D2
 density are consistent.
 
+### Reaction-Coefficient Export
+
+Build and run the B2-grid exporter with an explicit physical projectile energy
+for the H.3 diagnostic slice:
+
+```bash
+make -f Makefile.local export-eirene-reactions
+./bin/export_eirene_reactions Inputfile/settingfile/setting_Trimesh_D_5.log 1.0
+```
+
+The exporter reads `ne`, `Te`, `Ti`, atom temperature, and molecule temperature
+from the setting's `Casepath`. Electron reactions use `ne,Te`; H.2 3.2.3 uses
+local `Ti`; AMMONX reactions use the matching neutral temperature; hydrogen H.3
+uses local `Ti` and the physical projectile energy supplied as the second
+argument. D/T arguments are automatically mapped to the H-database mass scale.
+The generated `value_m3_s` is generally a rate coefficient `<sigma v>`, not a
+raw cross section. During particle flight, H.3 is still evaluated from each
+test particle's instantaneous energy; the exported fixed-energy map is only a
+controlled comparison slice.
+
 ## Program Implementation Notes
 
 The high-level flow is:
@@ -231,6 +271,11 @@ Recent D2+ transport changes are intentionally conservative:
   explicit Euler for stiff friction terms.
 - Invalid triangle/cell transitions are treated as boundary/numerical loss
   instead of continuing with undefined plasma fields.
+- Target hits with a stale or missing B2 radial index are resolved from the
+  current triangle and nearest target-segment midpoint only at the boundary
+  event; target geometry is not searched on every transport step.
+- A neutral step whose endpoint remains inside the current triangle follows the
+  normal collision-probability path instead of being counted as a lost particle.
 - Diagnostic summaries report maximum speed, low-speed residence fractions,
   fate weights, and source channel weights.
 

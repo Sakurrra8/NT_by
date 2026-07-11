@@ -381,11 +381,12 @@ void D2pMesh3FlightAuditOutput()
 {
     ofstream audit(Outputpath + "D2p_mesh3_flight_audit.csv");
     const bool transport_enabled = MeshMode == 3 && K_D2Flight == 1;
-    audit << "MeshMode,K_D2Flight,K_flight,K_Prob,"
+    audit << "MeshMode,K_D2Flight,K_flight,K_Prob,K_NNCs,EireneHeavyEnergyScale,"
           << "push_tri_allows_charged,track_tri_has_charge_gt_0_branch,"
           << "coll_immediate_charge1_branch_exists,official_Tri_D2p_density_estimator,"
           << "mesh3_D2p_flight_status,D2p_max_allowed_speed_m_s\n";
     audit << MeshMode << ',' << K_D2Flight << ',' << K_flight << ',' << K_Prob << ','
+          << K_NNCs << ',' << EireneHeavyEnergyScale << ','
           << "1,1,1,"
           << (transport_enabled ? "transport_track_length" : "local_balance_P_over_L") << ','
           << (transport_enabled ? "transport_enabled" : "transport_disabled")
@@ -416,7 +417,7 @@ void D2pMesh3FlightAuditOutput()
         << "6. The sampled DS event is tallied as a source/fate contribution and terminates the current D2+.\n"
         << "7. DS1 creates two ion products and no neutral test particle is launched.\n"
         << "8. DS2 launches one neutral D, and DS3 launches neutral D with twice the event weight.\n"
-        << "9. The secondary neutral D velocity uses the D2+ center-of-mass velocity plus a 3 eV isotropic Frank-Condon dissociation velocity.\n"
+        << "9. DS2 secondary D uses 4.3 eV and DS3 secondary D uses 16 eV, matching the EIRENE reaction cards.\n"
         << "10. The secondary neutral D energy/temperature is recalculated with the D mass and then tracked by the normal neutral-D chain until ionization or another terminal fate.\n"
         << "11. D+ products are accounted in the source/fate tallies; they are not launched as separate test ions.\n"
         << "12. Leaving the plasma triangle mesh or producing non-finite/unphysical speed terminates that test ion as a boundary/numerical loss.\n\n"
@@ -431,6 +432,9 @@ void D2pMesh3FlightAuditOutput()
     status
         << "MeshMode=" << MeshMode << '\n'
         << "K_D2Flight=" << K_D2Flight << '\n'
+        << "K_NNCs=" << K_NNCs << '\n'
+        << "EireneHeavyEnergyScale=" << EireneHeavyEnergyScale << '\n'
+        << "hydrogen_isotope_scaling=automatic_by_background_species\n"
         << "D2p_transport=" << (transport_enabled ? "enabled" : "disabled") << '\n'
         << "D2p_secondary_product_transport=neutral_D_from_DS2_DS3_tracked\n"
         << "D2p_max_allowed_speed_m_s=" << D2pMaxAllowedSpeed << '\n'
@@ -872,57 +876,6 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
     OutPar2->Dump_Tri(Pra, DS[2], 1);
 
     string pathout;
-    if (K_NNCs)
-    {
-        pathout = Casepath + OutPar1->name() + "_0_" + "V_Tri";
-        out.open(pathout);
-        for (int i = 0; i < Grid4.num_tris(); i++)
-        {
-            out << OutPar1->V_Grid_Tri(i, 0, 0) << "\t" << OutPar1->V_Grid_Tri(i, 1, 0) << "\t" << OutPar1->V_Grid_Tri(i, 2, 0) << endl;
-        }
-        out.close();
-
-        pathout = Casepath + OutPar2->name() + "_0_" + "V_Tri";
-        out.open(pathout);
-        for (int i = 0; i < Grid4.num_tris(); i++)
-        {
-            out << OutPar2->V_Grid_Tri(i, 0, 0) << "\t" << OutPar2->V_Grid_Tri(i, 1, 0) << "\t" << OutPar2->V_Grid_Tri(i, 2, 0) << endl;
-        }
-        out.close();
-
-        pathout = Casepath + OutPar1->name() + "_0_" + "T_Tri";
-        out.open(pathout);
-        for (int i = 0; i < Grid4.num_tris(); i++)
-        {
-            out << OutPar1->Tn_Tri(i, 0) << endl;
-        }
-        out.close();
-
-        pathout = Casepath + OutPar2->name() + "_0_" + "T_Tri";
-        out.open(pathout);
-        for (int i = 0; i < Grid4.num_tris(); i++)
-        {
-            out << OutPar2->Tn_Tri(i, 0) << endl;
-        }
-        out.close();
-
-        pathout = Casepath + OutPar1->name() + "_0_" + "n_Tri";
-        out.open(pathout);
-        for (int i = 0; i < Grid4.num_tris(); i++)
-        {
-            out << OutPar1->n_Tri(i, 0) << endl;
-        }
-        out.close();
-
-        pathout = Casepath + OutPar2->name() + "_0_" + "n_Tri";
-        out.open(pathout);
-        for (int i = 0; i < Grid4.num_tris(); i++)
-        {
-            out << OutPar2->n_Tri(i, 0) << endl;
-        }
-        out.close();
-    }
-
     pathout = Outputpath + OutPar1->name() + "_0_" + "T_Tri";
     out.open(pathout);
     for (int i = 0; i < Grid4.num_tris(); i++)

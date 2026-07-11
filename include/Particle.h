@@ -449,6 +449,7 @@ private:
 	void beginDeferredCollisionStats(double scale);
 	void endDeferredCollisionStats();
 	void SampleIonVelocity(int isotope);
+	double D2ElasticScatteringCosine(int isotope) const;
 
 	/// @brief Statistical pointer views
 	double *n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
@@ -669,7 +670,7 @@ public:
 	void RecombinCal(std::vector<double> &NumPar_wall, std::vector<double> &T_Init);
 	void CalWeight1(int num);
 	void CalWeight2(std::vector<double> &NumPar, int num);
-	void Init(int k, int z = 0);
+	void Init(int k, int z = 0, double scattering_cosine = 2.0);
 	void VtoVcharge();
 	void VchargetoV();
 	void Vchargefix(); // when the charged particle flight to next grid, V_charge[0,1,2] should be fixed
@@ -691,7 +692,7 @@ public:
 	void CalProb();
 	double CollProb();
 	void Coll();
-	int H2PCollCal();
+	int H2PCollCal(double *neutral_energy_eV = nullptr);
 	void regression();
 	void Setdt(double dt_);
 	double FlightTime();

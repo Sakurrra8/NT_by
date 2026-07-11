@@ -19,6 +19,9 @@ struct SettingPaths
 {
     int n_poloidal = 98;
     int n_radial = 38;
+    int background_isotope = 1;
+    double electron_temperature_scale = 1.0;
+    double heavy_energy_scale = 1.0;
     std::string case_path;
     std::string database_path = "Inputfile/database/";
     std::string output_path = "Outputfile/test/data/";
@@ -73,10 +76,32 @@ SettingPaths readSettingPaths(const std::string &setting_file)
             paths.database_path = value;
         else if (key == "Outputpath")
             paths.output_path = value;
+        else if (key == "K_back")
+            paths.background_isotope = std::stoi(value);
+        else if (key == "EireneRateArgumentScale")
+        {
+            paths.electron_temperature_scale = std::stod(value);
+            paths.heavy_energy_scale = std::stod(value);
+        }
+        else if (key == "EireneElectronTemperatureScale")
+            paths.electron_temperature_scale = std::stod(value);
+        else if (key == "EireneHeavyEnergyScale")
+            paths.heavy_energy_scale = std::stod(value);
     }
     if (paths.case_path.empty())
         throw std::runtime_error("Casepath is missing in setting file: " + setting_file);
     return paths;
+}
+
+double isotopeMassScale(int isotope, double multiplier)
+{
+    if (isotope == 1)
+        return 1.0;
+    if (isotope == 2)
+        return 0.5 * multiplier;
+    if (isotope == 3)
+        return multiplier / 3.0;
+    throw std::runtime_error("K_back must be 1 (H), 2 (D), or 3 (T)");
 }
 
 void setDatabaseEnvironment(const std::string &database_path)
@@ -210,7 +235,53 @@ std::vector<ReactionSpec> reactionSpecs()
     };
 }
 
-void writeReadme(const std::filesystem::path &path)
+struct ReactionArguments
+{
+    std::string argument1_name;
+    double argument1 = 0.0;
+    std::string argument2_name;
+    double argument2 = 0.0;
+};
+
+ReactionArguments reactionArguments(const ReactionSpec &spec,
+                                    double ne,
+                                    double te,
+                                    double ti,
+                                    double atom_temperature,
+                                    double molecule_temperature,
+                                    double projectile_energy,
+                                    double isotope_scale,
+                                    double electron_temperature_scale)
+{
+    if (spec.name == "R3_2_3_H2")
+        return {"unused_by_H.2", 0.0,
+                "background_ion_temperature_database_eV", ti * isotope_scale};
+
+    if (spec.name == "R3_2_3_H3" || spec.name == "R3_1_8_H3" ||
+        spec.name == "R0_3T_H3" || spec.name == "R0_3D_H3")
+        return {"projectile_energy_database_eV", projectile_energy * isotope_scale,
+                "background_ion_temperature_database_eV", ti * isotope_scale};
+
+    if (spec.name == "R5_3_1_H3")
+        return {"projectile_energy_eV", projectile_energy,
+                "background_ion_temperature_eV", ti};
+
+    if (spec.name == "R_H_H" || spec.name == "R_H2_H")
+        return {"unused_by_H.2", 0.0,
+                "background_atom_temperature_database_eV", atom_temperature * isotope_scale};
+
+    if (spec.name == "R_H_H2" || spec.name == "R_H2_H2")
+        return {"unused_by_H.2", 0.0,
+                "background_molecule_temperature_database_eV", molecule_temperature * isotope_scale};
+
+    return {spec.argument1_name, ne,
+            spec.argument2_name, te * electron_temperature_scale};
+}
+
+void writeReadme(const std::filesystem::path &path,
+                 int background_isotope,
+                 double isotope_scale,
+                 double projectile_energy)
 {
     std::ofstream out(path);
     out << "EIRENE reaction coefficient export\n"
@@ -220,14 +291,24 @@ void writeReadme(const std::filesystem::path &path)
         << "Most exported quantities are <sigma v> rate coefficients, not raw microscopic sigma(E).\n"
         << "H.8 entries are energy-loss coefficients and use the corresponding H.2 value as helper input.\n"
         << "For electron reactions, each B2 cell uses ne_2D and te_2D from the setting Casepath.\n"
-        << "For H.3 heavy-particle fits, the B2 Te value is used as the local energy/temperature argument so the output keeps B2 shape.\n";
+        << "For H.2 3.2.3, each B2 cell uses the local ion temperature.\n"
+        << "For AMMONX H.2 reactions, each cell uses the matching atom or molecule background temperature.\n"
+        << "For hydrogen H.3 fits, each cell uses local Ti and the explicit physical projectile energy.\n"
+        << "Background isotope K_back: " << background_isotope << "\n"
+        << "Automatic hydrogen-database mass scale: " << isotope_scale << "\n"
+        << "Physical projectile energy used for H.3: " << projectile_energy << " eV\n"
+        << "The simulation evaluates H.3 at every test particle's instantaneous energy; this fixed-energy map is a diagnostic slice.\n";
 }
 }
 
 int main(int argc, char **argv)
 {
     const std::string setting_file = argc > 1 ? argv[1] : "Inputfile/settingfile/setting_Trimesh_D_5.log";
+    const double projectile_energy = argc > 2 ? std::stod(argv[2]) : 1.0;
+    if (!(projectile_energy > 0.0) || !std::isfinite(projectile_energy))
+        throw std::runtime_error("Projectile energy must be a finite positive value in eV");
     const SettingPaths paths = readSettingPaths(setting_file);
+    const double isotope_scale = isotopeMassScale(paths.background_isotope, paths.heavy_energy_scale);
     setDatabaseEnvironment(paths.database_path);
 
     const std::filesystem::path case_path(paths.case_path);
@@ -243,8 +324,29 @@ int main(int argc, char **argv)
         case_path / "te_2D.dat",
         case_path / "te_2D.data",
     });
+    const auto ti_path = firstExistingPath({
+        case_path / "2D_data" / "ti_2D.dat",
+        case_path / "2D_data" / "ti_2D.data",
+        case_path / "ti_2D.dat",
+        case_path / "ti_2D.data",
+    });
+    const auto atom_temperature_path = firstExistingPath({
+        case_path / "2D_data" / "tDatom_2D.dat",
+        case_path / "2D_data" / "tDatom_2D.data",
+        case_path / "tDatom_2D.dat",
+        case_path / "tDatom_2D.data",
+    });
+    const auto molecule_temperature_path = firstExistingPath({
+        case_path / "2D_data" / "tDmolecule_2D.dat",
+        case_path / "2D_data" / "tDmolecule_2D.data",
+        case_path / "tDmolecule_2D.dat",
+        case_path / "tDmolecule_2D.data",
+    });
     const auto ne = readB2Field(ne_path, paths.n_poloidal, paths.n_radial);
     const auto te = readB2Field(te_path, paths.n_poloidal, paths.n_radial);
+    const auto ti = readB2Field(ti_path, paths.n_poloidal, paths.n_radial);
+    const auto atom_temperature = readB2Field(atom_temperature_path, paths.n_poloidal, paths.n_radial);
+    const auto molecule_temperature = readB2Field(molecule_temperature_path, paths.n_poloidal, paths.n_radial);
 
     std::filesystem::create_directories(paths.output_path);
     const std::filesystem::path output_dir(paths.output_path);
@@ -267,30 +369,35 @@ int main(int argc, char **argv)
         if (!out.is_open())
             throw std::runtime_error("Cannot write reaction CSV: " + reaction_path.string());
         out << std::setprecision(12)
-            << "i,j,ne_m-3,Te_eV,argument1_name,argument1_value,argument2_name,argument2_value,value_m3_s\n";
+            << "i,j,ne_m-3,Te_eV,Ti_eV,T_atom_eV,T_molecule_eV,physical_projectile_energy_eV,"
+               "isotope_mass_scale,argument1_name,argument1_value,argument2_name,argument2_value,value_m3_s\n";
 
         long long rows = 0;
         for (int i = 0; i < paths.n_poloidal; ++i)
         {
             for (int j = 0; j < paths.n_radial; ++j)
             {
-                const double arg1 = spec.fit == 3 ? te[i][j] : ne[i][j];
-                const double arg2 = te[i][j];
+                const ReactionArguments arguments = reactionArguments(
+                    spec, ne[i][j], te[i][j], ti[i][j], atom_temperature[i][j],
+                    molecule_temperature[i][j], projectile_energy, isotope_scale,
+                    paths.electron_temperature_scale);
                 double value = 0.0;
                 if (spec.name == "R2_2_14_H8")
                 {
                     EIRENE helper(2, 2157, "amjuel");
-                    double h2_value = helper.cal(ne[i][j], te[i][j]);
-                    value = reaction.cal(ne[i][j], te[i][j], &h2_value);
+                    double h2_value = helper.cal(ne[i][j], arguments.argument2);
+                    value = reaction.cal(ne[i][j], arguments.argument2, &h2_value);
                 }
                 else
                 {
-                    value = reaction.cal(arg1, arg2);
+                    value = reaction.cal(arguments.argument1, arguments.argument2);
                 }
                 out << i << ',' << j << ','
-                    << ne[i][j] << ',' << te[i][j] << ','
-                    << csvEscape(spec.argument1_name) << ',' << arg1 << ','
-                    << csvEscape(spec.argument2_name) << ',' << arg2 << ','
+                    << ne[i][j] << ',' << te[i][j] << ',' << ti[i][j] << ','
+                    << atom_temperature[i][j] << ',' << molecule_temperature[i][j] << ','
+                    << projectile_energy << ',' << isotope_scale << ','
+                    << csvEscape(arguments.argument1_name) << ',' << arguments.argument1 << ','
+                    << csvEscape(arguments.argument2_name) << ',' << arguments.argument2 << ','
                     << value << '\n';
                 ++rows;
             }
@@ -305,9 +412,13 @@ int main(int argc, char **argv)
                 << rows << '\n';
     }
 
-    writeReadme(readme_path);
+    writeReadme(readme_path, paths.background_isotope, isotope_scale, projectile_energy);
     std::cout << "Read " << ne_path << '\n';
     std::cout << "Read " << te_path << '\n';
+    std::cout << "Read " << ti_path << '\n';
+    std::cout << "Read " << atom_temperature_path << '\n';
+    std::cout << "Read " << molecule_temperature_path << '\n';
+    std::cout << "H.3 physical projectile energy: " << projectile_energy << " eV\n";
     std::cout << "Wrote reaction files under " << b2_output_dir << '\n';
     std::cout << "Wrote " << summary_path << '\n';
     std::cout << "Wrote " << readme_path << '\n';

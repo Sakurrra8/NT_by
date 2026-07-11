@@ -220,6 +220,16 @@ void Initialize(int Input, char *settingfile[]) {
         option_input >> K_Splitting;
       else if (option_name == "K_H5Output")
         option_input >> K_H5Output;
+      else if (option_name == "K_NNCs")
+        option_input >> K_NNCs;
+      else if (option_name == "EireneRateArgumentScale") {
+        option_input >> EireneRateArgumentScale;
+        EireneElectronTemperatureScale = EireneRateArgumentScale;
+        EireneHeavyEnergyScale = EireneRateArgumentScale;
+      } else if (option_name == "EireneElectronTemperatureScale")
+        option_input >> EireneElectronTemperatureScale;
+      else if (option_name == "EireneHeavyEnergyScale")
+        option_input >> EireneHeavyEnergyScale;
       else if (option_name == "W_RouletteMin")
         option_input >> W_RouletteMin;
       else if (option_name == "W_RouletteTarget")
@@ -324,6 +334,8 @@ void Initialize(int Input, char *settingfile[]) {
       iss >> K_Splitting;
     else if (Inputstring == "K_H5Output")
       iss >> K_H5Output;
+    else if (Inputstring == "K_NNCs")
+      iss >> K_NNCs;
     else if (Inputstring == "W_RouletteMin")
       iss >> W_RouletteMin;
     else if (Inputstring == "W_RouletteTarget")
