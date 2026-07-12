@@ -290,7 +290,6 @@ void Initialize(int Input, char *settingfile[])
   }
   D2ElasticModel = std::clamp(D2ElasticModel, 0, 3);
   DTargetIncidentModel = std::clamp(DTargetIncidentModel, 0, 1);
-  DTargetSheathFactor = std::max(0.0, DTargetSheathFactor);
   DTargetIncidentSamples = std::max(256, DTargetIncidentSamples);
   K_DBoundarySource = std::clamp(K_DBoundarySource, 0, 1);
   DBoundaryLaunchModel = std::clamp(DBoundaryLaunchModel, 0, 1);
@@ -299,7 +298,9 @@ void Initialize(int Input, char *settingfile[])
     D2ElasticModel = 0;
   std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
   std::cout << "DTargetIncidentModel: " << DTargetIncidentModel
-            << " (sheath factor=" << DTargetSheathFactor
+            << " (sheath="
+            << (DTargetSheathFactor <= 0. ? "EIRENE dynamic" : "fixed")
+            << ", factor=" << DTargetSheathFactor
             << ", averaging samples=" << DTargetIncidentSamples << ")"
             << std::endl;
   std::cout << "D boundary FNIY source: "

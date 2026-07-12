@@ -77,7 +77,7 @@ MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
 K_DWTargetActualAngle 1     # use local B-to-target-normal incidence angle
 DTargetIncidentModel 1      # 0 fixed mean E/angle; 1 NEMODS=7-like drifting flux plus sheath
-DTargetSheathFactor  3.0    # sheath energy added along target normal in units of local Te
+DTargetSheathFactor -1.0    # <=0 EIRENE SHEATH from local D+ flow; >0 fixed Te multiplier
 DTargetIncidentSamples 4096 # low-discrepancy samples per target for source-weight averaging
 K_DTargetSourceMode 1       # 1 use recycled_neutral_flux_D; 2 use ni*abs(ua)*abs(b.normal)*target_area and TRIM split
 K_DBoundarySource   1       # add EIRENE strata 3-5 from outward D+ FNIY

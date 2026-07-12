@@ -5,7 +5,32 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <stdexcept>
+
+double DTargetSheathFactorAtCell(int grid_i, int grid_j)
+{
+    if (grid_i < 0 || grid_i >= N_poloidal ||
+        grid_j < 0 || grid_j >= N_radial)
+        throw std::out_of_range("D target sheath factor has invalid B2 index");
+    if (DTargetSheathFactor > 0.)
+        return DTargetSheathFactor;
+
+    constexpr double electron_mass = 5.448e-4 * 1.6606e-27;
+    constexpr double two_pi = 6.28318530717958647692;
+    const double electron_temperature = Te[grid_i][grid_j];
+    const double ion_speed = std::abs(ua_D_1[grid_i][grid_j]);
+    if (!(electron_temperature > 0.) || !(ion_speed > 0.))
+        return 2.8;
+
+    const double electron_thermal_speed =
+        std::sqrt(qe * electron_temperature / electron_mass);
+    const double sheath_argument =
+        std::sqrt(two_pi) * ion_speed / electron_thermal_speed;
+    if (!(sheath_argument > 0.) || !std::isfinite(sheath_argument))
+        return 2.8;
+    return std::max(0., -std::log(sheath_argument));
+}
 
 Tools::IncidentFluxSample SampleDTargetIncidentFlux(
     int target, double xi_normal,
@@ -38,7 +63,8 @@ Tools::IncidentFluxSample SampleDIncidentFluxAtSurface(
         ua_D_1[grid_i][grid_j] * B[grid_i][grid_j][2]};
     return Tools::SampleIncidentFlux(
         Ti[grid_i][grid_j], Te[grid_i][grid_j], Dmass, drift,
-        inward_tangent_cos, inward_tangent_sin, DTargetSheathFactor,
+        inward_tangent_cos, inward_tangent_sin,
+        DTargetSheathFactorAtCell(grid_i, grid_j),
         xi_normal, xi_gaussian_radius, xi_gaussian_angle);
 }
 

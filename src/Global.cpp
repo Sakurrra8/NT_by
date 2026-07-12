@@ -49,7 +49,7 @@ int DBoundaryLaunchModel = 0;  // 0 EIRENE surface recycling; 1 direct outward n
 int numPar_flight_DBoundary = 6000;
 int DTargetIncidentModel = 1;  // 0 fixed mean E/angle; 1 NEMODS=7-like incident flux sampling
 int DTargetIncidentSamples = 4096;
-double DTargetSheathFactor = 3.0;
+double DTargetSheathFactor = -1.0; // <=0: EIRENE SHEATH model; >0: fixed Te multiplier
 int K_ReflectDirection;        // OP: 1 for cosing distribution; 2 for forward-reflect distribution; 3 for mirror reflection
 bool backGridBoundry;          // OP: make Particles go back to Grid when Particle flight
 bool K_H;                      // OP: H calculation

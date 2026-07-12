@@ -48,9 +48,22 @@ namespace
 		double weighted_energy = 0.;
 		double weighted_angle = 0.;
 		double weighted_fast_probability = 0.;
+		double weighted_sheath_factor = 0.;
 		double source_weight = 0.;
+		double minimum_sheath_factor = 0.;
+		double maximum_sheath_factor = 0.;
 		for (int target = 0; target < target_count; ++target)
 		{
+			const int grid_i = target < N_radial ? 1 : poloidalLastIndex();
+			const int grid_j = target < N_radial ? target : target - N_radial;
+			const double sheath_factor = DTargetSheathFactorAtCell(grid_i, grid_j);
+			if (target == 0)
+				minimum_sheath_factor = maximum_sheath_factor = sheath_factor;
+			else
+			{
+				minimum_sheath_factor = std::min(minimum_sheath_factor, sheath_factor);
+				maximum_sheath_factor = std::max(maximum_sheath_factor, sheath_factor);
+			}
 			double energy_sum = 0.;
 			double angle_sum = 0.;
 			double fast_probability_sum = 0.;
@@ -87,6 +100,7 @@ namespace
 			weighted_angle += target_weight * DTargetIncidentAngle[target];
 			weighted_fast_probability +=
 				target_weight * DTargetFastProbability[target];
+			weighted_sheath_factor += target_weight * sheath_factor;
 			source_weight += target_weight;
 		}
 
@@ -96,7 +110,11 @@ namespace
 					  << weighted_energy / source_weight
 					  << " eV, angle=" << weighted_angle / source_weight
 					  << " deg, fast reflection="
-					  << weighted_fast_probability / source_weight << std::endl;
+					  << weighted_fast_probability / source_weight
+					  << ", sheath factor="
+					  << weighted_sheath_factor / source_weight
+					  << " [" << minimum_sheath_factor << ", "
+					  << maximum_sheath_factor << "]" << std::endl;
 		}
 	}
 
