@@ -137,6 +137,19 @@ B-to-target-normal angle model for A/B tests. Run
 `make -f Makefile.local check-target-incident` to verify the analytic flux
 moments and sheath-energy increment.
 
+The optional `K_DBoundarySource=1` path reconstructs EIRENE interface strata
+3--5 from the species-resolved SOLPS `fnay_Dplus.dat` field. Negative flux on
+the lower radial boundary supplies the two PFR-side strata; positive flux on
+the upper radial boundary supplies the outer-side stratum. The file values are
+face-integrated D+ rates in s^-1. Each ion flux is folded with the same local
+`NEMODS=7`-style incident distribution and D-on-W surface model as the target:
+fast products launch D atoms and the remaining recycled nuclei launch thermal
+D2 molecules. Source points are sampled on the exact plasma/non-plasma
+triangle edge and emitted into the plasma triangle. `D_boundary_source.csv`
+records the geometry, FNIY strength, incident moments, D/D2 split, and provides
+an explicit source-nuclei closure check. `numPar_flight_DBoundary` controls the
+combined Monte Carlo history budget for the three strata.
+
 ### Transparent Boundaries And Additional Cells
 
 In MeshMode 3, triangle edges tagged `-1` or `-2` are EIRENE transparent

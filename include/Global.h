@@ -76,6 +76,7 @@ extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell
 extern std::array<int, 5> K_Puff;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
 extern int K_T_array, K_NNCs, K_Roulette, K_Splitting, K_DWTargetActualAngle, K_DTargetSourceMode;
+extern int K_DBoundarySource, numPar_flight_DBoundary;
 extern int DTargetIncidentModel, DTargetIncidentSamples;
 extern int K_H5Output, MaxSplit, MaxSplitDepth;
 extern int ImportanceMainPoloidalBegin, ImportanceMainPoloidalEnd;
@@ -94,7 +95,7 @@ extern double DTmass, D2Tmass, DT2mass, HH2mass, DD2mass, TT2mass, H2H2mass, D2D
 extern double Dn[N_RADIAL_GRID];
 
 extern int MeshMode;
-extern std::string DWTrimDatabase;
+extern std::string DWTrimDatabase, DBoundaryFluxFile;
 
 // 三维网格
 extern std::vector<std::vector<std::vector<double>>> Grid;

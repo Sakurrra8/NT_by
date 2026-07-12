@@ -1,4 +1,5 @@
 #include "Particle.h"
+#include "DBoundarySource.h"
 #include "TargetIncident.h"
 
 namespace
@@ -679,11 +680,119 @@ string sourceStratumName(SourceStratum source)
 		return "Argon";
 	case SourceStratum::PlasmaBoundary:
 		return "PlasmaBoundary";
+	case SourceStratum::PFRSide1:
+		return "PFRSide1";
+	case SourceStratum::PFRSide2:
+		return "PFRSide2";
+	case SourceStratum::OuterSide:
+		return "OuterSide";
 	case SourceStratum::Core:
 		return "Core";
 	default:
 		return "Unknown";
 	}
+}
+
+void Particle::InitDBoundarySource(
+	int source_segment, double represented_particles)
+{
+	if (this != &D && this != &D2)
+		throw std::logic_error("D boundary source can only launch D or D2");
+	if (!(represented_particles > 0.) || !std::isfinite(represented_particles))
+		throw std::invalid_argument("D boundary source history weight is invalid");
+
+	const DBoundarySourceSegment &source =
+		D_BoundarySource.Segment(static_cast<std::size_t>(source_segment));
+	switch (source.region)
+	{
+	case DBoundarySourceRegion::PFRSide1:
+		source_stratum_ = SourceStratum::PFRSide1;
+		break;
+	case DBoundarySourceRegion::PFRSide2:
+		source_stratum_ = SourceStratum::PFRSide2;
+		break;
+	case DBoundarySourceRegion::OuterSide:
+		source_stratum_ = SourceStratum::OuterSide;
+		break;
+	}
+
+	split_depth_ = 0;
+	importance_region_ = -1;
+	in_additional_cell_ = false;
+	additional_cell_exit_tag_ = 0;
+	D2p_origin_channel_ = 0;
+	Charge_ = 0;
+	ChargeTag_ = 0;
+	fate_[0] = 2;
+	sourcePar_[0] = 1;
+	boundary_start_ = 0;
+	IfColl_ = 0;
+	IfFlightOut_ = 0;
+	Weight_ = 1.;
+	NumPar_now = represented_particles;
+
+	const double position_fraction = Tools::Random();
+	X_[0] = source.x0 + position_fraction * (source.x1 - source.x0);
+	X_[1] = source.y0 + position_fraction * (source.y1 - source.y0);
+	X_[2] = 0.;
+	Tri_Index_ = source.triangle;
+	if (!nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
+		throw std::runtime_error("Cannot place D boundary source inside plasma triangle");
+	XY_[0] = source.grid_i;
+	XY_[1] = source.grid_j;
+	Zone_ = zoneFromB2Index(XY_[0], XY_[1]);
+	GridIndex_ = gridIndex2D(XY_[0], XY_[1]);
+
+	double speed = 0.;
+	if (this == &D)
+	{
+		Tools::IncidentFluxSample incident;
+		Tools::IncidentFluxSample best_incident;
+		double best_probability = -1.;
+		bool accepted = false;
+		for (int attempt = 0; attempt < DTargetIncidentSamples; ++attempt)
+		{
+			incident = SampleDIncidentFluxAtSurface(
+				source.grid_i, source.grid_j,
+				source.tangent_cos, source.tangent_sin,
+				Tools::Random(), Tools::Random(), Tools::Random());
+			const double probability =
+				DFastReflectionProbability(incident, coeff_ercyc_wall);
+			if (probability > best_probability)
+			{
+				best_probability = probability;
+				best_incident = incident;
+			}
+			if (Tools::Random() <= probability)
+			{
+				accepted = true;
+				break;
+			}
+		}
+		if (!accepted)
+			incident = best_incident;
+		const DWReflectionSample reflected = D_W_Trim.Sample(
+			incident.energy_eV, incident.angle_deg,
+			Tools::Random(), Tools::Random(), Tools::Random());
+		Tn_ = (2. / 3.) * reflected.energy_eV;
+		speed = std::sqrt(2. * qe * std::max(0., reflected.energy_eV) / mass_);
+		const double incident_direction[3] = {
+			incident.velocity[0], incident.velocity[1], incident.velocity[2]};
+		setDWTrimDirection(
+			V_, reflected, source.tangent_cos, source.tangent_sin,
+			incident_direction);
+	}
+	else
+	{
+		Tn_ = T_wall;
+		speed = Tools::MaxwellianFluxSpeed(Tn_, mass_);
+		Tools::calculateReflectionVelocity(
+			V_, source.tangent_cos, source.tangent_sin, 0);
+	}
+	for (double &component : V_)
+		component *= speed;
+	importance_region_ = PhysicalImportanceRegion();
+	recordSourceLaunch();
 }
 
 Particle::Particle()
@@ -1329,7 +1438,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 					Tools::IncidentFluxSample best_incident;
 					double best_probability = -1.;
 					bool accepted = false;
-					for (int attempt = 0; attempt < 4096; ++attempt)
+					for (int attempt = 0; attempt < DTargetIncidentSamples; ++attempt)
 					{
 						incident = SampleDTargetIncidentFlux(
 							z, Tools::Random(), Tools::Random(), Tools::Random());

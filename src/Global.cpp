@@ -13,6 +13,7 @@ string Outputpath;           // path for result Output
 string Databasepath;         // path for EIRENE database files
 string name_Xlog, name_Vlog; // path for log Output
 string DWTrimDatabase = "D_on_W";
+string DBoundaryFluxFile = "2D_data/fnay_Dplus.dat";
 
 /// OP
 bool K_log;                    // OP: Particle way log
@@ -43,6 +44,8 @@ int K_Reflect;                 // OP: 1 for empirical formula; 2 for Trim databa
 int K_DWTrimReflection = 0;    // OP: 0 for legacy D-W reflection; 1 for D_on_W_5.53 distributions
 int K_DWTargetActualAngle = 1; // OP: 0 fixed 60 deg; 1 local B-to-target-normal angle
 int K_DTargetSourceMode = 1;   // OP: 1 use recycled_neutral_flux_D; 2 use ni*|ua|*target_area ion flux
+int K_DBoundarySource = 0;     // OP: D+ FNIY recycling sources on PFR/outer B2 boundaries
+int numPar_flight_DBoundary = 6000;
 int DTargetIncidentModel = 1;  // 0 fixed mean E/angle; 1 NEMODS=7-like incident flux sampling
 int DTargetIncidentSamples = 4096;
 double DTargetSheathFactor = 3.0;

@@ -234,6 +234,12 @@ void Initialize(int Input, char *settingfile[])
         option_input >> DTargetSheathFactor;
       else if (option_name == "DTargetIncidentSamples")
         option_input >> DTargetIncidentSamples;
+      else if (option_name == "K_DBoundarySource")
+        option_input >> K_DBoundarySource;
+      else if (option_name == "numPar_flight_DBoundary")
+        option_input >> numPar_flight_DBoundary;
+      else if (option_name == "DBoundaryFluxFile")
+        option_input >> DBoundaryFluxFile;
       else if (option_name == "K_Roulette")
         option_input >> K_Roulette;
       else if (option_name == "K_Splitting")
@@ -284,6 +290,8 @@ void Initialize(int Input, char *settingfile[])
   DTargetIncidentModel = std::clamp(DTargetIncidentModel, 0, 1);
   DTargetSheathFactor = std::max(0.0, DTargetSheathFactor);
   DTargetIncidentSamples = std::max(256, DTargetIncidentSamples);
+  K_DBoundarySource = std::clamp(K_DBoundarySource, 0, 1);
+  numPar_flight_DBoundary = std::max(0, numPar_flight_DBoundary);
   if (!K_H2_elastic)
     D2ElasticModel = 0;
   std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
@@ -291,6 +299,10 @@ void Initialize(int Input, char *settingfile[])
             << " (sheath factor=" << DTargetSheathFactor
             << ", averaging samples=" << DTargetIncidentSamples << ")"
             << std::endl;
+  std::cout << "D boundary FNIY source: "
+            << (K_DBoundarySource ? "on" : "off")
+            << " (histories=" << numPar_flight_DBoundary
+            << ", file=" << DBoundaryFluxFile << ")" << std::endl;
   std::getline(In, line);
   In >> Inputstring >> K_dn;
   // std::cout << K_dn << endl;
@@ -382,6 +394,12 @@ void Initialize(int Input, char *settingfile[])
       iss >> DTargetSheathFactor;
     else if (Inputstring == "DTargetIncidentSamples")
       iss >> DTargetIncidentSamples;
+    else if (Inputstring == "K_DBoundarySource")
+      iss >> K_DBoundarySource;
+    else if (Inputstring == "numPar_flight_DBoundary")
+      iss >> numPar_flight_DBoundary;
+    else if (Inputstring == "DBoundaryFluxFile")
+      iss >> DBoundaryFluxFile;
     else if (Inputstring == "W_RouletteMin")
       iss >> W_RouletteMin;
     else if (Inputstring == "W_RouletteTarget")

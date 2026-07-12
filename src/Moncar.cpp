@@ -1,4 +1,5 @@
 #include "Global.h"
+#include "DBoundarySource.h"
 #include "Particle.h"
 #include "RecyclingFlightAllocation.h"
 
@@ -126,6 +127,42 @@ void Moncar()
                 }
                 T2.EndDeferredFlightStats();
             }
+        }
+    }
+
+    if (K_D && K_DBoundarySource)
+    {
+        const auto boundary_flights = AllocateRecyclingFlights(
+            D_BoundarySource.DSourceSum(),
+            D_BoundarySource.D2SourceSum(),
+            numPar_flight_DBoundary);
+        if (D_BoundarySource.DSourceSum() > 0. && boundary_flights.first > 0)
+        {
+            const double represented_particles =
+                D_BoundarySource.DSourceSum() / boundary_flights.first;
+            D.BeginDeferredFlightStats(represented_particles);
+            for (int history = 1; history <= boundary_flights.first; ++history)
+            {
+                const int source = D_BoundarySource.SampleDSource();
+                P = &D;
+                P->InitDBoundarySource(source, represented_particles);
+                flight(source, history);
+            }
+            D.EndDeferredFlightStats();
+        }
+        if (D_BoundarySource.D2SourceSum() > 0. && boundary_flights.second > 0)
+        {
+            const double represented_particles =
+                D_BoundarySource.D2SourceSum() / boundary_flights.second;
+            D2.BeginDeferredFlightStats(represented_particles);
+            for (int history = 1; history <= boundary_flights.second; ++history)
+            {
+                const int source = D_BoundarySource.SampleD2Source();
+                P = &D2;
+                P->InitDBoundarySource(source, represented_particles);
+                flight(source, history);
+            }
+            D2.EndDeferredFlightStats();
         }
     }
 

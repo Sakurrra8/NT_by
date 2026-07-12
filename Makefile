@@ -60,8 +60,14 @@ $(BIN_DIR)/compare_eirene_323: tools/compare_eirene_323.cpp src/EIRENE.cpp inclu
 check-target-incident: $(BIN_DIR)/check_target_incident
 	./$(BIN_DIR)/check_target_incident
 
+check-d-boundary-flux: $(BIN_DIR)/check_d_boundary_flux
+	./$(BIN_DIR)/check_d_boundary_flux case_input/2MW-5e19/2D_data/fnay_Dplus.dat
+
 $(BIN_DIR)/check_target_incident: tools/check_target_incident.cpp src/utils.cpp include/utils.h | $(BIN_DIR)
 	$(CCOMPILE) -I ./include tools/check_target_incident.cpp src/utils.cpp -o $@
+
+$(BIN_DIR)/check_d_boundary_flux: tools/check_d_boundary_flux.cpp src/SOLPSField.cpp include/SOLPSField.h | $(BIN_DIR)
+	$(CCOMPILE) -I ./include tools/check_d_boundary_flux.cpp src/SOLPSField.cpp -o $@
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
@@ -73,6 +79,6 @@ $(BIN_DIR):
 	$(FCOMPILE) -c $(INCS) $< -o $@
 
 clean:
-	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/compare_eirene_323 $(BIN_DIR)/check_target_incident
+	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/compare_eirene_323 $(BIN_DIR)/check_target_incident $(BIN_DIR)/check_d_boundary_flux
 clean-data:
 	rm -f *~ *.txt *.dat *.nc errfile outfile

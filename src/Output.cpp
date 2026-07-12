@@ -1,4 +1,5 @@
 #include "Global.h"
+#include "DBoundarySource.h"
 #include "Particle.h"
 #include <algorithm>
 #include <map>
@@ -80,6 +81,8 @@ void Output()
                      << NumPar_D2_recyc[i] << '\n';
         }
         Out_temp.close();
+        if (K_DBoundarySource)
+            D_BoundarySource.WriteSummary(Outputpath + "D_boundary_source.csv");
     }
     if (K_T)
     {

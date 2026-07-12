@@ -1,4 +1,5 @@
 #include "Global.h"
+#include "DBoundarySource.h"
 #include "Particle.h"
 #include "RecyclingFlightAllocation.h"
 #include "TargetIncident.h"
@@ -1132,6 +1133,8 @@ void Prepare()
 			D.RecycledSourceSum(), D2.RecycledSourceSum(), numPar_flight_Target);
 		D.CalWeight2(NumPar_D_recyc, d_recycling_flights.first);
 		D2.CalWeight2(NumPar_D2_recyc, d_recycling_flights.second);
+		if (K_DBoundarySource)
+			D_BoundarySource.Prepare();
 	}
 	// T recycling
 	if (K_T)

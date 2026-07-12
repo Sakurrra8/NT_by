@@ -1,6 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "Read.h"
 #include "Particle.h"
+#include "DBoundarySource.h"
+
+#include <filesystem>
 
 namespace
 {
@@ -279,6 +282,15 @@ void Read()
         if (!D_W_Trim.Load(Inputpath + "database/" + DWTrimDatabase))
             throw std::runtime_error("Failed to load D-on-W reflection database: " + DWTrimDatabase);
         std::cout << "D-on-W TRIM distribution model enabled: " << DWTrimDatabase << endl;
+    }
+    if (K_DBoundarySource)
+    {
+        if (!K_D)
+            throw std::runtime_error("K_DBoundarySource requires K_D=1");
+        std::filesystem::path flux_path(DBoundaryFluxFile);
+        if (flux_path.is_relative())
+            flux_path = std::filesystem::path(Casepath) / flux_path;
+        D_BoundarySource.Load(flux_path.string());
     }
     /*for (double i = 1; i < 1000; i++)
     {
