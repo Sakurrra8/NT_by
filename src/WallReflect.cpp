@@ -179,6 +179,10 @@ void WallReflect()
         }
         else if (P == &H2 || P == &D2 || P == &T2)
         {
+            if (InterscePoint[0][4] == 11)
+                P->AddWallEro(InterscePoint[0][3]);
+            else if (InterscePoint[0][4] == 1)
+                P->AddTargetEro(InterscePoint[0][3]);
             if (Tools::Random() > coeff_recyc)
             {
                 P->SetWeight(0.);
@@ -374,6 +378,10 @@ void WallReflect()
             }
             else if (P == &H2 || P == &D2 || P == &T2)
             {
+                if (InterscePoint[0][4] == 11)
+                    P->AddWallEro(InterscePoint[0][3]);
+                else if (InterscePoint[0][4] == 1)
+                    P->AddTargetEro(InterscePoint[0][3]);
                 if (Tools::Random() > coeff_recyc)
                 {
                     P->SetWeight(0.);
