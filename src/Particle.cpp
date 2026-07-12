@@ -740,7 +740,7 @@ void Particle::InitDBoundarySource(
 		if (this != &D)
 			throw std::logic_error("Direct D boundary outflow cannot launch D2");
 		const int outward_triangle =
-			Grid4.tris_[source.triangle].neigh[source.edge];
+			Grid4.tris_[source.triangle].neigh[3 * source.edge];
 		if (outward_triangle < 0 ||
 			static_cast<std::size_t>(outward_triangle) >= Grid4.tris_.size())
 			throw std::runtime_error(
