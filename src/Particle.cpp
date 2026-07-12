@@ -747,37 +747,55 @@ void Particle::InitDBoundarySource(
 	if (this == &D)
 	{
 		Tools::IncidentFluxSample incident;
-		Tools::IncidentFluxSample best_incident;
-		double best_probability = -1.;
-		bool accepted = false;
-		for (int attempt = 0; attempt < DTargetIncidentSamples; ++attempt)
+		double incident_direction[3] = {
+			B[source.grid_i][source.grid_j][0],
+			B[source.grid_i][source.grid_j][1],
+			B[source.grid_i][source.grid_j][2]};
+		if (DTargetIncidentModel == 0)
 		{
-			incident = SampleDIncidentFluxAtSurface(
-				source.grid_i, source.grid_j,
-				source.tangent_cos, source.tangent_sin,
-				Tools::Random(), Tools::Random(), Tools::Random());
-			const double probability =
-				DFastReflectionProbability(incident, coeff_ercyc_wall);
-			if (probability > best_probability)
-			{
-				best_probability = probability;
-				best_incident = incident;
-			}
-			if (Tools::Random() <= probability)
-			{
-				accepted = true;
-				break;
-			}
+			incident.energy_eV =
+				2. * Ti[source.grid_i][source.grid_j] +
+				3. * Te[source.grid_i][source.grid_j];
+			incident.angle_deg = Tools::CalBFieldToWallNormalAngle(
+				B[source.grid_i][source.grid_j][0],
+				B[source.grid_i][source.grid_j][1],
+				B[source.grid_i][source.grid_j][2],
+				source.tangent_cos, source.tangent_sin);
 		}
-		if (!accepted)
-			incident = best_incident;
+		else
+		{
+			Tools::IncidentFluxSample best_incident;
+			double best_probability = -1.;
+			bool accepted = false;
+			for (int attempt = 0; attempt < DTargetIncidentSamples; ++attempt)
+			{
+				incident = SampleDIncidentFluxAtSurface(
+					source.grid_i, source.grid_j,
+					source.tangent_cos, source.tangent_sin,
+					Tools::Random(), Tools::Random(), Tools::Random());
+				const double probability =
+					DFastReflectionProbability(incident, coeff_ercyc_wall);
+				if (probability > best_probability)
+				{
+					best_probability = probability;
+					best_incident = incident;
+				}
+				if (Tools::Random() <= probability)
+				{
+					accepted = true;
+					break;
+				}
+			}
+			if (!accepted)
+				incident = best_incident;
+			for (int component = 0; component < 3; ++component)
+				incident_direction[component] = incident.velocity[component];
+		}
 		const DWReflectionSample reflected = D_W_Trim.Sample(
 			incident.energy_eV, incident.angle_deg,
 			Tools::Random(), Tools::Random(), Tools::Random());
 		Tn_ = (2. / 3.) * reflected.energy_eV;
 		speed = std::sqrt(2. * qe * std::max(0., reflected.energy_eV) / mass_);
-		const double incident_direction[3] = {
-			incident.velocity[0], incident.velocity[1], incident.velocity[2]};
 		setDWTrimDirection(
 			V_, reflected, source.tangent_cos, source.tangent_sin,
 			incident_direction);

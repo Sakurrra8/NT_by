@@ -263,24 +263,48 @@ void DBoundarySourceModel::Prepare()
         double angle_sum = 0.;
         double fast_sum = 0.;
         double reflected_energy_sum = 0.;
-        for (int sample_index = 1;
-             sample_index <= DTargetIncidentSamples; ++sample_index)
+        if (DTargetIncidentModel == 0)
         {
-            const auto incident = SampleDIncidentFluxAtSurface(
-                segment.grid_i, segment.grid_j,
-                segment.tangent_cos, segment.tangent_sin,
-                RadicalInverse(sample_index, 2),
-                RadicalInverse(sample_index, 3),
-                RadicalInverse(sample_index, 5));
+            Tools::IncidentFluxSample incident;
+            incident.energy_eV =
+                2. * Ti[segment.grid_i][segment.grid_j] +
+                3. * Te[segment.grid_i][segment.grid_j];
+            incident.angle_deg = Tools::CalBFieldToWallNormalAngle(
+                B[segment.grid_i][segment.grid_j][0],
+                B[segment.grid_i][segment.grid_j][1],
+                B[segment.grid_i][segment.grid_j][2],
+                segment.tangent_cos, segment.tangent_sin);
             const double fast =
                 DFastReflectionProbability(incident, recycling);
-            energy_sum += incident.energy_eV;
-            angle_sum += incident.angle_deg;
-            fast_sum += fast;
+            energy_sum = incident.energy_eV * DTargetIncidentSamples;
+            angle_sum = incident.angle_deg * DTargetIncidentSamples;
+            fast_sum = fast * DTargetIncidentSamples;
             if (fast > 0.)
-                reflected_energy_sum += fast * D_W_Trim.MeanReflectedEnergy(
-                                                       incident.energy_eV,
-                                                       incident.angle_deg);
+                reflected_energy_sum = fast * DTargetIncidentSamples *
+                    D_W_Trim.MeanReflectedEnergy(
+                        incident.energy_eV, incident.angle_deg);
+        }
+        else
+        {
+            for (int sample_index = 1;
+                 sample_index <= DTargetIncidentSamples; ++sample_index)
+            {
+                const auto incident = SampleDIncidentFluxAtSurface(
+                    segment.grid_i, segment.grid_j,
+                    segment.tangent_cos, segment.tangent_sin,
+                    RadicalInverse(sample_index, 2),
+                    RadicalInverse(sample_index, 3),
+                    RadicalInverse(sample_index, 5));
+                const double fast =
+                    DFastReflectionProbability(incident, recycling);
+                energy_sum += incident.energy_eV;
+                angle_sum += incident.angle_deg;
+                fast_sum += fast;
+                if (fast > 0.)
+                    reflected_energy_sum += fast *
+                        D_W_Trim.MeanReflectedEnergy(
+                            incident.energy_eV, incident.angle_deg);
+            }
         }
         const double inverse_samples = 1. / DTargetIncidentSamples;
         segment.mean_incident_energy = energy_sum * inverse_samples;
@@ -305,7 +329,8 @@ void DBoundarySourceModel::Prepare()
     BuildCdf(segments_, false, d_cdf_, d_source_sum_);
     BuildCdf(segments_, true, d2_cdf_, d2_source_sum_);
     std::cout << std::scientific << std::setprecision(8)
-              << "D boundary source: segments=" << segments_.size()
+              << "D boundary source (incident model="
+              << DTargetIncidentModel << "): segments=" << segments_.size()
               << ", ion=" << ion_flux_sum_
               << ", D=" << d_source_sum_
               << ", D2=" << d2_source_sum_

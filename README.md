@@ -148,7 +148,9 @@ D2 molecules. Source points are sampled on the exact plasma/non-plasma
 triangle edge and emitted into the plasma triangle. `D_boundary_source.csv`
 records the geometry, FNIY strength, incident moments, D/D2 split, and provides
 an explicit source-nuclei closure check. `numPar_flight_DBoundary` controls the
-combined Monte Carlo history budget for the three strata.
+combined Monte Carlo history budget for the three strata. For controlled A/B
+tests, `DTargetIncidentModel=0` also switches these boundary strata to the
+former `2*Ti+3*Te` energy and local B-to-surface-normal angle.
 
 ### Transparent Boundaries And Additional Cells
 
