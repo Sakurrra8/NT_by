@@ -36,6 +36,7 @@ int K_Prob;                    // OP: 1: add the cross-section; 2: add the colli
 int K_CX_impurity;             // OP: CX collision recation
 std::array<int, 5> K_Puff{};   // OP: Puff, 0 and 1 for different puff ports
 int K_D2Flight;                // OP: D2 flight
+int D2ElasticModel = 2;        // 0 off, 1 H.3 moment, 2 H.0/H.1/H.3, 3 with rejection sampling
 int K_abnormal_transport;      // OP: abnormal transport
 int K_flight;                  // OP: 1 for mean free path; 2 for fixed time step; 3 for
 int K_Reflect;                 // OP: 1 for empirical formula; 2 for Trim database; 3 for calculate from Trim
@@ -396,6 +397,8 @@ EIRENE R2_2_10_H4(EIRENE_H4, 4679);  //$ e + H_2 = 2e + H + H^+  $
 EIRENE R3_2_3_H2(EIRENE_H2, 2253); //$ p + H_2 = H + H_2^+  $
 EIRENE R3_2_3_H3(EIRENE_H3, 3841); //$ p + H_2(EIRENE_v) = H + H_2^+  $
 EIRENE R3_1_8_H3(EIRENE_H3, 3683); //$ p + H(EIRENE_1s) = H(EIRENE_1s) + p   $
+EIRENE R0_3T_H0(EIRENE_H0, 989);   //$ p + H_2 = p + H_2 ,\ $ interaction potential
+EIRENE R0_3T_H1(EIRENE_H1, 1334);  //$ p + H_2 = p + H_2 ,\ $ total cross section
 EIRENE R0_3T_H3(EIRENE_H3, 2972);  //$ p + H_2 = p + H_2 ,\ $  elastic
 EIRENE R0_3D_H3(EIRENE_H3, 3026);  //$ p + H_2 = p + H_2 ,\ $  elastic
 

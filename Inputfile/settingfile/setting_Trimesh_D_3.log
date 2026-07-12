@@ -72,6 +72,7 @@ ImportanceMainPoloidalBegin 25
 ImportanceMainPoloidalEnd   72
 K_H5Output          0       # option: write HDF5 output files
 K_NNCs              1       # match EIRENE AMMONX neutral-neutral reactions
+D2ElasticModel      2       # 0 off; 1 H.3 moment; 2 H.0/H.1/H.3; 3 with rejection sampling
 MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
 K_DWTargetActualAngle 1     # use local B-to-target-normal incidence angle

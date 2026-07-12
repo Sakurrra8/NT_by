@@ -242,6 +242,240 @@ namespace
 		return fraction;
 	}
 
+	struct TransparentBoundaryEdge
+	{
+		int tri;
+		int tag;
+		double x0;
+		double y0;
+		double x1;
+		double y1;
+	};
+
+	const std::vector<TransparentBoundaryEdge> &transparentBoundaryEdges()
+	{
+		static std::vector<TransparentBoundaryEdge> edges;
+		static std::size_t cached_triangle_count = std::numeric_limits<std::size_t>::max();
+		if (cached_triangle_count == Grid4.tris_.size())
+			return edges;
+
+		edges.clear();
+		cached_triangle_count = Grid4.tris_.size();
+		for (std::size_t tri_index = 0; tri_index < Grid4.tris_.size(); ++tri_index)
+		{
+			const auto &tri = Grid4.tris_[tri_index];
+			for (int edge = 0; edge < 3; ++edge)
+			{
+				const int tag = Grid4.lines_info(static_cast<int>(tri_index), edge);
+				if (tag != -1 && tag != -2)
+					continue;
+				const auto &a = Grid4.nodes_[tri.v[edge]];
+				const auto &b = Grid4.nodes_[tri.v[(edge + 1) % 3]];
+				edges.push_back({static_cast<int>(tri_index), tag, a.r, a.z, b.r, b.z});
+			}
+		}
+		return edges;
+	}
+
+	bool raySegmentIntersection(double origin_x, double origin_y,
+								double direction_x, double direction_y,
+								double segment_x0, double segment_y0,
+								double segment_x1, double segment_y1,
+								double &distance, double &hit_x, double &hit_y)
+	{
+		const double segment_dx = segment_x1 - segment_x0;
+		const double segment_dy = segment_y1 - segment_y0;
+		const double denominator = direction_x * segment_dy - direction_y * segment_dx;
+		if (std::abs(denominator) < 1.e-14)
+			return false;
+
+		const double offset_x = segment_x0 - origin_x;
+		const double offset_y = segment_y0 - origin_y;
+		const double ray_distance =
+			(offset_x * segment_dy - offset_y * segment_dx) / denominator;
+		const double segment_fraction =
+			(offset_x * direction_y - offset_y * direction_x) / denominator;
+		if (ray_distance <= 1.e-8 || segment_fraction < -1.e-10 || segment_fraction > 1.0 + 1.e-10)
+			return false;
+
+		distance = ray_distance;
+		hit_x = origin_x + ray_distance * direction_x;
+		hit_y = origin_y + ray_distance * direction_y;
+		return std::isfinite(distance) && std::isfinite(hit_x) && std::isfinite(hit_y);
+	}
+
+	bool rayEntersTriangle(int tri_index, double hit_x, double hit_y,
+							 double direction_x, double direction_y)
+	{
+		for (double offset : {1.e-8, 1.e-7, 1.e-6, 1.e-5})
+			if (Grid4.Ifingrid(tri_index,
+							 hit_x + offset * direction_x,
+							 hit_y + offset * direction_y))
+				return true;
+		return false;
+	}
+
+	double h2IonElasticSigmaV(double relative_speed)
+	{
+		if (!(relative_speed > 0.) || !std::isfinite(relative_speed))
+			return 0.;
+		const double proton_lab_energy = 0.5 * Hmass * relative_speed * relative_speed / qe;
+		return R0_3T_H1.cal(0., proton_lab_energy) * relative_speed;
+	}
+
+	double h2IonElasticSigmaVUpperBound()
+	{
+		static const double upper_bound = []()
+		{
+			double maximum = 0.;
+			const double log_min_energy = std::log(1.e-8);
+			const double log_max_energy = std::log(1.e8);
+			for (int point = 0; point <= 1024; ++point)
+			{
+				const double energy = std::exp(
+					log_min_energy + (log_max_energy - log_min_energy) * point / 1024.);
+				const double speed = std::sqrt(2. * qe * energy / Hmass);
+				maximum = std::max(maximum, R0_3T_H1.cal(0., energy) * speed);
+			}
+			return 1.1 * maximum;
+		}();
+		return upper_bound;
+	}
+
+	struct GaussLegendreRule
+	{
+		std::array<double, 16> nodes{};
+		std::array<double, 16> weights{};
+
+		GaussLegendreRule()
+		{
+			constexpr int order = 16;
+			for (int i = 0; i < order / 2; ++i)
+			{
+				double root = std::cos(pi * (i + 0.75) / (order + 0.5));
+				double derivative = 0.;
+				for (int iteration = 0; iteration < 20; ++iteration)
+				{
+					double p0 = 1.;
+					double p1 = root;
+					for (int degree = 2; degree <= order; ++degree)
+					{
+						const double p2 = ((2. * degree - 1.) * root * p1 -
+										   (degree - 1.) * p0) /
+										  degree;
+						p0 = p1;
+						p1 = p2;
+					}
+					derivative = order * (root * p1 - p0) / (root * root - 1.);
+					const double next = root - p1 / derivative;
+					if (std::abs(next - root) < 1.e-15)
+					{
+						root = next;
+						break;
+					}
+					root = next;
+				}
+				const double weight = 1. / ((1. - root * root) * derivative * derivative);
+				nodes[i] = 0.5 * (1. - root);
+				nodes[order - 1 - i] = 0.5 * (1. + root);
+				weights[i] = weight;
+				weights[order - 1 - i] = weight;
+			}
+		}
+	};
+
+	bool h2IonElasticClosestApproach(double relative_energy_eV, double impact_parameter,
+									 double &closest_approach)
+	{
+		if (!(relative_energy_eV > 0.) || !(impact_parameter >= 0.))
+			return false;
+		auto orbit_function = [relative_energy_eV, impact_parameter](double radius)
+		{
+			return 1. - R0_3T_H0.potential(radius) / relative_energy_eV -
+				   Tools::sqr(impact_parameter / radius);
+		};
+
+		double outer_radius = std::max(100., 10. * impact_parameter + 20.);
+		double outer_value = orbit_function(outer_radius);
+		for (int expansion = 0; expansion < 8 && !(outer_value > 0.); ++expansion)
+		{
+			outer_radius *= 2.;
+			outer_value = orbit_function(outer_radius);
+		}
+		if (!(outer_value > 0.))
+			return false;
+
+		const double minimum_radius = 1.e-3;
+		double positive_radius = outer_radius;
+		double positive_value = outer_value;
+		for (int point = 1; point <= 192; ++point)
+		{
+			const double fraction = point / 192.;
+			const double radius = outer_radius *
+				std::pow(minimum_radius / outer_radius, fraction);
+			const double value = orbit_function(radius);
+			if (value <= 0. && positive_value > 0.)
+			{
+				double lower = radius;
+				double upper = positive_radius;
+				for (int iteration = 0; iteration < 80; ++iteration)
+				{
+					const double middle = 0.5 * (lower + upper);
+					if (orbit_function(middle) > 0.)
+						upper = middle;
+					else
+						lower = middle;
+				}
+				closest_approach = 0.5 * (lower + upper);
+				return std::isfinite(closest_approach) && closest_approach > 0.;
+			}
+			positive_radius = radius;
+			positive_value = value;
+		}
+		return false;
+	}
+
+	double h2IonElasticScatteringCosine(double relative_speed)
+	{
+		if (!(relative_speed > 0.) || !std::isfinite(relative_speed))
+			return std::numeric_limits<double>::quiet_NaN();
+		const double proton_lab_energy = 0.5 * Hmass * relative_speed * relative_speed / qe;
+		const double total_cross_section = R0_3T_H1.cal(0., proton_lab_energy);
+		constexpr double bohr_radius_m = 5.29177210903e-11;
+		if (!(total_cross_section > 0.) || !std::isfinite(total_cross_section))
+			return std::numeric_limits<double>::quiet_NaN();
+		const double maximum_impact_parameter =
+			std::sqrt(total_cross_section / pi) / bohr_radius_m;
+		const double impact_parameter = maximum_impact_parameter * std::sqrt(Tools::Random());
+		const double reference_reduced_mass = (2. / 3.) * Hmass;
+		const double relative_energy =
+			0.5 * reference_reduced_mass * relative_speed * relative_speed / qe;
+		double closest_approach = 0.;
+		if (!h2IonElasticClosestApproach(relative_energy, impact_parameter, closest_approach))
+			return std::numeric_limits<double>::quiet_NaN();
+		if (impact_parameter <= 1.e-14)
+			return -1.;
+
+		static const GaussLegendreRule quadrature;
+		double integral = 0.;
+		for (std::size_t node = 0; node < quadrature.nodes.size(); ++node)
+		{
+			const double t = quadrature.nodes[node];
+			const double x = 1. - t * t;
+			const double radius = closest_approach / x;
+			const double radicand =
+				1. - R0_3T_H0.potential(radius) / relative_energy -
+				Tools::sqr(impact_parameter / radius);
+			if (!std::isfinite(radicand) || radicand < -1.e-8)
+				return std::numeric_limits<double>::quiet_NaN();
+			integral += quadrature.weights[node] *
+						2. * t / std::sqrt(std::max(radicand, 1.e-14));
+		}
+		const double deflection =
+			pi - 2. * impact_parameter / closest_approach * integral;
+		return std::clamp(std::cos(deflection), -1., 1.);
+	}
+
 	bool earliestWallHitInTri(int tri_index,
 							  double x0, double y0,
 							  double x1, double y1,
@@ -646,6 +880,8 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 	D2p_origin_channel_ = A->D2pOriginChannel();
 	split_depth_ = A->split_depth_;
 	importance_region_ = A->importance_region_;
+	in_additional_cell_ = A->in_additional_cell_;
+	additional_cell_exit_tag_ = A->additional_cell_exit_tag_;
 
 	// XY_new_[0] = A->XY_new(0);
 	// XY_new_[1] = A->XY_new(1);
@@ -656,6 +892,134 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 		Charge_ = A->Charge();
 	else
 		Charge_ = Charge;
+}
+
+void Particle::EnterAdditionalCell(int boundary_tag)
+{
+	in_additional_cell_ = true;
+	additional_cell_exit_tag_ = boundary_tag;
+	++additional_cell_exit_events_;
+	additional_cell_exit_weight_ += diagnosticEventWeight();
+	Tri_Index_ = -1;
+	XY_[0] = -1;
+	XY_[1] = -1;
+	Zone_ = 6;
+	IfColl_ = 0;
+	IfFlightOut_ = 0;
+	boundary_start_ = 0;
+}
+
+bool Particle::AdvanceAdditionalCell()
+{
+	auto lose_particle = [this]()
+	{
+		++additional_cell_no_hit_loss_events_;
+		additional_cell_no_hit_loss_weight_ += diagnosticEventWeight();
+		in_additional_cell_ = false;
+		additional_cell_exit_tag_ = 0;
+		Weight_ = 0.;
+		IfColl_ = 0;
+		IfFlightOut_ = 7;
+		Zone_ = 7;
+		return false;
+	};
+
+	const double speed_rz = std::hypot(V_[0], V_[1]);
+	if (!std::isfinite(speed_rz) || speed_rz <= 1.e-20)
+		return lose_particle();
+	const double direction_x = V_[0] / speed_rz;
+	const double direction_y = V_[1] / speed_rz;
+
+	double wall_distance = std::numeric_limits<double>::infinity();
+	double wall_hit_x = 0.;
+	double wall_hit_y = 0.;
+	int wall_index = -1;
+	for (int candidate = 0; candidate < Grid4.Wall_.Wall_num(); ++candidate)
+	{
+		const auto &wall = Grid4.Wall_.Segment(candidate);
+		double candidate_distance = 0.;
+		double candidate_x = 0.;
+		double candidate_y = 0.;
+		if (raySegmentIntersection(X_[0], X_[1], direction_x, direction_y,
+								   wall[0], wall[1], wall[2], wall[3],
+								   candidate_distance, candidate_x, candidate_y) &&
+			candidate_distance < wall_distance)
+		{
+			wall_distance = candidate_distance;
+			wall_hit_x = candidate_x;
+			wall_hit_y = candidate_y;
+			wall_index = candidate;
+		}
+	}
+
+	double entry_distance = std::numeric_limits<double>::infinity();
+	double entry_hit_x = 0.;
+	double entry_hit_y = 0.;
+	int entry_tri = -1;
+	for (const auto &edge : transparentBoundaryEdges())
+	{
+		double candidate_distance = 0.;
+		double candidate_x = 0.;
+		double candidate_y = 0.;
+		if (!raySegmentIntersection(X_[0], X_[1], direction_x, direction_y,
+									 edge.x0, edge.y0, edge.x1, edge.y1,
+									 candidate_distance, candidate_x, candidate_y) ||
+			candidate_distance >= entry_distance ||
+			!rayEntersTriangle(edge.tri, candidate_x, candidate_y, direction_x, direction_y))
+			continue;
+		entry_distance = candidate_distance;
+		entry_hit_x = candidate_x;
+		entry_hit_y = candidate_y;
+		entry_tri = edge.tri;
+	}
+
+	const bool hit_wall = wall_index >= 0 && wall_distance <= entry_distance + 1.e-10;
+	const double distance = hit_wall ? wall_distance : entry_distance;
+	if (!std::isfinite(distance) || (!hit_wall && entry_tri < 0))
+		return lose_particle();
+
+	const double travel_time = distance / speed_rz;
+	for (int component = 0; component < 3; ++component)
+		X_old_[component] = X_[component];
+	X_[0] = hit_wall ? wall_hit_x : entry_hit_x;
+	X_[1] = hit_wall ? wall_hit_y : entry_hit_y;
+	X_[2] += V_[2] * travel_time;
+	for (int component = 0; component < 3; ++component)
+		X_new_[component] = X_[component];
+	dt_trace_ = travel_time;
+
+	if (hit_wall)
+	{
+		++additional_cell_wall_events_;
+		additional_cell_wall_weight_ += diagnosticEventWeight();
+		NeutralFluxStatistics(2, 1);
+		IfColl_ = 0;
+		IfFlightOut_ = 7;
+		boundary_start_ = 0;
+		InterscePoint[0][0] = 0.;
+		InterscePoint[0][1] = X_[0];
+		InterscePoint[0][2] = X_[1];
+		InterscePoint[0][3] = wall_index;
+		InterscePoint[0][4] = 11;
+		InterscePoint[0][5] = -1;
+		Zone_ = 7;
+		return true;
+	}
+
+	Tri_Index_ = entry_tri;
+	if (!nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
+		return lose_particle();
+	X_new_[0] = X_[0];
+	X_new_[1] = X_[1];
+	in_additional_cell_ = false;
+	additional_cell_exit_tag_ = 0;
+	IfColl_ = 0;
+	IfFlightOut_ = 0;
+	boundary_start_ = 0;
+	synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
+	++additional_cell_reentry_events_;
+	additional_cell_reentry_weight_ += diagnosticEventWeight();
+	return true;
 }
 
 /**
@@ -916,6 +1280,11 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	bool record_source_launch = false;
 	bool thermal_surface_emission = false;
 	bool prescribed_reflection_speed = false;
+	if (k != 3 || InterscePoint[0][4] != 11)
+	{
+		in_additional_cell_ = false;
+		additional_cell_exit_tag_ = 0;
+	}
 	if (k != 3 && k != 6 && k != 7)
 		D2p_origin_channel_ = 0;
 	auto speedFromEnergy = [this](double energy_eV)
@@ -1060,19 +1429,57 @@ void Particle::Init(int k, int z, double scattering_cosine)
 			V_temp[1] = V_Charge_[1] + V_Charge_[7] * V_temp2[1] / Module; // * ery[XY_[0]][XY_[1]];
 			V_temp[2] = V_Charge_[2] + V_Charge_[7] * V_temp2[2] / Module;
 		}
-		double Vtheta, Vphi;
-		Vtheta = 2 * pi * Tools::Random();
-		Vphi = scattering_cosine >= -1.0 && scattering_cosine <= 1.0
-				   ? std::acos(scattering_cosine)
-				   : isotropicPolarAngle();
-		Modules = sqrt(Tools::sqr(V_temp[0] - V_ion[0]) + Tools::sqr(V_temp[1] - V_ion[1]) + Tools::sqr(V_temp[2] - V_ion[2]));
-		// z = 1 for particle B, z = 2 for particle A
-		V_1[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] - m_A * Modules * sin(Vphi) * cos(Vtheta));
-		V_1[1] = 1.0 / (m_A + m_B) * (m_A * V_ion[1] + m_B * V_temp[1] - m_A * Modules * sin(Vphi) * sin(Vtheta));
-		V_1[2] = 1.0 / (m_A + m_B) * (m_A * V_ion[2] + m_B * V_temp[2] - m_A * Modules * cos(Vphi));
-		V_2[0] = 1.0 / (m_A + m_B) * (m_A * V_ion[0] + m_B * V_temp[0] + m_B * Modules * sin(Vphi) * cos(Vtheta));
-		V_2[1] = 1.0 / (m_A + m_B) * (m_A * V_ion[1] + m_B * V_temp[1] + m_B * Modules * sin(Vphi) * sin(Vtheta));
-		V_2[2] = 1.0 / (m_A + m_B) * (m_A * V_ion[2] + m_B * V_temp[2] + m_B * Modules * cos(Vphi));
+		const double incoming_relative[3] = {
+			V_temp[0] - V_ion[0],
+			V_temp[1] - V_ion[1],
+			V_temp[2] - V_ion[2]};
+		Modules = sqrt(Tools::sqr(incoming_relative[0]) +
+					   Tools::sqr(incoming_relative[1]) +
+					   Tools::sqr(incoming_relative[2]));
+		double outgoing_relative[3] = {0., 0., 0.};
+		if (Modules > 1.e-20)
+		{
+			const double incoming_direction[3] = {
+				incoming_relative[0] / Modules,
+				incoming_relative[1] / Modules,
+				incoming_relative[2] / Modules};
+			const double cosine = scattering_cosine >= -1. && scattering_cosine <= 1.
+								  ? scattering_cosine
+								  : 2. * Tools::Random() - 1.;
+			const double sine = std::sqrt(std::max(0., 1. - cosine * cosine));
+			const double azimuth = 2. * pi * Tools::Random();
+			const double reference[3] = {
+				std::abs(incoming_direction[2]) < 0.9 ? 0. : 1.,
+				0.,
+				std::abs(incoming_direction[2]) < 0.9 ? 1. : 0.};
+			double perpendicular1[3] = {
+				incoming_direction[1] * reference[2] - incoming_direction[2] * reference[1],
+				incoming_direction[2] * reference[0] - incoming_direction[0] * reference[2],
+				incoming_direction[0] * reference[1] - incoming_direction[1] * reference[0]};
+			const double perpendicular_length = std::sqrt(
+				Tools::sqr(perpendicular1[0]) + Tools::sqr(perpendicular1[1]) +
+				Tools::sqr(perpendicular1[2]));
+			for (double &component : perpendicular1)
+				component /= perpendicular_length;
+			const double perpendicular2[3] = {
+				incoming_direction[1] * perpendicular1[2] - incoming_direction[2] * perpendicular1[1],
+				incoming_direction[2] * perpendicular1[0] - incoming_direction[0] * perpendicular1[2],
+				incoming_direction[0] * perpendicular1[1] - incoming_direction[1] * perpendicular1[0]};
+			for (int component = 0; component < 3; ++component)
+				outgoing_relative[component] = Modules *
+					(cosine * incoming_direction[component] +
+					 sine * (std::cos(azimuth) * perpendicular1[component] +
+							 std::sin(azimuth) * perpendicular2[component]));
+		}
+
+		// z = 1 for neutral B, z = 2 for ion A.
+		for (int component = 0; component < 3; ++component)
+		{
+			const double center_of_mass =
+				(m_A * V_ion[component] + m_B * V_temp[component]) / (m_A + m_B);
+			V_1[component] = center_of_mass + m_A / (m_A + m_B) * outgoing_relative[component];
+			V_2[component] = center_of_mass - m_B / (m_A + m_B) * outgoing_relative[component];
+		}
 		if (K_test3)
 		{
 			std::cout << "2V of neu: " << V_1[0] << ", " << V_1[1] << ", " << V_1[2] << " T:"
@@ -2288,8 +2695,9 @@ void Particle::track()
 				CalTn();
 				// std::cout << name_ << '\t' << Charge_ << "+\t" << ChargeTag_ << endl;
 			}
-			if (Tri_Index_ < 0 || static_cast<std::size_t>(Tri_Index_) >= Grid4.tris_.size() ||
-				!Grid4.Ifingrid(Tri_Index_, X_[0], X_[1]))
+			if (!in_additional_cell_ &&
+				(Tri_Index_ < 0 || static_cast<std::size_t>(Tri_Index_) >= Grid4.tris_.size() ||
+				 !Grid4.Ifingrid(Tri_Index_, X_[0], X_[1])))
 			{
 				int tri = findTriangleContainingPoint(X_[0], X_[1]);
 				if (tri < 0)
@@ -2327,7 +2735,8 @@ void Particle::track()
 					Zone_ = 6;
 				}
 			}
-			synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
+			if (!in_additional_cell_)
+				synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
 			if (K_flight == 1 || K_flight == 3)
 			{
 				IfColl_ = 0;
@@ -2337,7 +2746,6 @@ void Particle::track()
 				unsigned int neutral_tri_stall_steps = 0;
 				while (!IfColl_ && Zone_ < 7)
 				{
-					synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
 					if (++neutral_tri_steps > MaxNeutralTriSteps)
 					{
 						std::cerr << "MeshMode3 neutral exceeded max triangle steps: name=" << name_
@@ -2351,6 +2759,15 @@ void Particle::track()
 						Zone_ = 7;
 						return;
 					}
+					if (in_additional_cell_)
+					{
+						AdvanceAdditionalCell();
+						if (Zone_ >= 7 || Weight_ <= 0.)
+							return;
+						neutral_tri_stall_steps = 0;
+						continue;
+					}
+					synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
 					const double x_before_trace = X_[0];
 					const double y_before_trace = X_[1];
 					if (K_Tn == 1)
@@ -2385,7 +2802,7 @@ void Particle::track()
 					for (int i = 0; i < 3; i++)
 						X_new_[i] = X_[i] + V_[i] * dt_;
 					Caltrace_Tri();
-					if (!IfColl_ && Zone_ < 7)
+					if (!IfColl_ && Zone_ < 7 && !in_additional_cell_)
 					{
 						double step_rz = std::hypot(X_[0] - x_before_trace, X_[1] - y_before_trace);
 						if ((!std::isfinite(step_rz) || step_rz < 1.e-9) &&
@@ -2744,6 +3161,61 @@ double Particle::D2ElasticScatteringCosine(int isotope) const
 	return 1.0 - mean_one_minus_cosine;
 }
 
+double Particle::SampleD2ElasticScatteringCosine(int isotope)
+{
+	double *ion_velocity = nullptr;
+	if (isotope == 1)
+		ion_velocity = V_H_1_now.data();
+	else if (isotope == 2)
+		ion_velocity = V_D_1_now.data();
+	else if (isotope == 3)
+		ion_velocity = V_T_1_now.data();
+	else
+		return 0.;
+
+	if (D2ElasticModel == 3)
+	{
+		const double upper_bound = h2IonElasticSigmaVUpperBound();
+		bool accepted = false;
+		for (int attempt = 0; attempt < 512; ++attempt)
+		{
+			SampleIonVelocity(isotope);
+			const double relative_speed = std::sqrt(
+				Tools::sqr(V_[0] - ion_velocity[0]) +
+				Tools::sqr(V_[1] - ion_velocity[1]) +
+				Tools::sqr(V_[2] - ion_velocity[2]));
+			const double sigma_v = h2IonElasticSigmaV(relative_speed);
+			if (!(upper_bound > 0.) || sigma_v >= upper_bound ||
+				Tools::Random() * upper_bound <= sigma_v)
+			{
+				accepted = true;
+				break;
+			}
+		}
+		if (!accepted)
+			SampleIonVelocity(isotope);
+	}
+	else
+	{
+		SampleIonVelocity(isotope);
+	}
+
+	if (D2ElasticModel <= 1)
+		return D2ElasticScatteringCosine(isotope);
+	++elastic_h0_sample_events_;
+	elastic_h0_sample_weight_ += diagnosticEventWeight();
+	const double relative_speed = std::sqrt(
+		Tools::sqr(V_[0] - ion_velocity[0]) +
+		Tools::sqr(V_[1] - ion_velocity[1]) +
+		Tools::sqr(V_[2] - ion_velocity[2]));
+	const double scattering_cosine = h2IonElasticScatteringCosine(relative_speed);
+	if (std::isfinite(scattering_cosine))
+		return scattering_cosine;
+	++elastic_h0_fallback_events_;
+	elastic_h0_fallback_weight_ += diagnosticEventWeight();
+	return D2ElasticScatteringCosine(isotope);
+}
+
 void Particle::CalLambda()
 {
 	bool valid_plasma_cell =
@@ -2993,6 +3465,8 @@ void Particle::CalLambda()
 				Diss2_[0].Setcs_now(Diss2_[0].cs(XY_[0], XY_[1]));
 				CX_[0].Setcs_now(CX_[0].cs(XY_[0], XY_[1]));
 				Ela_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_H, Ti[XY_[0]][XY_[1]]));
+				if (D2ElasticModel == 0)
+					Ela_[0].Setcs_now(0.);
 				lambda_now_ = 1. / (Ion_[0].cs_now() + Diss1_[0].cs_now() + Diss2_[0].cs_now() + CX_[0].cs_now() + Ela_[0].cs_now());
 			}
 			else if (this == &D2)
@@ -3034,6 +3508,11 @@ void Particle::CalLambda()
 				{
 					CX_DT_[0].Setcs_now(0.0);
 					Ela_DT_[0].Setcs_now(0.0);
+				}
+				if (D2ElasticModel == 0)
+				{
+					Ela_[0].Setcs_now(0.);
+					Ela_DT_[0].Setcs_now(0.);
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(XY_[0], XY_[1]));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(XY_[0], XY_[1]));
@@ -3079,6 +3558,11 @@ void Particle::CalLambda()
 				{
 					CX_DT_[0].Setcs_now(0.0);
 					Ela_DT_[0].Setcs_now(0.0);
+				}
+				if (D2ElasticModel == 0)
+				{
+					Ela_[0].Setcs_now(0.);
+					Ela_DT_[0].Setcs_now(0.);
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(XY_[0], XY_[1]));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(XY_[0], XY_[1]));
@@ -3303,6 +3787,8 @@ void Particle::CalLambda()
 				Diss2_[0].Setcs_now(Diss2_[0].cs(Tri_Index_));
 				CX_[0].Setcs_now(CX_[0].cs(Tri_Index_));
 				Ela_[0].Setcs_now(n_H_1[XY_[0]][XY_[1]] * R0_3T_H3.cal(H3_test_particle_energy_H, Ti[XY_[0]][XY_[1]]));
+				if (D2ElasticModel == 0)
+					Ela_[0].Setcs_now(0.);
 				if (K_NNCs)
 				{
 					R_with_H_[0].Setcs_now(R_with_H_[0].cs(Tri_Index_));
@@ -3364,6 +3850,11 @@ void Particle::CalLambda()
 					CX_DT_[0].Setcs_now(0.0);
 					Ela_DT_[0].Setcs_now(0.0);
 				}
+				if (D2ElasticModel == 0)
+				{
+					Ela_[0].Setcs_now(0.);
+					Ela_DT_[0].Setcs_now(0.);
+				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(Tri_Index_));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(Tri_Index_));
 				DS_[1][2].Setcs_now(DS_[1][2].cs(Tri_Index_));
@@ -3415,6 +3906,11 @@ void Particle::CalLambda()
 				{
 					CX_DT_[0].Setcs_now(0.0);
 					Ela_DT_[0].Setcs_now(0.0);
+				}
+				if (D2ElasticModel == 0)
+				{
+					Ela_[0].Setcs_now(0.);
+					Ela_DT_[0].Setcs_now(0.);
 				}
 				DS_[1][0].Setcs_now(DS_[1][0].cs(Tri_Index_));
 				DS_[1][1].Setcs_now(DS_[1][1].cs(Tri_Index_));
@@ -4103,55 +4599,10 @@ void Particle::Caltrace_Tri()
 						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						NeutralFluxStatistics(5, 1);
 					}
-					else if (Grid4.lines_info(Tri_Index_, 0) == -1 || Grid4.lines_info(Tri_Index_, 0) == -2) // Wall
+					else if (Grid4.lines_info(Tri_Index_, 0) == -1 || Grid4.lines_info(Tri_Index_, 0) == -2)
 					{
-						IfFlightOut_ = 7;
-						boundary_start_ = 0;
-						NeutralFluxStatistics(2, 1);
-
-						int num_intersect = 0;
-						const double path_min_x_wall = std::min(X_old_[0], X_[0]);
-						const double path_max_x_wall = std::max(X_old_[0], X_[0]);
-						const double path_min_y_wall = std::min(X_old_[1], X_[1]);
-						const double path_max_y_wall = std::max(X_old_[1], X_[1]);
-						std::vector<int> wall_candidates;
-						Grid4.Wall_.CandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
-						for (int i : wall_candidates)
-						{
-							const auto &wall_bounds = Grid4.Wall_.Bounds(i);
-							if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
-								continue;
-							const auto &wall = Grid4.Wall_.Segment(i);
-							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], wall[0], wall[1], wall[2], wall[3], InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
-							{
-								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
-								InterscePoint[num_intersect++][3] = i;
-							}
-						}
-						if (num_intersect > 1)
-						{
-							for (int i = 1; i < num_intersect - 1; i++)
-							{
-								if (InterscePoint[i][0] < InterscePoint[0][0])
-									for (int j = 0; j < 4; j++)
-										InterscePoint[0][j] = InterscePoint[i][j];
-							}
-						}
-						if (num_intersect < 1)
-						{
-							++wall_nearest_fallback_events_;
-							wall_nearest_fallback_weight_ += diagnosticEventWeight();
-							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
-							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
-							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
-							// pause();
-						}
-
-						InterscePoint[0][1] = secx;
-						InterscePoint[0][2] = secy;
-						InterscePoint[0][4] = 11;
-						InterscePoint[0][5] = 0;
-						Zone_ = 7;
+						EnterAdditionalCell(Grid4.lines_info(Tri_Index_, 0));
+						return;
 					}
 					else if (Grid4.lines_info(Tri_Index_, 0) == 1) // Core Boundary
 					{
@@ -4287,53 +4738,10 @@ void Particle::Caltrace_Tri()
 						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						NeutralFluxStatistics(5, 1);
 					}
-					else if (Grid4.lines_info(Tri_Index_, 1) == -1 || Grid4.lines_info(Tri_Index_, 1) == -2) // Wall
+					else if (Grid4.lines_info(Tri_Index_, 1) == -1 || Grid4.lines_info(Tri_Index_, 1) == -2)
 					{
-						IfFlightOut_ = 7;
-						boundary_start_ = 0;
-						NeutralFluxStatistics(2, 1);
-
-						int num_intersect = 0;
-						const double path_min_x_wall = std::min(X_old_[0], X_[0]);
-						const double path_max_x_wall = std::max(X_old_[0], X_[0]);
-						const double path_min_y_wall = std::min(X_old_[1], X_[1]);
-						const double path_max_y_wall = std::max(X_old_[1], X_[1]);
-						std::vector<int> wall_candidates;
-						Grid4.Wall_.CandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
-						for (int i : wall_candidates)
-						{
-							const auto &wall_bounds = Grid4.Wall_.Bounds(i);
-							if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
-								continue;
-							const auto &wall = Grid4.Wall_.Segment(i);
-							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], wall[0], wall[1], wall[2], wall[3], InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
-							{
-								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
-								InterscePoint[num_intersect++][3] = i;
-							}
-						}
-						if (num_intersect > 1)
-						{
-							for (int i = 1; i < num_intersect - 1; i++)
-							{
-								if (InterscePoint[i][0] < InterscePoint[0][0])
-									for (int j = 0; j < 4; j++)
-										InterscePoint[0][j] = InterscePoint[i][j];
-							}
-						}
-						if (num_intersect < 1)
-						{
-							++wall_nearest_fallback_events_;
-							wall_nearest_fallback_weight_ += diagnosticEventWeight();
-							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
-							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
-							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
-						}
-						InterscePoint[0][1] = secx;
-						InterscePoint[0][2] = secy;
-						InterscePoint[0][4] = 11;
-						InterscePoint[0][5] = 1;
-						Zone_ = 7;
+						EnterAdditionalCell(Grid4.lines_info(Tri_Index_, 1));
+						return;
 					}
 					else if (Grid4.lines_info(Tri_Index_, 1) == 1) // Core Boundary
 					{
@@ -4471,53 +4879,10 @@ void Particle::Caltrace_Tri()
 						nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 						NeutralFluxStatistics(5, 1);
 					}
-					else if (Grid4.lines_info(Tri_Index_, 2) == -1 || Grid4.lines_info(Tri_Index_, 2) == -2) // Wall
+					else if (Grid4.lines_info(Tri_Index_, 2) == -1 || Grid4.lines_info(Tri_Index_, 2) == -2)
 					{
-						NeutralFluxStatistics(2, 1);
-						IfFlightOut_ = 7;
-						boundary_start_ = 0;
-
-						int num_intersect = 0;
-						const double path_min_x_wall = std::min(X_old_[0], X_[0]);
-						const double path_max_x_wall = std::max(X_old_[0], X_[0]);
-						const double path_min_y_wall = std::min(X_old_[1], X_[1]);
-						const double path_max_y_wall = std::max(X_old_[1], X_[1]);
-						std::vector<int> wall_candidates;
-						Grid4.Wall_.CandidateSegments(path_min_x_wall, path_max_x_wall, path_min_y_wall, path_max_y_wall, wall_candidates);
-						for (int i : wall_candidates)
-						{
-							const auto &wall_bounds = Grid4.Wall_.Bounds(i);
-							if (path_max_x_wall < wall_bounds[0] || wall_bounds[1] < path_min_x_wall || path_max_y_wall < wall_bounds[2] || wall_bounds[3] < path_min_y_wall)
-								continue;
-							const auto &wall = Grid4.Wall_.Segment(i);
-							if (Tools::getLineSegmentIntersection(X_old_[0], X_old_[1], X_[0], X_[1], wall[0], wall[1], wall[2], wall[3], InterscePoint[num_intersect][1], InterscePoint[num_intersect][2]))
-							{
-								InterscePoint[num_intersect][0] = Tools::sqr(InterscePoint[num_intersect][1] - X_old_[0]) + Tools::sqr(InterscePoint[num_intersect][2] - X_old_[1]);
-								InterscePoint[num_intersect++][3] = i;
-							}
-						}
-						if (num_intersect > 1)
-						{
-							for (int i = 1; i < num_intersect - 1; i++)
-							{
-								if (InterscePoint[i][0] < InterscePoint[0][0])
-									for (int j = 0; j < 4; j++)
-										InterscePoint[0][j] = InterscePoint[i][j];
-							}
-						}
-						if (num_intersect < 1)
-						{
-							++wall_nearest_fallback_events_;
-							wall_nearest_fallback_weight_ += diagnosticEventWeight();
-							InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(secx, secy);
-							// std::cout << "x_old: " << X_old_[0] << ", " << X_old_[1] << "\t";
-							// std::cout << "InterscePoint[0][3]: " << InterscePoint[0][3] << endl;
-						}
-						InterscePoint[0][1] = secx;
-						InterscePoint[0][2] = secy;
-						InterscePoint[0][4] = 11;
-						InterscePoint[0][5] = 2;
-						Zone_ = 7;
+						EnterAdditionalCell(Grid4.lines_info(Tri_Index_, 2));
+						return;
 					}
 					else if (Grid4.lines_info(Tri_Index_, 2) == 1) // Core Boundary
 					{
@@ -4641,17 +5006,7 @@ void Particle::Caltrace_Tri()
 				}
 				else if (line_info == -1 || line_info == -2)
 				{
-					IfFlightOut_ = 7;
-					NeutralFluxStatistics(2, 1);
-					++wall_nearest_fallback_events_;
-					wall_nearest_fallback_weight_ += diagnosticEventWeight();
-					InterscePoint[0][0] = 0;
-					InterscePoint[0][1] = fallback_x;
-					InterscePoint[0][2] = fallback_y;
-					InterscePoint[0][3] = Grid4.Wall_.findNearestWallFast(fallback_x, fallback_y);
-					InterscePoint[0][4] = 11;
-					InterscePoint[0][5] = fallback_edge;
-					Zone_ = 7;
+					EnterAdditionalCell(line_info);
 					return;
 				}
 				else if (line_info == 1)
@@ -4863,6 +5218,8 @@ Particle::State Particle::SaveState() const
 	state.Rand_flight = Rand_flight_;
 	state.D2p_current_flight_steps = D2p_current_flight_steps_;
 	state.D2p_current_created_by_cx = D2p_current_created_by_cx_;
+	state.inAdditionalCell = in_additional_cell_;
+	state.additionalCellExitTag = additional_cell_exit_tag_;
 	state.V = V_;
 	for (int i = 0; i < 3; ++i)
 	{
@@ -4913,6 +5270,8 @@ void Particle::RestoreState(const State &state)
 	Rand_flight_ = state.Rand_flight;
 	D2p_current_flight_steps_ = state.D2p_current_flight_steps;
 	D2p_current_created_by_cx_ = state.D2p_current_created_by_cx;
+	in_additional_cell_ = state.inAdditionalCell;
+	additional_cell_exit_tag_ = state.additionalCellExitTag;
 	V_ = state.V;
 	for (int i = 0; i < 3; ++i)
 	{
@@ -6651,12 +7010,9 @@ void Particle::Coll()
 				}
 				else if (rand_one < Sum_factor[5] / Sum_factor[Num_Collision_D2 - 1])
 				{
-					if (this == &H2)
-						SampleIonVelocity(1);
-					else if (this == &D2)
-						SampleIonVelocity(2);
-					else
-						SampleIonVelocity(3);
+					const int elastic_isotope = this == &H2 ? 1 : (this == &D2 ? 2 : 3);
+					const double elastic_scattering_cosine =
+						SampleD2ElasticScatteringCosine(elastic_isotope);
 					if (this == &D2)
 						V_temp1 = B[XY_[0]][XY_[1]][0] * V_D_1_now[0] + B[XY_[0]][XY_[1]][1] * V_D_1_now[1] + B[XY_[0]][XY_[1]][2] * V_D_1_now[2];
 					else if (this == &T2)
@@ -6692,7 +7048,7 @@ void Particle::Coll()
 						}
 						setfate(0, 9, Index_);
 						// std::cout << name_ + " before Ela V: " << V_[0] << ", " << V_[1] << ", " << V_[2] << " T: " << Tn_ << endl;
-						Init(2, 1, D2ElasticScatteringCosine(this == &D2 ? 2 : (this == &T2 ? 3 : 1)));
+						Init(2, 1, elastic_scattering_cosine);
 						if (K_mu == 2)
 						{
 							V_temp2 = B[XY_[0]][XY_[1]][0] * V_2[0] + B[XY_[0]][XY_[1]][1] * V_2[1] + B[XY_[0]][XY_[1]][2] * V_2[2];
@@ -6746,7 +7102,7 @@ void Particle::Coll()
 						Ela_[0].E_Add(Tri_Index_, -(1.5 * Ti[XY_[0]][XY_[1]] * qe + 0.5 * Dmass * (Tools::sqr(V_D_1_now[0]) + Tools::sqr(V_D_1_now[1]) + Tools::sqr(V_D_1_now[2]))) * collisionStatWeight());
 
 						setfate(0, 9, Index_);
-						Init(2, 1, D2ElasticScatteringCosine(this == &D2 ? 2 : (this == &T2 ? 3 : 1)));
+						Init(2, 1, elastic_scattering_cosine);
 
 						Ela_[0].Mu_Add(XY_, Dmass * (V_2[0] * B[XY_[0]][XY_[1]][0] + V_2[1] * B[XY_[0]][XY_[1]][1] + V_2[2] * B[XY_[0]][XY_[1]][2]) * collisionStatWeight());
 						Ela_[0].E_Add(XY_, +(0.5 * Dmass * (V_2[0] * V_2[0] + V_2[1] * V_2[1] + V_2[2] * V_2[2]) * collisionStatWeight()));
@@ -9069,6 +9425,20 @@ void Particle::Clear(int n)
 		caltrace_invalid_loss_weight_ = 0.;
 		wall_nearest_fallback_events_ = 0;
 		wall_nearest_fallback_weight_ = 0.;
+		in_additional_cell_ = false;
+		additional_cell_exit_tag_ = 0;
+		additional_cell_exit_events_ = 0;
+		additional_cell_exit_weight_ = 0.;
+		additional_cell_reentry_events_ = 0;
+		additional_cell_reentry_weight_ = 0.;
+		additional_cell_wall_events_ = 0;
+		additional_cell_wall_weight_ = 0.;
+		additional_cell_no_hit_loss_events_ = 0;
+		additional_cell_no_hit_loss_weight_ = 0.;
+		elastic_h0_sample_events_ = 0;
+		elastic_h0_sample_weight_ = 0.;
+		elastic_h0_fallback_events_ = 0;
+		elastic_h0_fallback_weight_ = 0.;
 		importance_region_ = -1;
 		source_stratum_ = SourceStratum::Unknown;
 		D2p_origin_channel_ = 0;
@@ -10008,6 +10378,12 @@ void Particle::Dump_Flux()
 	out << name_ << ",caltrace_lost," << caltrace_lost_loss_events_ << "," << caltrace_lost_loss_weight_ << "\n";
 	out << name_ << ",caltrace_invalid," << caltrace_invalid_loss_events_ << "," << caltrace_invalid_loss_weight_ << "\n";
 	out << name_ << ",wall_nearest_fallback," << wall_nearest_fallback_events_ << "," << wall_nearest_fallback_weight_ << "\n";
+	out << name_ << ",additional_cell_exit," << additional_cell_exit_events_ << "," << additional_cell_exit_weight_ << "\n";
+	out << name_ << ",additional_cell_reentry," << additional_cell_reentry_events_ << "," << additional_cell_reentry_weight_ << "\n";
+	out << name_ << ",additional_cell_wall," << additional_cell_wall_events_ << "," << additional_cell_wall_weight_ << "\n";
+	out << name_ << ",additional_cell_no_hit," << additional_cell_no_hit_loss_events_ << "," << additional_cell_no_hit_loss_weight_ << "\n";
+	out << name_ << ",elastic_h0_sample," << elastic_h0_sample_events_ << "," << elastic_h0_sample_weight_ << "\n";
+	out << name_ << ",elastic_h0_fallback," << elastic_h0_fallback_events_ << "," << elastic_h0_fallback_weight_ << "\n";
 	out.close();
 	if (K_H5Output)
 		FT_.write_H5(Outputpath + name_ + "_FluxZone.h5");

@@ -33,6 +33,7 @@ private:
 public:
     EIRENE(int Fit, int Num, const string &database = "amjuel");
     double cal(double n, double T, double *H2dataforH8 = NULL);
+    double potential(double radius_bohr) const;
     int fit() const;
     double data(int i);
     void out();

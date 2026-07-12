@@ -434,6 +434,20 @@ private:
 	double caltrace_invalid_loss_weight_{0.};
 	unsigned long long wall_nearest_fallback_events_{0};
 	double wall_nearest_fallback_weight_{0.};
+	bool in_additional_cell_{false};
+	int additional_cell_exit_tag_{0};
+	unsigned long long additional_cell_exit_events_{0};
+	double additional_cell_exit_weight_{0.};
+	unsigned long long additional_cell_reentry_events_{0};
+	double additional_cell_reentry_weight_{0.};
+	unsigned long long additional_cell_wall_events_{0};
+	double additional_cell_wall_weight_{0.};
+	unsigned long long additional_cell_no_hit_loss_events_{0};
+	double additional_cell_no_hit_loss_weight_{0.};
+	unsigned long long elastic_h0_sample_events_{0};
+	double elastic_h0_sample_weight_{0.};
+	unsigned long long elastic_h0_fallback_events_{0};
+	double elastic_h0_fallback_weight_{0.};
 	std::size_t gridScalarIndex(int i, int j, int charge) const;
 	std::size_t gridVectorIndex(int i, int j, int component, int charge) const;
 	std::size_t triScalarIndex(int tri, int charge) const;
@@ -450,6 +464,9 @@ private:
 	void endDeferredCollisionStats();
 	void SampleIonVelocity(int isotope);
 	double D2ElasticScatteringCosine(int isotope) const;
+	double SampleD2ElasticScatteringCosine(int isotope);
+	void EnterAdditionalCell(int boundary_tag);
+	bool AdvanceAdditionalCell();
 
 	/// @brief Statistical pointer views
 	double *n_[N_POLOIDAL_GRID][N_RADIAL_GRID];
@@ -603,6 +620,8 @@ public:
 		double Rand_flight;
 		unsigned long long D2p_current_flight_steps;
 		bool D2p_current_created_by_cx;
+		bool inAdditionalCell;
+		int additionalCellExitTag;
 		std::vector<double> V;
 		double intersection[10][6];
 	};

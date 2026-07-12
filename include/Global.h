@@ -72,7 +72,7 @@ extern int N_poloidal, N_radial;
 #define gridIndex2D(i, j) ((i) * N_radial + (j))
 extern bool K_log, StepLog, K_H2_elastic, K_EcrossBDrift, backGridBoundry, K_H, K_D, K_T;
 extern int K_CX_impurity, K_C, K_ReflectDirection, K_Reflect, K_DWTrimReflection, K_Prob, K_back, K_dn, K_CX_DT, K_DT, K_flight, K_GRID, K_Pump, K_test1, K_test2, K_test3, K_Tn, K_Vi, K_Wallelement;
-extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, K_database_Pra, K_mu, K_PartoPar;
+extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell, K_Ar, K_abnormal_transport, K_D2Flight, D2ElasticModel, K_database_Pra, K_mu, K_PartoPar;
 extern std::array<int, 5> K_Puff;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
 extern int K_T_array, K_NNCs, K_Roulette, K_Splitting, K_DWTargetActualAngle, K_DTargetSourceMode;
@@ -304,6 +304,8 @@ extern EIRENE R2_2_10_H4; //$ e + H_2 = 2e + H + H^+  $
 extern EIRENE R3_2_3_H2;  //$ p + H_2 = H + H_2^+  $
 extern EIRENE R3_2_3_H3;  //$ p + H_2(v) = H + H_2^+  $
 extern EIRENE R3_1_8_H3;  //$ p + H(1s) = H(1s) + p   $
+extern EIRENE R0_3T_H0;   //$ p + H_2 = p + H_2 ,\ $ interaction potential
+extern EIRENE R0_3T_H1;   //$ p + H_2 = p + H_2 ,\ $ total cross section
 extern EIRENE R0_3T_H3;   //$ p + H_2 = p + H_2 ,\ $  elastic
 extern EIRENE R0_3D_H3;   //$ p + H_2 = p + H_2 ,\ $  elastic
 extern EIRENE R2_2_12_H4; //$ e + H_2^+ = e + H + H^+  $
