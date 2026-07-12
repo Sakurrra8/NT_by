@@ -57,6 +57,12 @@ compare-eirene-323: $(BIN_DIR)/compare_eirene_323
 $(BIN_DIR)/compare_eirene_323: tools/compare_eirene_323.cpp src/EIRENE.cpp include/EIRENE.h | $(BIN_DIR)
 	$(CCOMPILE) -I ./include tools/compare_eirene_323.cpp src/EIRENE.cpp -o $@
 
+check-target-incident: $(BIN_DIR)/check_target_incident
+	./$(BIN_DIR)/check_target_incident
+
+$(BIN_DIR)/check_target_incident: tools/check_target_incident.cpp src/utils.cpp include/utils.h | $(BIN_DIR)
+	$(CCOMPILE) -I ./include tools/check_target_incident.cpp src/utils.cpp -o $@
+
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 	
@@ -67,6 +73,6 @@ $(BIN_DIR):
 	$(FCOMPILE) -c $(INCS) $< -o $@
 
 clean:
-	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/compare_eirene_323
+	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/compare_eirene_323 $(BIN_DIR)/check_target_incident
 clean-data:
 	rm -f *~ *.txt *.dat *.nc errfile outfile

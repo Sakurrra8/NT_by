@@ -36,7 +36,7 @@ else
 CPPFLAGS += -O3 -DNDEBUG
 endif
 
-.PHONY: all clean dirs hdf5-links run-check export-eirene-reactions check-eirene-elastic
+.PHONY: all clean dirs hdf5-links run-check export-eirene-reactions check-eirene-elastic check-target-incident
 
 all: $(BIN_DIR)/$(PRGM)
 
@@ -60,8 +60,14 @@ export-eirene-reactions: $(BIN_DIR)/export_eirene_reactions
 check-eirene-elastic: $(BIN_DIR)/check_eirene_elastic
 	./$(BIN_DIR)/check_eirene_elastic
 
+check-target-incident: $(BIN_DIR)/check_target_incident
+	./$(BIN_DIR)/check_target_incident
+
 $(BIN_DIR)/check_eirene_elastic: tools/check_eirene_elastic.cpp src/EIRENE.cpp include/EIRENE.h | dirs
 	$(CXX) $(CXXSTD) -O2 -I$(INC_DIR) tools/check_eirene_elastic.cpp src/EIRENE.cpp -o $@
+
+$(BIN_DIR)/check_target_incident: tools/check_target_incident.cpp src/utils.cpp include/utils.h | dirs
+	$(CXX) $(CXXSTD) -O2 -I$(INC_DIR) tools/check_target_incident.cpp src/utils.cpp -o $@
 
 $(BIN_DIR)/export_eirene_reactions: tools/export_eirene_reactions.cpp src/EIRENE.cpp include/EIRENE.h | dirs
 	$(CXX) $(CXXSTD) -O2 -I$(INC_DIR) tools/export_eirene_reactions.cpp src/EIRENE.cpp -o $@
@@ -73,4 +79,4 @@ run-check: $(BIN_DIR)/$(PRGM)
 	./$(BIN_DIR)/$(PRGM) $(SETTING)
 
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/check_eirene_elastic
+	rm -rf $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/check_eirene_elastic $(BIN_DIR)/check_target_incident

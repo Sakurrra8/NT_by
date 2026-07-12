@@ -17,6 +17,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include <utility>
 #include "utils.h"
 
 using namespace std;
@@ -350,6 +351,7 @@ namespace eirene
         int targetIndex(int i, int j); // indx of target
         double Sin_Target(int i);
         double Cos_Target(int i);
+        std::pair<double, double> InwardTargetTangent(int i) const;
         double Mid_Target(int i, int j);
         double Vol_Target(int i);
         int num_Nodes();

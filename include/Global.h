@@ -76,12 +76,14 @@ extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell
 extern std::array<int, 5> K_Puff;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
 extern int K_T_array, K_NNCs, K_Roulette, K_Splitting, K_DWTargetActualAngle, K_DTargetSourceMode;
+extern int DTargetIncidentModel, DTargetIncidentSamples;
 extern int K_H5Output, MaxSplit, MaxSplitDepth;
 extern int ImportanceMainPoloidalBegin, ImportanceMainPoloidalEnd;
 extern double dt, Te_core, ne_core, NumPar_now, Tn_core, T_N, T_wall, DWTrimERMIN, Num_D2_pump, Num_T2_pump, coefficient_D, coefficient_T;
 extern double Num_CD4_pump, t_max, Ratio_T, Ratio_D_Coll, Ratio_T_Coll, Ratio_DT_Coll, coeff_puff;
 extern double EireneRateArgumentScale, EireneElectronTemperatureScale, EireneHeavyEnergyScale;
 extern double W_RouletteMin, W_RouletteTarget, W_SplitMax, W_SplitTarget, W_SplitMin;
+extern double DTargetSheathFactor;
 extern std::array<double, 3> RegionImportance;
 extern unsigned long long RouletteTrials, RouletteSurvived, RouletteKilled;
 extern unsigned long long SplitEvents, SplitChildrenCreated, SplitSuppressedByMinWeight;
@@ -154,6 +156,8 @@ extern double CoreBoundry[55][2], GridBoundry[100][2], PFRBoundry[55][2]; //, co
 extern std::vector<double> NumPar_H_recyc, Tn_H_recyc, NumPar_H2_recyc;
 extern std::vector<double> NumPar_D_recyc, Tn_D_recyc, NumPar_D2_recyc;
 extern std::vector<double> DTargetIncidentAngle;
+extern std::vector<double> DTargetFastProbability, DTargetMeanIncidentEnergy;
+extern std::vector<double> DTargetMeanReflectedEnergy;
 extern std::vector<double> NumPar_T_recyc, Tn_T_recyc, NumPar_T2_recyc;
 extern double Ei_Dion[80], InterscePoint[10][6], coeff_recyc_target, coeff_ercyc_wall;
 // extern vector<double> S_target, S_wall;

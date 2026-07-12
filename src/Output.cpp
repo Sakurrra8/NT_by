@@ -1,5 +1,6 @@
 #include "Global.h"
 #include "Particle.h"
+#include <algorithm>
 #include <map>
 #include <set>
 
@@ -60,6 +61,23 @@ void Output()
         for (int i = 0; i < 76; i++)
         {
             Out_temp << NumPar_D_recyc[i] << " " << Tn_D_recyc[i] << " " << NumPar_D2_recyc[i] << endl;
+        }
+        Out_temp.close();
+
+        Out_temp.open(Outputpath + "target_incident_D.csv");
+        Out_temp << "target,mean_incident_energy_eV,mean_incident_angle_deg,"
+                    "mean_fast_probability,mean_reflected_energy_eV,D_source_s-1,D2_source_s-1\n";
+        const int target_count = std::min(
+            2 * N_radial, static_cast<int>(DTargetIncidentAngle.size()));
+        for (int i = 0; i < target_count; ++i)
+        {
+            Out_temp << i << ','
+                     << DTargetMeanIncidentEnergy[i] << ','
+                     << DTargetIncidentAngle[i] << ','
+                     << DTargetFastProbability[i] << ','
+                     << DTargetMeanReflectedEnergy[i] << ','
+                     << NumPar_D_recyc[i] << ','
+                     << NumPar_D2_recyc[i] << '\n';
         }
         Out_temp.close();
     }

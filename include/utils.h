@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <algorithm>
+#include <array>
 #include <random>
 #include <stdexcept>
 #include <vector>
@@ -30,6 +31,13 @@ public:
 
 namespace Tools
 {
+    struct IncidentFluxSample
+    {
+        std::array<double, 3> velocity{};
+        double energy_eV = 0.0;
+        double angle_deg = 0.0;
+    };
+
     inline double sqr(double x) { return x * x; }
     int orientation(Point &A, Point &B, Point &C);
 
@@ -40,6 +48,12 @@ namespace Tools
     double Random();
     double Maxwell(double E, double Mass);
     double MaxwellianFluxSpeed(double temperature_eV, double mass);
+    IncidentFluxSample SampleIncidentFlux(
+        double ion_temperature_eV, double electron_temperature_eV,
+        double mass, const std::array<double, 3> &drift_velocity,
+        double surface_tangent_cos, double surface_tangent_sin,
+        double sheath_factor, double xi_normal,
+        double xi_gaussian_radius, double xi_gaussian_angle);
     double intersect(double *A, double *B, int i);
     int PointandLine(double line_x1, double line_y1, double line_x2, double line_y2, double point_x, double point_y);
     double randomSign();
