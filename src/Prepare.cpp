@@ -15,139 +15,139 @@ void CX_DT_Fix();
 
 namespace
 {
-double NormalProjectionFromAngle(double angle_degree)
-{
-	const double kPi = 3.14159265358979323846;
-	return std::abs(std::cos(angle_degree * kPi / 180.0));
-}
-
-void ApplyDTargetIonFluxProfile(const std::vector<double> &angle_B_with_target)
-{
-	double inner_total = 0.0;
-	double outer_total = 0.0;
-	const int outer_poloidal = poloidalLastIndex();
-
-	for (int i = 0; i < N_radial; ++i)
+	double NormalProjectionFromAngle(double angle_degree)
 	{
-		const double inner_density = std::max(0.0, n_D_1[1][i]);
-		const double outer_density = std::max(0.0, n_D_1[outer_poloidal][i]);
-		const double inner_source =
-			inner_density * std::abs(ua_D_1[1][i]) *
-			NormalProjectionFromAngle(angle_B_with_target[i]) * Grid4.Vol_Target(i);
-		const double outer_source =
-			outer_density * std::abs(ua_D_1[outer_poloidal][i]) *
-			NormalProjectionFromAngle(angle_B_with_target[i + N_radial]) * Grid4.Vol_Target(i + N_radial);
-		NumPar_wall_D[i] = inner_source;
-		NumPar_wall_D[i + N_radial] = outer_source;
-		inner_total += inner_source;
-		outer_total += outer_source;
+		const double kPi = 3.14159265358979323846;
+		return std::abs(std::cos(angle_degree * kPi / 180.0));
 	}
-	if (inner_total <= 0.0 || outer_total <= 0.0)
-		throw std::runtime_error("D target ion-flux profile is zero; check nDion, ua_Dion and target geometry");
-	std::cout << "D target source mode: SOLPS projected ion flux profile"
-			  << " (IT D+ flux=" << inner_total
-			  << ", OT D+ flux=" << outer_total << ")" << std::endl;
-}
 
-void BindEireneCollisionRates()
-{
-	if (K_database == 2)
+	void ApplyDTargetIonFluxProfile(const std::vector<double> &angle_B_with_target)
 	{
+		double inner_total = 0.0;
+		double outer_total = 0.0;
+		const int outer_poloidal = poloidalLastIndex();
+
+		for (int i = 0; i < N_radial; ++i)
+		{
+			const double inner_density = std::max(0.0, n_D_1[1][i]);
+			const double outer_density = std::max(0.0, n_D_1[outer_poloidal][i]);
+			const double inner_source =
+				inner_density * std::abs(ua_D_1[1][i]) *
+				NormalProjectionFromAngle(angle_B_with_target[i]) * Grid4.Vol_Target(i);
+			const double outer_source =
+				outer_density * std::abs(ua_D_1[outer_poloidal][i]) *
+				NormalProjectionFromAngle(angle_B_with_target[i + N_radial]) * Grid4.Vol_Target(i + N_radial);
+			NumPar_wall_D[i] = inner_source;
+			NumPar_wall_D[i + N_radial] = outer_source;
+			inner_total += inner_source;
+			outer_total += outer_source;
+		}
+		if (inner_total <= 0.0 || outer_total <= 0.0)
+			throw std::runtime_error("D target ion-flux profile is zero; check nDion, ua_Dion and target geometry");
+		std::cout << "D target source mode: SOLPS projected ion flux profile"
+				  << " (IT D+ flux=" << inner_total
+				  << ", OT D+ flux=" << outer_total << ")" << std::endl;
+	}
+
+	void BindEireneCollisionRates()
+	{
+		if (K_database == 2)
+		{
+			if (K_H)
+				H.Ion_[0].EIRENEInput(&R2_1_5_H4, EireneDensitySource::Electron);
+			if (K_D)
+			{
+				D.Ion_[0].EIRENEInput(&R2_1_5_H4, EireneDensitySource::Electron);
+				D.Rec_[1].EIRENEInput(&R2_1_8_H4, EireneDensitySource::Electron);
+			}
+			if (K_T)
+			{
+				T.Ion_[0].EIRENEInput(&R2_1_5_H4, EireneDensitySource::Electron);
+				T.Rec_[1].EIRENEInput(&R2_1_8_H4, EireneDensitySource::Electron);
+			}
+		}
+
+		if (K_MarColl == 1)
+		{
+			if (K_H)
+			{
+				H2.MAR_[0].EIRENEInput(nullptr);
+				H2.DS_[1][2].EIRENEInput(&R2_2_14_H4, EireneDensitySource::Electron);
+			}
+			if (K_D)
+			{
+				D2.MAR_[0].EIRENEInput(nullptr);
+				D2.DS_[1][2].EIRENEInput(&R2_2_14_H4, EireneDensitySource::Electron);
+			}
+			if (K_T)
+			{
+				T2.MAR_[0].EIRENEInput(nullptr);
+				T2.DS_[1][2].EIRENEInput(&R2_2_14_H4, EireneDensitySource::Electron);
+			}
+		}
+		else if (K_MarColl == 2)
+		{
+			if (K_H)
+			{
+				H2.MAR_[0].EIRENEInput(&R3_2_3r_H4, EireneDensitySource::Electron);
+				H2.DS_[1][2].EIRENEInput(nullptr);
+			}
+			if (K_D)
+			{
+				D2.MAR_[0].EIRENEInput(&R3_2_3r_H4, EireneDensitySource::Electron);
+				D2.DS_[1][2].EIRENEInput(nullptr);
+			}
+			if (K_T)
+			{
+				T2.MAR_[0].EIRENEInput(&R3_2_3r_H4, EireneDensitySource::Electron);
+				T2.DS_[1][2].EIRENEInput(nullptr);
+			}
+		}
+
 		if (K_H)
-			H.Ion_[0].EIRENEInput(&R2_1_5_H4, EireneDensitySource::Electron);
+		{
+			H2.CX_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::HIon);
+			H2.Ion_[0].EIRENEInput(&R2_2_9_H4, EireneDensitySource::Electron);
+			H2.Diss1_[0].EIRENEInput(&R2_2_5g_H4, EireneDensitySource::Electron);
+			H2.Diss2_[0].EIRENEInput(&R2_2_10_H4, EireneDensitySource::Electron);
+			H2.DS_[1][0].EIRENEInput(&R2_2_11_H4, EireneDensitySource::Electron);
+			H2.DS_[1][1].EIRENEInput(&R2_2_12_H4, EireneDensitySource::Electron);
+			H.R_with_H_[0].EIRENEInput(&R_H_H, EireneDensitySource::HNeutralTri, EireneArgumentMode::SameDensityTemperature);
+			H.R_with_H2_[0].EIRENEInput(&R_H_H2, EireneDensitySource::H2NeutralTri, EireneArgumentMode::SameDensityTemperature);
+			H2.R_with_H_[0].EIRENEInput(&R_H2_H, EireneDensitySource::HNeutralTri, EireneArgumentMode::SameDensityTemperature);
+			H2.R_with_H2_[0].EIRENEInput(&R_H2_H2, EireneDensitySource::H2NeutralTri, EireneArgumentMode::SameDensityTemperature);
+		}
 		if (K_D)
 		{
-			D.Ion_[0].EIRENEInput(&R2_1_5_H4, EireneDensitySource::Electron);
-			D.Rec_[1].EIRENEInput(&R2_1_8_H4, EireneDensitySource::Electron);
+			D2.CX_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::DIon);
+			if (K_DT && K_CX_DT)
+				D2.CX_DT_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::TIon);
+			D2.Ion_[0].EIRENEInput(&R2_2_9_H4, EireneDensitySource::Electron);
+			D2.Diss1_[0].EIRENEInput(&R2_2_5g_H4, EireneDensitySource::Electron);
+			D2.Diss2_[0].EIRENEInput(&R2_2_10_H4, EireneDensitySource::Electron);
+			D2.DS_[1][0].EIRENEInput(&R2_2_11_H4, EireneDensitySource::Electron);
+			D2.DS_[1][1].EIRENEInput(&R2_2_12_H4, EireneDensitySource::Electron);
+			D.R_with_H_[0].EIRENEInput(&R_H_H, EireneDensitySource::DNeutralTri, EireneArgumentMode::SameDensityTemperature);
+			D.R_with_H2_[0].EIRENEInput(&R_H_H2, EireneDensitySource::D2NeutralTri, EireneArgumentMode::SameDensityTemperature);
+			D2.R_with_H_[0].EIRENEInput(&R_H2_H, EireneDensitySource::DNeutralTri, EireneArgumentMode::SameDensityTemperature);
+			D2.R_with_H2_[0].EIRENEInput(&R_H2_H2, EireneDensitySource::D2NeutralTri, EireneArgumentMode::SameDensityTemperature);
 		}
 		if (K_T)
 		{
-			T.Ion_[0].EIRENEInput(&R2_1_5_H4, EireneDensitySource::Electron);
-			T.Rec_[1].EIRENEInput(&R2_1_8_H4, EireneDensitySource::Electron);
+			T2.CX_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::TIon);
+			if (K_DT && K_CX_DT)
+				T2.CX_DT_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::DIon);
+			T2.Ion_[0].EIRENEInput(&R2_2_9_H4, EireneDensitySource::Electron);
+			T2.Diss1_[0].EIRENEInput(&R2_2_5g_H4, EireneDensitySource::Electron);
+			T2.Diss2_[0].EIRENEInput(&R2_2_10_H4, EireneDensitySource::Electron);
+			T2.DS_[1][0].EIRENEInput(&R2_2_11_H4, EireneDensitySource::Electron);
+			T2.DS_[1][1].EIRENEInput(&R2_2_12_H4, EireneDensitySource::Electron);
+			T.R_with_H_[0].EIRENEInput(&R_H_H, EireneDensitySource::TNeutralTri, EireneArgumentMode::SameDensityTemperature);
+			T.R_with_H2_[0].EIRENEInput(&R_H_H2, EireneDensitySource::T2NeutralTri, EireneArgumentMode::SameDensityTemperature);
+			T2.R_with_H_[0].EIRENEInput(&R_H2_H, EireneDensitySource::TNeutralTri, EireneArgumentMode::SameDensityTemperature);
+			T2.R_with_H2_[0].EIRENEInput(&R_H2_H2, EireneDensitySource::T2NeutralTri, EireneArgumentMode::SameDensityTemperature);
 		}
 	}
-
-	if (K_MarColl == 1)
-	{
-		if (K_H)
-		{
-			H2.MAR_[0].EIRENEInput(nullptr);
-			H2.DS_[1][2].EIRENEInput(&R2_2_14_H4, EireneDensitySource::Electron);
-		}
-		if (K_D)
-		{
-			D2.MAR_[0].EIRENEInput(nullptr);
-			D2.DS_[1][2].EIRENEInput(&R2_2_14_H4, EireneDensitySource::Electron);
-		}
-		if (K_T)
-		{
-			T2.MAR_[0].EIRENEInput(nullptr);
-			T2.DS_[1][2].EIRENEInput(&R2_2_14_H4, EireneDensitySource::Electron);
-		}
-	}
-	else if (K_MarColl == 2)
-	{
-		if (K_H)
-		{
-			H2.MAR_[0].EIRENEInput(&R3_2_3r_H4, EireneDensitySource::Electron);
-			H2.DS_[1][2].EIRENEInput(nullptr);
-		}
-		if (K_D)
-		{
-			D2.MAR_[0].EIRENEInput(&R3_2_3r_H4, EireneDensitySource::Electron);
-			D2.DS_[1][2].EIRENEInput(nullptr);
-		}
-		if (K_T)
-		{
-			T2.MAR_[0].EIRENEInput(&R3_2_3r_H4, EireneDensitySource::Electron);
-			T2.DS_[1][2].EIRENEInput(nullptr);
-		}
-	}
-
-	if (K_H)
-	{
-		H2.CX_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::HIon);
-		H2.Ion_[0].EIRENEInput(&R2_2_9_H4, EireneDensitySource::Electron);
-		H2.Diss1_[0].EIRENEInput(&R2_2_5g_H4, EireneDensitySource::Electron);
-		H2.Diss2_[0].EIRENEInput(&R2_2_10_H4, EireneDensitySource::Electron);
-		H2.DS_[1][0].EIRENEInput(&R2_2_11_H4, EireneDensitySource::Electron);
-		H2.DS_[1][1].EIRENEInput(&R2_2_12_H4, EireneDensitySource::Electron);
-		H.R_with_H_[0].EIRENEInput(&R_H_H, EireneDensitySource::HNeutralTri, EireneArgumentMode::SameDensityTemperature);
-		H.R_with_H2_[0].EIRENEInput(&R_H_H2, EireneDensitySource::H2NeutralTri, EireneArgumentMode::SameDensityTemperature);
-		H2.R_with_H_[0].EIRENEInput(&R_H2_H, EireneDensitySource::HNeutralTri, EireneArgumentMode::SameDensityTemperature);
-		H2.R_with_H2_[0].EIRENEInput(&R_H2_H2, EireneDensitySource::H2NeutralTri, EireneArgumentMode::SameDensityTemperature);
-	}
-	if (K_D)
-	{
-		D2.CX_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::DIon);
-		if (K_DT && K_CX_DT)
-			D2.CX_DT_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::TIon);
-		D2.Ion_[0].EIRENEInput(&R2_2_9_H4, EireneDensitySource::Electron);
-		D2.Diss1_[0].EIRENEInput(&R2_2_5g_H4, EireneDensitySource::Electron);
-		D2.Diss2_[0].EIRENEInput(&R2_2_10_H4, EireneDensitySource::Electron);
-		D2.DS_[1][0].EIRENEInput(&R2_2_11_H4, EireneDensitySource::Electron);
-		D2.DS_[1][1].EIRENEInput(&R2_2_12_H4, EireneDensitySource::Electron);
-		D.R_with_H_[0].EIRENEInput(&R_H_H, EireneDensitySource::DNeutralTri, EireneArgumentMode::SameDensityTemperature);
-		D.R_with_H2_[0].EIRENEInput(&R_H_H2, EireneDensitySource::D2NeutralTri, EireneArgumentMode::SameDensityTemperature);
-		D2.R_with_H_[0].EIRENEInput(&R_H2_H, EireneDensitySource::DNeutralTri, EireneArgumentMode::SameDensityTemperature);
-		D2.R_with_H2_[0].EIRENEInput(&R_H2_H2, EireneDensitySource::D2NeutralTri, EireneArgumentMode::SameDensityTemperature);
-	}
-	if (K_T)
-	{
-		T2.CX_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::TIon);
-		if (K_DT && K_CX_DT)
-			T2.CX_DT_[0].EIRENEInput(&R3_2_3_H2, EireneDensitySource::DIon);
-		T2.Ion_[0].EIRENEInput(&R2_2_9_H4, EireneDensitySource::Electron);
-		T2.Diss1_[0].EIRENEInput(&R2_2_5g_H4, EireneDensitySource::Electron);
-		T2.Diss2_[0].EIRENEInput(&R2_2_10_H4, EireneDensitySource::Electron);
-		T2.DS_[1][0].EIRENEInput(&R2_2_11_H4, EireneDensitySource::Electron);
-		T2.DS_[1][1].EIRENEInput(&R2_2_12_H4, EireneDensitySource::Electron);
-		T.R_with_H_[0].EIRENEInput(&R_H_H, EireneDensitySource::TNeutralTri, EireneArgumentMode::SameDensityTemperature);
-		T.R_with_H2_[0].EIRENEInput(&R_H_H2, EireneDensitySource::T2NeutralTri, EireneArgumentMode::SameDensityTemperature);
-		T2.R_with_H_[0].EIRENEInput(&R_H2_H, EireneDensitySource::TNeutralTri, EireneArgumentMode::SameDensityTemperature);
-		T2.R_with_H2_[0].EIRENEInput(&R_H2_H2, EireneDensitySource::T2NeutralTri, EireneArgumentMode::SameDensityTemperature);
-	}
-}
 }
 
 void Prepare()
@@ -812,7 +812,7 @@ void Prepare()
 	{
 		D.CalProb();
 		D2.CalProb();
-		std::cout << "D.lambda_min: " << D.lambda_min(0) << " " << D2.lambda_min(0) << endl;
+		// std::cout << "D.lambda_min: " << D.lambda_min(0) << " " << D2.lambda_min(0) << endl;
 		/*out.open("doc/D2_lambda.txt");
 		for (double i = 0; i < 98; i++)
 		{
