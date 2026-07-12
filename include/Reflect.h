@@ -94,7 +94,8 @@ public:
 	double ReflectionProbability(double incident_energy_eV, double incident_angle_deg) const;
 	double MeanReflectedEnergy(double incident_energy_eV, double incident_angle_deg) const;
 	DWReflectionSample Sample(double incident_energy_eV, double incident_angle_deg,
-							  double xi_energy, double xi_polar, double xi_azimuth) const;
+							  double xi_energy, double xi_polar, double xi_azimuth,
+							  double minimum_energy_eV = 0.0) const;
 };
 
 #endif

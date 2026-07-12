@@ -436,24 +436,34 @@ bool DWTrimReflection::Load(const std::string &filename)
 			}
 			return std::vector<double>{};
 		};
+		auto storeQuantiles = [](std::array<double, 7> &destination,
+								 const std::vector<double> &source) {
+			for (int q = 0; q < 5; ++q)
+				destination[q + 1] = source[q];
+			if (source.size() == 7)
+			{
+				destination[0] = source[5];
+				destination[6] = source[6];
+			}
+			else
+			{
+				// REFLC1 extrapolates outside the tabulated 0.1--0.9 quantiles.
+				destination[0] = 1.5 * source[0] - 0.5 * source[1];
+				destination[6] = 1.5 * source[4] - 0.5 * source[3];
+			}
+		};
 
 		std::vector<double> values = readDataRow();
 		if (values.size() != 5 && values.size() != 7)
 			throw std::runtime_error("Invalid energy row in D-on-W TRIM database");
-		for (int q = 0; q < 5; ++q)
-			block.energy[q + 1] = values[q];
-		block.energy[0] = values.size() == 7 ? values[5] : values[0];
-		block.energy[6] = values.size() == 7 ? values[6] : values[4];
+		storeQuantiles(block.energy, values);
 
 		for (int energy_q = 0; energy_q < 5; ++energy_q)
 		{
 			values = readDataRow();
 			if (values.size() != 5 && values.size() != 7)
 				throw std::runtime_error("Invalid polar-angle row in D-on-W TRIM database");
-			for (int q = 0; q < 5; ++q)
-				block.cos_polar[energy_q][q + 1] = values[q];
-			block.cos_polar[energy_q][0] = values.size() == 7 ? values[5] : values[0];
-			block.cos_polar[energy_q][6] = values.size() == 7 ? values[6] : values[4];
+			storeQuantiles(block.cos_polar[energy_q], values);
 		}
 
 		for (int energy_q = 0; energy_q < 5; ++energy_q)
@@ -462,10 +472,7 @@ bool DWTrimReflection::Load(const std::string &filename)
 				values = readDataRow();
 				if (values.size() != 5 && values.size() != 7)
 					throw std::runtime_error("Invalid azimuth row in D-on-W TRIM database");
-				for (int q = 0; q < 5; ++q)
-					block.cos_azimuth[energy_q][polar_q][q + 1] = values[q];
-				block.cos_azimuth[energy_q][polar_q][0] = values.size() == 7 ? values[5] : values[0];
-				block.cos_azimuth[energy_q][polar_q][6] = values.size() == 7 ? values[6] : values[4];
+				storeQuantiles(block.cos_azimuth[energy_q][polar_q], values);
 			}
 		parsed.push_back(block);
 	}
@@ -553,9 +560,10 @@ double DWTrimReflection::MeanReflectedEnergy(double incident_energy_eV,
 
 	auto blockMean = [](const Block &block) {
 		double sum = 0.0;
-		for (int q = 1; q <= 5; ++q)
-			sum += block.energy[q];
-		return sum / 5.0;
+		for (int q = 0; q + 1 < static_cast<int>(kQuantileGrid.size()); ++q)
+			sum += 0.5 * (kQuantileGrid[q + 1] - kQuantileGrid[q]) *
+				   (block.energy[q] + block.energy[q + 1]);
+		return sum;
 	};
 	return clampValue(
 		bilinear(blockMean(BlockAt(ei, ai)), blockMean(BlockAt(ei + 1, ai)),
@@ -568,7 +576,8 @@ DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 											 double incident_angle_deg,
 											 double xi_energy,
 											 double xi_polar,
-											 double xi_azimuth) const
+											 double xi_azimuth,
+											 double minimum_energy_eV) const
 {
 	if (!loaded_)
 		throw std::runtime_error("D-on-W TRIM reflection database is not loaded");
@@ -592,7 +601,7 @@ DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 		sample.energy_eV = SampleQuantile(block.energy, xi_energy);
 
 		constexpr std::array<double, 5> conditional_grid{{0.1, 0.3, 0.5, 0.7, 0.9}};
-		const double energy_xi = clampValue(xi_energy, conditional_grid.front(), conditional_grid.back());
+		const double energy_xi = clampValue(xi_energy, 0.0, 1.0);
 		const int energy_q = FindInterval(conditional_grid.data(), 5, energy_xi);
 		const double energy_q_weight =
 			(energy_xi - conditional_grid[energy_q]) /
@@ -602,7 +611,7 @@ DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 			SampleQuantile(block.cos_polar[energy_q + 1], xi_polar),
 			energy_q_weight);
 
-		const double polar_xi = clampValue(xi_polar, conditional_grid.front(), conditional_grid.back());
+		const double polar_xi = clampValue(xi_polar, 0.0, 1.0);
 		const int polar_q = FindInterval(conditional_grid.data(), 5, polar_xi);
 		const double polar_q_weight =
 			(polar_xi - conditional_grid[polar_q]) /
@@ -628,7 +637,8 @@ DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 	result.energy_eV = clampValue(
 		bilinear(q00.energy_eV, q10.energy_eV, q01.energy_eV, q11.energy_eV,
 				 energy_weight, angle_weight),
-		0.0, incident_energy_eV);
+		std::min(std::max(0.0, minimum_energy_eV), incident_energy_eV),
+		incident_energy_eV);
 	result.cos_polar = clampValue(
 		bilinear(q00.cos_polar, q10.cos_polar, q01.cos_polar, q11.cos_polar,
 				 energy_weight, angle_weight),

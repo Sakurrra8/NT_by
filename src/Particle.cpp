@@ -823,7 +823,7 @@ void Particle::InitDBoundarySource(
 		}
 		const DWReflectionSample reflected = D_W_Trim.Sample(
 			incident.energy_eV, incident.angle_deg,
-			Tools::Random(), Tools::Random(), Tools::Random());
+			Tools::Random(), Tools::Random(), Tools::Random(), 2. * T_wall);
 		Tn_ = (2. / 3.) * reflected.energy_eV;
 		speed = std::sqrt(2. * qe * std::max(0., reflected.energy_eV) / mass_);
 		setDWTrimDirection(
@@ -1519,7 +1519,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 				}
 				const DWReflectionSample sample = D_W_Trim.Sample(
 					incident.energy_eV, incident.angle_deg,
-					Tools::Random(), Tools::Random(), Tools::Random());
+					Tools::Random(), Tools::Random(), Tools::Random(), 2. * T_wall);
 				Tn_ = (2.0 / 3.0) * sample.energy_eV;
 				vel = speedFromEnergy(sample.energy_eV);
 				prescribed_reflection_speed = true;
@@ -1682,7 +1682,8 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		{
 			const DWReflectionSample sample =
 				D_W_Trim.Sample(1.5 * Tn_, incident_angle_deg,
-								Tools::Random(), Tools::Random(), Tools::Random());
+								Tools::Random(), Tools::Random(), Tools::Random(),
+								2. * T_wall);
 			Tn_ = (2.0 / 3.0) * sample.energy_eV;
 			speed = speedFromEnergy(sample.energy_eV);
 			const double incident_direction[3] = {V_[0], V_[1], V_[2]};

@@ -36,7 +36,7 @@ else
 CPPFLAGS += -O3 -DNDEBUG
 endif
 
-.PHONY: all clean dirs hdf5-links run-check export-eirene-reactions check-eirene-elastic check-target-incident check-d-boundary-flux
+.PHONY: all clean dirs hdf5-links run-check export-eirene-reactions check-eirene-elastic check-target-incident check-dw-trim-reflection check-d-boundary-flux
 
 all: $(BIN_DIR)/$(PRGM)
 
@@ -63,6 +63,9 @@ check-eirene-elastic: $(BIN_DIR)/check_eirene_elastic
 check-target-incident: $(BIN_DIR)/check_target_incident
 	./$(BIN_DIR)/check_target_incident
 
+check-dw-trim-reflection: $(BIN_DIR)/check_dw_trim_reflection
+	./$(BIN_DIR)/check_dw_trim_reflection Inputfile/database/D_on_W
+
 check-d-boundary-flux: $(BIN_DIR)/check_d_boundary_flux
 	./$(BIN_DIR)/check_d_boundary_flux case_input/2MW-5e19/2D_data/fnay_Dplus.dat
 
@@ -71,6 +74,9 @@ $(BIN_DIR)/check_eirene_elastic: tools/check_eirene_elastic.cpp src/EIRENE.cpp i
 
 $(BIN_DIR)/check_target_incident: tools/check_target_incident.cpp src/utils.cpp include/utils.h | dirs
 	$(CXX) $(CXXSTD) -O2 -I$(INC_DIR) tools/check_target_incident.cpp src/utils.cpp -o $@
+
+$(BIN_DIR)/check_dw_trim_reflection: tools/check_dw_trim_reflection.cpp src/Reflect.cpp include/Reflect.h | dirs
+	$(CXX) $(CXXSTD) -O2 -I$(INC_DIR) tools/check_dw_trim_reflection.cpp src/Reflect.cpp -o $@
 
 $(BIN_DIR)/check_d_boundary_flux: tools/check_d_boundary_flux.cpp src/SOLPSField.cpp include/SOLPSField.h | dirs
 	$(CXX) $(CXXSTD) -O2 -I$(INC_DIR) tools/check_d_boundary_flux.cpp src/SOLPSField.cpp -o $@
@@ -85,4 +91,4 @@ run-check: $(BIN_DIR)/$(PRGM)
 	./$(BIN_DIR)/$(PRGM) $(SETTING)
 
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/check_eirene_elastic $(BIN_DIR)/check_target_incident $(BIN_DIR)/check_d_boundary_flux
+	rm -rf $(OBJ_DIR)/*.o $(BIN_DIR)/$(PRGM) $(BIN_DIR)/export_eirene_reactions $(BIN_DIR)/check_eirene_elastic $(BIN_DIR)/check_target_incident $(BIN_DIR)/check_dw_trim_reflection $(BIN_DIR)/check_d_boundary_flux
