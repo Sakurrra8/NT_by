@@ -347,6 +347,7 @@ int BinarySearch(const vector<double> &array, int low, int high, double key)
 namespace
 {
 constexpr std::array<double, 7> kQuantileGrid{{0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0}};
+constexpr double kDegreesToRadians = 0.01745329251994329577;
 
 double clampValue(double value, double low, double high)
 {
@@ -514,7 +515,12 @@ double DWTrimReflection::ReflectionProbability(double incident_energy_eV,
 	const double energy_weight =
 		(energy - energies_[ei]) /
 		(energies_[ei + 1] - energies_[ei]);
-	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
+	const double angle_cosine = std::cos(angle * kDegreesToRadians);
+	const double lower_angle_cosine = std::cos(angles_[ai] * kDegreesToRadians);
+	const double upper_angle_cosine = std::cos(angles_[ai + 1] * kDegreesToRadians);
+	const double angle_weight =
+		(angle_cosine - lower_angle_cosine) /
+		(upper_angle_cosine - lower_angle_cosine);
 
 	return clampValue(
 		bilinear(BlockAt(ei, ai).particle_reflection,
@@ -538,7 +544,12 @@ double DWTrimReflection::MeanReflectedEnergy(double incident_energy_eV,
 	const double energy_weight =
 		(energy - energies_[ei]) /
 		(energies_[ei + 1] - energies_[ei]);
-	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
+	const double angle_cosine = std::cos(angle * kDegreesToRadians);
+	const double lower_angle_cosine = std::cos(angles_[ai] * kDegreesToRadians);
+	const double upper_angle_cosine = std::cos(angles_[ai + 1] * kDegreesToRadians);
+	const double angle_weight =
+		(angle_cosine - lower_angle_cosine) /
+		(upper_angle_cosine - lower_angle_cosine);
 
 	auto blockMean = [](const Block &block) {
 		double sum = 0.0;
@@ -569,7 +580,12 @@ DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 	const double energy_weight =
 		(energy - energies_[ei]) /
 		(energies_[ei + 1] - energies_[ei]);
-	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
+	const double angle_cosine = std::cos(angle * kDegreesToRadians);
+	const double lower_angle_cosine = std::cos(angles_[ai] * kDegreesToRadians);
+	const double upper_angle_cosine = std::cos(angles_[ai + 1] * kDegreesToRadians);
+	const double angle_weight =
+		(angle_cosine - lower_angle_cosine) /
+		(upper_angle_cosine - lower_angle_cosine);
 
 	auto sampleBlock = [xi_energy, xi_polar, xi_azimuth](const Block &block) {
 		DWReflectionSample sample;
