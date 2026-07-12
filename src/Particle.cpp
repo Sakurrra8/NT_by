@@ -735,6 +735,35 @@ void Particle::InitDBoundarySource(
 	X_[0] = source.x0 + position_fraction * (source.x1 - source.x0);
 	X_[1] = source.y0 + position_fraction * (source.y1 - source.y0);
 	X_[2] = 0.;
+	if (DBoundaryLaunchModel == 1)
+	{
+		if (this != &D)
+			throw std::logic_error("Direct D boundary outflow cannot launch D2");
+		const int outward_triangle =
+			Grid4.tris_[source.triangle].neigh[source.edge];
+		if (outward_triangle < 0 ||
+			static_cast<std::size_t>(outward_triangle) >= Grid4.tris_.size())
+			throw std::runtime_error(
+				"Direct D boundary outflow has no exterior triangle");
+		Tri_Index_ = outward_triangle;
+		if (!nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
+			throw std::runtime_error(
+				"Cannot place direct D boundary outflow in exterior triangle");
+		synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
+		GridIndex_ = -1;
+
+		const auto outflow = SampleDPlasmaBoundaryOutflow(
+			source.grid_i, source.grid_j,
+			source.tangent_cos, source.tangent_sin,
+			Tools::Random(), Tools::Random(), Tools::Random());
+		for (int component = 0; component < 3; ++component)
+			V_[component] = outflow.velocity[component];
+		Tn_ = (2. / 3.) * outflow.energy_eV;
+		importance_region_ = PhysicalImportanceRegion();
+		recordSourceLaunch();
+		return;
+	}
+
 	Tri_Index_ = source.triangle;
 	if (!nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
 		throw std::runtime_error("Cannot place D boundary source inside plasma triangle");

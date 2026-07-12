@@ -263,7 +263,22 @@ void DBoundarySourceModel::Prepare()
         double angle_sum = 0.;
         double fast_sum = 0.;
         double reflected_energy_sum = 0.;
-        if (DTargetIncidentModel == 0)
+        if (DBoundaryLaunchModel == 1)
+        {
+            for (int sample_index = 1;
+                 sample_index <= DTargetIncidentSamples; ++sample_index)
+            {
+                const auto incident = SampleDPlasmaBoundaryOutflow(
+                    segment.grid_i, segment.grid_j,
+                    segment.tangent_cos, segment.tangent_sin,
+                    RadicalInverse(sample_index, 2),
+                    RadicalInverse(sample_index, 3),
+                    RadicalInverse(sample_index, 5));
+                energy_sum += incident.energy_eV;
+                angle_sum += incident.angle_deg;
+            }
+        }
+        else if (DTargetIncidentModel == 0)
         {
             Tools::IncidentFluxSample incident;
             incident.energy_eV =
@@ -312,10 +327,18 @@ void DBoundarySourceModel::Prepare()
         segment.fast_probability = fast_sum * inverse_samples;
         if (fast_sum > 0.)
             segment.mean_reflected_energy = reflected_energy_sum / fast_sum;
-        segment.d_source = segment.ion_flux * segment.fast_probability;
-        segment.d2_source =
-            segment.ion_flux *
-            std::max(0., recycling - segment.fast_probability) / 2.;
+        if (DBoundaryLaunchModel == 1)
+        {
+            segment.d_source = segment.ion_flux;
+            segment.d2_source = 0.;
+        }
+        else
+        {
+            segment.d_source = segment.ion_flux * segment.fast_probability;
+            segment.d2_source =
+                segment.ion_flux *
+                std::max(0., recycling - segment.fast_probability) / 2.;
+        }
 
         const int region = RegionIndex(segment.region);
         region_ion[region] += segment.ion_flux;
@@ -329,8 +352,9 @@ void DBoundarySourceModel::Prepare()
     BuildCdf(segments_, false, d_cdf_, d_source_sum_);
     BuildCdf(segments_, true, d2_cdf_, d2_source_sum_);
     std::cout << std::scientific << std::setprecision(8)
-              << "D boundary source (incident model="
-              << DTargetIncidentModel << "): segments=" << segments_.size()
+              << "D boundary source (launch model=" << DBoundaryLaunchModel
+              << ", incident model=" << DTargetIncidentModel
+              << "): segments=" << segments_.size()
               << ", ion=" << ion_flux_sum_
               << ", D=" << d_source_sum_
               << ", D2=" << d2_source_sum_

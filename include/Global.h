@@ -76,7 +76,7 @@ extern int numPar_flight, numPar_flight_Target, IfOut, K_Recyc, K_Rec, K_Maxwell
 extern std::array<int, 5> K_Puff;
 extern int K_database, Num_Reflect, Num_Reflect_Core, numPar_flight_CD4, K_Ei, K_WallRefl, K_backScatter, K_MarColl, K_Methane, numPar_flight_D2, numPar_flight_T2;
 extern int K_T_array, K_NNCs, K_Roulette, K_Splitting, K_DWTargetActualAngle, K_DTargetSourceMode;
-extern int K_DBoundarySource, numPar_flight_DBoundary;
+extern int K_DBoundarySource, DBoundaryLaunchModel, numPar_flight_DBoundary;
 extern int DTargetIncidentModel, DTargetIncidentSamples;
 extern int K_H5Output, MaxSplit, MaxSplitDepth;
 extern int ImportanceMainPoloidalBegin, ImportanceMainPoloidalEnd;

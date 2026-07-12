@@ -42,6 +42,26 @@ Tools::IncidentFluxSample SampleDIncidentFluxAtSurface(
         xi_normal, xi_gaussian_radius, xi_gaussian_angle);
 }
 
+Tools::IncidentFluxSample SampleDPlasmaBoundaryOutflow(
+    int grid_i, int grid_j,
+    double inward_tangent_cos, double inward_tangent_sin,
+    double xi_normal, double xi_gaussian_radius,
+    double xi_gaussian_angle)
+{
+    if (grid_i < 0 || grid_i >= N_poloidal ||
+        grid_j < 0 || grid_j >= N_radial)
+        throw std::out_of_range("D boundary outflow sample has invalid B2 index");
+
+    const std::array<double, 3> drift{
+        ua_D_1[grid_i][grid_j] * B[grid_i][grid_j][0],
+        ua_D_1[grid_i][grid_j] * B[grid_i][grid_j][1],
+        ua_D_1[grid_i][grid_j] * B[grid_i][grid_j][2]};
+    return Tools::SampleIncidentFlux(
+        Ti[grid_i][grid_j], Te[grid_i][grid_j], Dmass, drift,
+        inward_tangent_cos, inward_tangent_sin, 0.,
+        xi_normal, xi_gaussian_radius, xi_gaussian_angle);
+}
+
 double DFastReflectionProbability(
     const Tools::IncidentFluxSample &incident,
     double recycling_coefficient)

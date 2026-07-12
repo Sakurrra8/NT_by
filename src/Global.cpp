@@ -45,6 +45,7 @@ int K_DWTrimReflection = 0;    // OP: 0 for legacy D-W reflection; 1 for D_on_W_
 int K_DWTargetActualAngle = 1; // OP: 0 fixed 60 deg; 1 local B-to-target-normal angle
 int K_DTargetSourceMode = 1;   // OP: 1 use recycled_neutral_flux_D; 2 use ni*|ua|*target_area ion flux
 int K_DBoundarySource = 0;     // OP: D+ FNIY recycling sources on PFR/outer B2 boundaries
+int DBoundaryLaunchModel = 0;  // 0 EIRENE surface recycling; 1 direct outward neutral sensitivity model
 int numPar_flight_DBoundary = 6000;
 int DTargetIncidentModel = 1;  // 0 fixed mean E/angle; 1 NEMODS=7-like incident flux sampling
 int DTargetIncidentSamples = 4096;
