@@ -48,8 +48,13 @@ namespace
 		double weighted_energy = 0.;
 		double weighted_angle = 0.;
 		double weighted_fast_probability = 0.;
+		double weighted_eirene_fast_probability = 0.;
 		double weighted_sheath_factor = 0.;
 		double source_weight = 0.;
+		double inner_eirene_fast_probability = 0.;
+		double inner_source_weight = 0.;
+		double outer_eirene_fast_probability = 0.;
+		double outer_source_weight = 0.;
 		double minimum_sheath_factor = 0.;
 		double maximum_sheath_factor = 0.;
 		for (int target = 0; target < target_count; ++target)
@@ -68,18 +73,27 @@ namespace
 			double angle_sum = 0.;
 			double fast_probability_sum = 0.;
 			double reflected_energy_sum = 0.;
+			double eirene_weight_sum = 0.;
+			double eirene_fast_probability_sum = 0.;
 			for (int sample_index = 1; sample_index <= DTargetIncidentSamples; ++sample_index)
 			{
+				const double xi_normal = RadicalInverse(sample_index, 2);
+				const double xi_radius = RadicalInverse(sample_index, 3);
+				const double xi_angle = RadicalInverse(sample_index, 5);
 				const auto incident = SampleDTargetIncidentFlux(
-					target,
-					RadicalInverse(sample_index, 2),
-					RadicalInverse(sample_index, 3),
-					RadicalInverse(sample_index, 5));
+					target, xi_normal, xi_radius, xi_angle);
+				const auto eirene_incident = SampleEireneDTargetIncidentFlux(
+					target, xi_normal, xi_radius, xi_angle);
 				const double fast_probability =
 					DTargetFastReflectionProbability(incident);
+				const double eirene_fast_probability =
+					DTargetFastReflectionProbability(eirene_incident);
 				energy_sum += incident.energy_eV;
 				angle_sum += incident.angle_deg;
 				fast_probability_sum += fast_probability;
+				eirene_weight_sum += eirene_incident.statistical_weight;
+				eirene_fast_probability_sum +=
+					eirene_incident.statistical_weight * eirene_fast_probability;
 				if (fast_probability > 0.)
 					reflected_energy_sum += fast_probability *
 						D_W_Trim.MeanReflectedEnergy(
@@ -87,6 +101,10 @@ namespace
 			}
 
 			const double inverse_samples = 1. / DTargetIncidentSamples;
+			const double eirene_fast_probability =
+				eirene_weight_sum > 0.
+					? eirene_fast_probability_sum / eirene_weight_sum
+					: 0.;
 			DTargetMeanIncidentEnergy[target] = energy_sum * inverse_samples;
 			DTargetIncidentAngle[target] = angle_sum * inverse_samples;
 			DTargetFastProbability[target] = fast_probability_sum * inverse_samples;
@@ -100,6 +118,18 @@ namespace
 			weighted_angle += target_weight * DTargetIncidentAngle[target];
 			weighted_fast_probability +=
 				target_weight * DTargetFastProbability[target];
+			weighted_eirene_fast_probability +=
+				target_weight * eirene_fast_probability;
+			if (target < N_radial)
+			{
+				inner_eirene_fast_probability += target_weight * eirene_fast_probability;
+				inner_source_weight += target_weight;
+			}
+			else
+			{
+				outer_eirene_fast_probability += target_weight * eirene_fast_probability;
+				outer_source_weight += target_weight;
+			}
 			weighted_sheath_factor += target_weight * sheath_factor;
 			source_weight += target_weight;
 		}
@@ -115,6 +145,17 @@ namespace
 					  << weighted_sheath_factor / source_weight
 					  << " [" << minimum_sheath_factor << ", "
 					  << maximum_sheath_factor << "]" << std::endl;
+			std::cout << "D target EIRENE VELOCS counterfactual: fast reflection="
+					  << weighted_eirene_fast_probability / source_weight
+					  << " (IT="
+					  << (inner_source_weight > 0.
+							  ? inner_eirene_fast_probability / inner_source_weight
+							  : 0.)
+					  << ", OT="
+					  << (outer_source_weight > 0.
+							  ? outer_eirene_fast_probability / outer_source_weight
+							  : 0.)
+					  << ")" << std::endl;
 		}
 	}
 

@@ -36,6 +36,7 @@ namespace Tools
         std::array<double, 3> velocity{};
         double energy_eV = 0.0;
         double angle_deg = 0.0;
+        double statistical_weight = 1.0;
     };
 
     inline double sqr(double x) { return x * x; }
@@ -49,6 +50,12 @@ namespace Tools
     double Maxwell(double E, double Mass);
     double MaxwellianFluxSpeed(double temperature_eV, double mass);
     IncidentFluxSample SampleIncidentFlux(
+        double ion_temperature_eV, double electron_temperature_eV,
+        double mass, const std::array<double, 3> &drift_velocity,
+        double surface_tangent_cos, double surface_tangent_sin,
+        double sheath_factor, double xi_normal,
+        double xi_gaussian_radius, double xi_gaussian_angle);
+    IncidentFluxSample SampleEireneIncidentFlux(
         double ion_temperature_eV, double electron_temperature_eV,
         double mass, const std::array<double, 3> &drift_velocity,
         double surface_tangent_cos, double surface_tangent_sin,

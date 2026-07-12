@@ -207,6 +207,99 @@ namespace Tools
         return sample;
     }
 
+    IncidentFluxSample SampleEireneIncidentFlux(
+        double ion_temperature_eV, double electron_temperature_eV,
+        double mass, const std::array<double, 3> &drift_velocity,
+        double surface_tangent_cos, double surface_tangent_sin,
+        double sheath_factor, double xi_normal,
+        double xi_gaussian_radius, double xi_gaussian_angle)
+    {
+        IncidentFluxSample sample;
+        if (!(mass > 0.) || !std::isfinite(mass))
+            return sample;
+
+        constexpr double pi_local = 3.14159265358979323846;
+        const std::array<double, 3> tangent{
+            surface_tangent_cos, surface_tangent_sin, 0.};
+        const std::array<double, 3> wallward_normal{
+            surface_tangent_sin, -surface_tangent_cos, 0.};
+        const std::array<double, 3> toroidal{0., 0., 1.};
+
+        const double temperature = std::max(0., ion_temperature_eV);
+        const double sigma = std::sqrt(qe * temperature / mass);
+        const double drift_normal =
+            drift_velocity[0] * wallward_normal[0] +
+            drift_velocity[1] * wallward_normal[1];
+        const double drift_tangent =
+            drift_velocity[0] * tangent[0] +
+            drift_velocity[1] * tangent[1];
+        const double drift_toroidal = drift_velocity[2];
+
+        double normal_before_sheath =
+            sigma * std::sqrt(-2. * std::log(openUnitInterval(xi_normal)));
+        const double gaussian_radius =
+            sigma * std::sqrt(-2. * std::log(openUnitInterval(xi_gaussian_radius)));
+        const double gaussian_phase =
+            2. * pi_local * openUnitInterval(xi_gaussian_angle);
+        const double tangent_speed =
+            drift_tangent + gaussian_radius * std::cos(gaussian_phase);
+        const double toroidal_speed =
+            drift_toroidal + gaussian_radius * std::sin(gaussian_phase);
+
+        const double thermal_flux_scale = std::sqrt(2.) * sigma;
+        if (thermal_flux_scale > 0. && drift_normal != 0.)
+        {
+            const double normalized_drift = drift_normal / thermal_flux_scale;
+            const double ccm = 0.6026 * normalized_drift;
+            if (ccm < 1.)
+            {
+                const double rccm = 1. / (1. - ccm);
+                normal_before_sheath *= std::sqrt(rccm);
+                const double normalized_normal =
+                    normal_before_sheath / thermal_flux_scale;
+                const double denominator =
+                    1. + normalized_drift * std::sqrt(pi_local) *
+                        (1. + std::erf(normalized_drift)) /
+                        std::exp(-normalized_drift * normalized_drift);
+                sample.statistical_weight =
+                    std::exp(normalized_normal *
+                             (2. * normalized_drift - ccm * normalized_normal)) *
+                    rccm / denominator;
+            }
+            else
+            {
+                normal_before_sheath =
+                    sampleFluxWeightedNormal(drift_normal, sigma, xi_normal);
+            }
+        }
+
+        const double sheath_energy_eV =
+            std::max(0., sheath_factor) * std::max(0., electron_temperature_eV);
+        const double normal_after_sheath = std::sqrt(
+            normal_before_sheath * normal_before_sheath +
+            2. * qe * sheath_energy_eV / mass);
+        for (int component = 0; component < 3; ++component)
+            sample.velocity[component] =
+                normal_after_sheath * wallward_normal[component] +
+                tangent_speed * tangent[component] +
+                toroidal_speed * toroidal[component];
+
+        const double speed2 =
+            sqr(sample.velocity[0]) + sqr(sample.velocity[1]) +
+            sqr(sample.velocity[2]);
+        sample.energy_eV = 0.5 * mass * speed2 / qe;
+        if (speed2 > 0.)
+        {
+            const double cosine = std::clamp(
+                normal_after_sheath / std::sqrt(speed2), 0., 1.);
+            sample.angle_deg = std::acos(cosine) * 180. / pi_local;
+        }
+        if (!std::isfinite(sample.statistical_weight) ||
+            sample.statistical_weight < 0.)
+            sample.statistical_weight = 0.;
+        return sample;
+    }
+
     double intersect(double *A, double *B, int i)
     {
         if (i == 1)
