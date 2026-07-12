@@ -1,11 +1,13 @@
 #include "Global.h"
 
-void Initialize(int Input, char *settingfile[]) {
+void Initialize(int Input, char *settingfile[])
+{
   string Inputstring, line;
   double number_temp;
   std::ifstream In;
   In.open(settingfile[1], std::ios::in); // ios::in means read
-  if (!In.is_open()) {
+  if (!In.is_open())
+  {
     std::cerr << "This file READING for setting.log have some problem!!!\n";
   }
   // std::cout << settingfile << " " << "Successfully read" << endl;
@@ -16,18 +18,23 @@ void Initialize(int Input, char *settingfile[]) {
   std::getline(In, line);
   In >> Inputstring >> Outputpath;
 
-  if (Input == 3) {
+  if (Input == 3)
+  {
     Outputpath = settingfile[2];
   }
 
   Databasepath = Inputpath + "database/";
   std::getline(In, line);
   std::streampos after_output = In.tellg();
-  if (In >> Inputstring) {
-    if (Inputstring == "Databasepath") {
+  if (In >> Inputstring)
+  {
+    if (Inputstring == "Databasepath")
+    {
       In >> Databasepath;
       std::getline(In, line);
-    } else {
+    }
+    else
+    {
       In.clear();
       In.seekg(after_output);
     }
@@ -47,14 +54,17 @@ void Initialize(int Input, char *settingfile[]) {
   B.assign(P, std::vector<std::vector<double>>(R, std::vector<double>(4, 0.0)));
 
   // 二维：每个都是 [P][R]
-  auto make2D = [&](std::vector<std::vector<double>> &a) {
+  auto make2D = [&](std::vector<std::vector<double>> &a)
+  {
     a.assign(P, std::vector<double>(R, 0.0));
   };
 
   // 一维：每个都是 [T]
-  auto make1D = [&](std::vector<double> &a) { a.assign(T, double(0.0)); };
+  auto make1D = [&](std::vector<double> &a)
+  { a.assign(T, double(0.0)); };
 
-  auto make1D_V = [&](std::vector<std::vector<double>> &a) {
+  auto make1D_V = [&](std::vector<std::vector<double>> &a)
+  {
     a.assign(T, std::vector<double>(3, 0.0));
   };
 
@@ -106,7 +116,7 @@ void Initialize(int Input, char *settingfile[]) {
 
   std::getline(In, line);
   In >> Inputstring >> K_log;
-  std::cout << K_log << endl;
+  // std::cout << K_log << endl;
   std::getline(In, line);
   In >> Inputstring >> StepLog;
   // std::cout << StepLog << endl;
@@ -198,7 +208,8 @@ void Initialize(int Input, char *settingfile[]) {
     std::ifstream option_stream(settingfile[1]);
     std::string option_name;
     std::string option_line;
-    while (std::getline(option_stream, option_line)) {
+    while (std::getline(option_stream, option_line))
+    {
       std::istringstream option_input(option_line);
       if (!(option_input >> option_name))
         continue;
@@ -222,11 +233,13 @@ void Initialize(int Input, char *settingfile[]) {
         option_input >> K_H5Output;
       else if (option_name == "K_NNCs")
         option_input >> K_NNCs;
-      else if (option_name == "EireneRateArgumentScale") {
+      else if (option_name == "EireneRateArgumentScale")
+      {
         option_input >> EireneRateArgumentScale;
         EireneElectronTemperatureScale = EireneRateArgumentScale;
         EireneHeavyEnergyScale = EireneRateArgumentScale;
-      } else if (option_name == "EireneElectronTemperatureScale")
+      }
+      else if (option_name == "EireneElectronTemperatureScale")
         option_input >> EireneElectronTemperatureScale;
       else if (option_name == "EireneHeavyEnergyScale")
         option_input >> EireneHeavyEnergyScale;
@@ -317,18 +330,21 @@ void Initialize(int Input, char *settingfile[]) {
 
   // Optional switches. Old setting files can omit these lines.
   bool mesh_mode_read = false;
-  while (std::getline(In, line)) {
+  while (std::getline(In, line))
+  {
     if (line.empty())
       continue;
     std::istringstream iss(line);
     iss >> Inputstring;
     if (Inputstring.empty() || Inputstring[0] == '#')
       continue;
-    if (Inputstring == "MeshMode") {
+    if (Inputstring == "MeshMode")
+    {
       iss >> MeshMode;
       mesh_mode_read = true;
       break;
-    } else if (Inputstring == "K_Roulette")
+    }
+    else if (Inputstring == "K_Roulette")
       iss >> K_Roulette;
     else if (Inputstring == "K_Splitting")
       iss >> K_Splitting;
@@ -360,11 +376,13 @@ void Initialize(int Input, char *settingfile[]) {
       iss >> ImportanceMainPoloidalBegin;
     else if (Inputstring == "ImportanceMainPoloidalEnd")
       iss >> ImportanceMainPoloidalEnd;
-    else if (Inputstring == "EireneRateArgumentScale") {
+    else if (Inputstring == "EireneRateArgumentScale")
+    {
       iss >> EireneRateArgumentScale;
       EireneElectronTemperatureScale = EireneRateArgumentScale;
       EireneHeavyEnergyScale = EireneRateArgumentScale;
-    } else if (Inputstring == "EireneElectronTemperatureScale")
+    }
+    else if (Inputstring == "EireneElectronTemperatureScale")
       iss >> EireneElectronTemperatureScale;
     else if (Inputstring == "EireneHeavyEnergyScale")
       iss >> EireneHeavyEnergyScale;
@@ -374,7 +392,8 @@ void Initialize(int Input, char *settingfile[]) {
 
   /// Extern Mode
   // std::cout << MeshMode << endl;
-  if (MeshMode == 2) {
+  if (MeshMode == 2)
+  {
     std::getline(In, line);
     In >> Inputstring >> number_temp;
     Grid3.Set_nx(number_temp);
@@ -399,7 +418,9 @@ void Initialize(int Input, char *settingfile[]) {
     In >> Inputstring >> number_temp;
     Grid3.Set_nCmxVx(number_temp);
     // std::cout << Grid3.nCmxVx() << endl;
-  } else {
+  }
+  else
+  {
     Grid3.Set_nx(0);
     Grid3.Set_ny(0);
     Grid3.Set_nCv(0);
@@ -410,7 +431,8 @@ void Initialize(int Input, char *settingfile[]) {
 
   In.close();
 
-  if (K_H) {
+  if (K_H)
+  {
     make2D(n_H_1);
     make2D(ua_H_1);
     make2D(Ti_H_thermal);
@@ -428,7 +450,8 @@ void Initialize(int Input, char *settingfile[]) {
     make2D(Vi_H);
   }
 
-  if (K_T) {
+  if (K_T)
+  {
     make2D(n_T_1);
     make2D(ua_T_1);
     make2D(Ti_T_thermal);
