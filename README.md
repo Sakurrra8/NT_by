@@ -123,9 +123,19 @@ velocity, updates all three velocity components, and recalculates the test
 particle energy after the event. The validation inputs use the full Maxwell
 speed distribution rather than the fixed RMS-speed shortcut.
 
-The current EIRENE-matching surface model uses D-on-W TRIM-style reflection,
-local target incidence angle, and thermal wall re-emission consistent with the
-case input assumptions.
+The current EIRENE-matching surface model uses D-on-W TRIM-style reflection and
+thermal wall re-emission. `DTargetIncidentModel=1` replaces the single target
+energy/angle with an EIRENE `NEMODS=7`-style incident distribution: a local
+drifting Maxwellian flux restricted to velocities directed into the target,
+followed by normal sheath acceleration of `DTargetSheathFactor*Te`. The TRIM
+reflection probability and reflected-state sample use each incident sample's
+energy and angle. A fixed low-discrepancy average over
+`DTargetIncidentSamples` sets the D/D2 source weights; fast-D histories then
+sample the corresponding reflection-conditioned incident distribution.
+`DTargetIncidentModel=0` retains the former `2*Ti+3*Te` mean-energy and local
+B-to-target-normal angle model for A/B tests. Run
+`make -f Makefile.local check-target-incident` to verify the analytic flux
+moments and sheath-energy increment.
 
 ### Transparent Boundaries And Additional Cells
 

@@ -43,6 +43,9 @@ int K_Reflect;                 // OP: 1 for empirical formula; 2 for Trim databa
 int K_DWTrimReflection = 0;    // OP: 0 for legacy D-W reflection; 1 for D_on_W_5.53 distributions
 int K_DWTargetActualAngle = 1; // OP: 0 fixed 60 deg; 1 local B-to-target-normal angle
 int K_DTargetSourceMode = 1;   // OP: 1 use recycled_neutral_flux_D; 2 use ni*|ua|*target_area ion flux
+int DTargetIncidentModel = 1;  // 0 fixed mean E/angle; 1 NEMODS=7-like incident flux sampling
+int DTargetIncidentSamples = 4096;
+double DTargetSheathFactor = 3.0;
 int K_ReflectDirection;        // OP: 1 for cosing distribution; 2 for forward-reflect distribution; 3 for mirror reflection
 bool backGridBoundry;          // OP: make Particles go back to Grid when Particle flight
 bool K_H;                      // OP: H calculation
@@ -193,6 +196,9 @@ std::vector<std::vector<double>> dTip, dTir, dTix, dTiy, dTiz;
 std::vector<double> NumPar_H_recyc, Tn_H_recyc, NumPar_H2_recyc;
 std::vector<double> NumPar_D_recyc, Tn_D_recyc, NumPar_D2_recyc;
 std::vector<double> DTargetIncidentAngle;
+std::vector<double> DTargetFastProbability;
+std::vector<double> DTargetMeanIncidentEnergy;
+std::vector<double> DTargetMeanReflectedEnergy;
 std::vector<double> NumPar_T_recyc, Tn_T_recyc, NumPar_T2_recyc;
 double NumPar_wall_H[80], NumPar_wall_D[80], NumPar_wall_T[80];
 double Xrecyc[80][2], theta[80][2], Ei_Dion[80];

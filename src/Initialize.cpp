@@ -110,6 +110,9 @@ void Initialize(int Input, char *settingfile[])
   NumPar_D2_recyc.resize(N_radial * 2);
   Tn_D_recyc.resize(N_radial * 2);
   DTargetIncidentAngle.resize(N_radial * 2, 60.0);
+  DTargetFastProbability.resize(N_radial * 2, 0.0);
+  DTargetMeanIncidentEnergy.resize(N_radial * 2, 0.0);
+  DTargetMeanReflectedEnergy.resize(N_radial * 2, 0.0);
   NumPar_T_recyc.resize(N_radial * 2);
   NumPar_T2_recyc.resize(N_radial * 2);
   Tn_T_recyc.resize(N_radial * 2);
@@ -225,6 +228,12 @@ void Initialize(int Input, char *settingfile[])
         option_input >> K_DWTargetActualAngle;
       else if (option_name == "K_DTargetSourceMode")
         option_input >> K_DTargetSourceMode;
+      else if (option_name == "DTargetIncidentModel")
+        option_input >> DTargetIncidentModel;
+      else if (option_name == "DTargetSheathFactor")
+        option_input >> DTargetSheathFactor;
+      else if (option_name == "DTargetIncidentSamples")
+        option_input >> DTargetIncidentSamples;
       else if (option_name == "K_Roulette")
         option_input >> K_Roulette;
       else if (option_name == "K_Splitting")
@@ -272,9 +281,16 @@ void Initialize(int Input, char *settingfile[])
     }
   }
   D2ElasticModel = std::clamp(D2ElasticModel, 0, 3);
+  DTargetIncidentModel = std::clamp(DTargetIncidentModel, 0, 1);
+  DTargetSheathFactor = std::max(0.0, DTargetSheathFactor);
+  DTargetIncidentSamples = std::max(256, DTargetIncidentSamples);
   if (!K_H2_elastic)
     D2ElasticModel = 0;
   std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
+  std::cout << "DTargetIncidentModel: " << DTargetIncidentModel
+            << " (sheath factor=" << DTargetSheathFactor
+            << ", averaging samples=" << DTargetIncidentSamples << ")"
+            << std::endl;
   std::getline(In, line);
   In >> Inputstring >> K_dn;
   // std::cout << K_dn << endl;
@@ -360,6 +376,12 @@ void Initialize(int Input, char *settingfile[])
       iss >> K_NNCs;
     else if (Inputstring == "D2ElasticModel")
       iss >> D2ElasticModel;
+    else if (Inputstring == "DTargetIncidentModel")
+      iss >> DTargetIncidentModel;
+    else if (Inputstring == "DTargetSheathFactor")
+      iss >> DTargetSheathFactor;
+    else if (Inputstring == "DTargetIncidentSamples")
+      iss >> DTargetIncidentSamples;
     else if (Inputstring == "W_RouletteMin")
       iss >> W_RouletteMin;
     else if (Inputstring == "W_RouletteTarget")

@@ -2841,6 +2841,32 @@ namespace eirene
         else
             throw std::logic_error("wrong Cos_Target!\n");
     }
+    std::pair<double, double> TriMesh::InwardTargetTangent(int i) const
+    {
+        if (i < 0 || i >= Num_Target_)
+            throw std::logic_error("wrong target index for inward tangent\n");
+        double target_cos = Cos_Target_[i];
+        double target_sin = Sin_Target_[i];
+        const int tri_index = TargetIndex_[i][0];
+        if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= tris_.size())
+            return {target_cos, target_sin};
+
+        const double mid_x = Mid_Target_[i][0];
+        const double mid_y = Mid_Target_[i][1];
+        const auto &tri = tris_[tri_index];
+        const double cx =
+            (nodes_[tri.v[0]].r + nodes_[tri.v[1]].r + nodes_[tri.v[2]].r) / 3.;
+        const double cy =
+            (nodes_[tri.v[0]].z + nodes_[tri.v[1]].z + nodes_[tri.v[2]].z) / 3.;
+        const double normal_x = -target_sin;
+        const double normal_y = target_cos;
+        if ((cx - mid_x) * normal_x + (cy - mid_y) * normal_y < 0.)
+        {
+            target_cos = -target_cos;
+            target_sin = -target_sin;
+        }
+        return {target_cos, target_sin};
+    }
     double TriMesh::Mid_Target(int i, int j) { return Mid_Target_[i][j]; }
     double TriMesh::Vol_Target(int i) { return Vol_Target_[i]; }
     double TriMesh::Sin_trimesh(int i, int j)

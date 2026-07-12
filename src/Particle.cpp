@@ -1,4 +1,5 @@
 #include "Particle.h"
+#include "TargetIncident.h"
 
 namespace
 {
@@ -519,29 +520,6 @@ namespace
 			}
 		}
 		return found;
-	}
-
-	std::pair<double, double> inwardTargetTangent(int target_index)
-	{
-		double target_cos = Grid4.Cos_Target(target_index);
-		double target_sin = Grid4.Sin_Target(target_index);
-		const int tri_index = Grid4.targetIndex(target_index, 0);
-		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size())
-			return {target_cos, target_sin};
-
-		const double mid_x = Grid4.Mid_Target(target_index, 0);
-		const double mid_y = Grid4.Mid_Target(target_index, 1);
-		const auto &tri = Grid4.tris_[tri_index];
-		const double cx = (Grid4.nodes_[tri.v[0]].r + Grid4.nodes_[tri.v[1]].r + Grid4.nodes_[tri.v[2]].r) / 3.0;
-		const double cy = (Grid4.nodes_[tri.v[0]].z + Grid4.nodes_[tri.v[1]].z + Grid4.nodes_[tri.v[2]].z) / 3.0;
-		const double normal_x = -target_sin;
-		const double normal_y = target_cos;
-		if ((cx - mid_x) * normal_x + (cy - mid_y) * normal_y < 0.0)
-		{
-			target_cos = -target_cos;
-			target_sin = -target_sin;
-		}
-		return {target_cos, target_sin};
 	}
 
 	int resolveTargetIndex(int tri_index, int line_info,
@@ -1333,7 +1311,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		else
 			Zone_ = 5;
 		GridIndex_ = XY_[0] * N_radial + XY_[1];
-		const auto target_tangent = inwardTargetTangent(z);
+		const auto target_tangent = Grid4.InwardTargetTangent(z);
 		const double target_cos = target_tangent.first;
 		const double target_sin = target_tangent.second;
 
@@ -1341,16 +1319,49 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		{
 			if (this == &D && K_DWTrimReflection == 1 && K_Wallelement == 1)
 			{
-				const DWReflectionSample sample =
-					D_W_Trim.Sample(Ei_Dion[z], DTargetIncidentAngle[z],
-									Tools::Random(), Tools::Random(), Tools::Random());
-				Tn_ = (2.0 / 3.0) * sample.energy_eV;
-				vel = speedFromEnergy(sample.energy_eV);
-				prescribed_reflection_speed = true;
-				const double reference_direction[3] = {
+				Tools::IncidentFluxSample incident;
+				double reference_direction[3] = {
 					B[XY_[0]][XY_[1]][0],
 					B[XY_[0]][XY_[1]][1],
 					B[XY_[0]][XY_[1]][2]};
+				if (DTargetIncidentModel == 1)
+				{
+					Tools::IncidentFluxSample best_incident;
+					double best_probability = -1.;
+					bool accepted = false;
+					for (int attempt = 0; attempt < 4096; ++attempt)
+					{
+						incident = SampleDTargetIncidentFlux(
+							z, Tools::Random(), Tools::Random(), Tools::Random());
+						const double probability =
+							DTargetFastReflectionProbability(incident);
+						if (probability > best_probability)
+						{
+							best_probability = probability;
+							best_incident = incident;
+						}
+						if (Tools::Random() <= probability)
+						{
+							accepted = true;
+							break;
+						}
+					}
+					if (!accepted)
+						incident = best_incident;
+					for (int component = 0; component < 3; ++component)
+						reference_direction[component] = incident.velocity[component];
+				}
+				else
+				{
+					incident.energy_eV = Ei_Dion[z];
+					incident.angle_deg = DTargetIncidentAngle[z];
+				}
+				const DWReflectionSample sample = D_W_Trim.Sample(
+					incident.energy_eV, incident.angle_deg,
+					Tools::Random(), Tools::Random(), Tools::Random());
+				Tn_ = (2.0 / 3.0) * sample.energy_eV;
+				vel = speedFromEnergy(sample.energy_eV);
+				prescribed_reflection_speed = true;
 				setDWTrimDirection(V_, sample, target_cos, target_sin, reference_direction);
 			}
 			else

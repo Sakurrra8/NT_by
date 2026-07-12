@@ -1,6 +1,7 @@
 #include "Global.h"
 #include "Particle.h"
 #include "RecyclingFlightAllocation.h"
+#include "TargetIncident.h"
 // #include "sys/timeb.h"
 #include <algorithm>
 #include <cmath>
@@ -19,6 +20,83 @@ double NormalProjectionFromAngle(double angle_degree)
 {
 	const double kPi = 3.14159265358979323846;
 	return std::abs(std::cos(angle_degree * kPi / 180.0));
+}
+
+double RadicalInverse(unsigned int index, unsigned int base)
+{
+	double value = 0.;
+	double factor = 1. / static_cast<double>(base);
+	while (index > 0)
+	{
+		value += factor * static_cast<double>(index % base);
+		index /= base;
+		factor /= static_cast<double>(base);
+	}
+	return value;
+}
+
+void BuildDTargetIncidentAverages()
+{
+	const int target_count = 2 * N_radial;
+	DTargetFastProbability.assign(target_count, 0.);
+	DTargetMeanIncidentEnergy.assign(target_count, 0.);
+	DTargetMeanReflectedEnergy.assign(target_count, 0.);
+	if (DTargetIncidentModel != 1 || K_DWTrimReflection != 1 || K_Wallelement != 1)
+		return;
+
+	double weighted_energy = 0.;
+	double weighted_angle = 0.;
+	double weighted_fast_probability = 0.;
+	double source_weight = 0.;
+	for (int target = 0; target < target_count; ++target)
+	{
+		double energy_sum = 0.;
+		double angle_sum = 0.;
+		double fast_probability_sum = 0.;
+		double reflected_energy_sum = 0.;
+		for (int sample_index = 1; sample_index <= DTargetIncidentSamples; ++sample_index)
+		{
+			const auto incident = SampleDTargetIncidentFlux(
+				target,
+				RadicalInverse(sample_index, 2),
+				RadicalInverse(sample_index, 3),
+				RadicalInverse(sample_index, 5));
+			const double fast_probability =
+				DTargetFastReflectionProbability(incident);
+			energy_sum += incident.energy_eV;
+			angle_sum += incident.angle_deg;
+			fast_probability_sum += fast_probability;
+			if (fast_probability > 0.)
+				reflected_energy_sum += fast_probability *
+					D_W_Trim.MeanReflectedEnergy(
+						incident.energy_eV, incident.angle_deg);
+		}
+
+		const double inverse_samples = 1. / DTargetIncidentSamples;
+		DTargetMeanIncidentEnergy[target] = energy_sum * inverse_samples;
+		DTargetIncidentAngle[target] = angle_sum * inverse_samples;
+		DTargetFastProbability[target] = fast_probability_sum * inverse_samples;
+		if (fast_probability_sum > 0.)
+			DTargetMeanReflectedEnergy[target] =
+				reflected_energy_sum / fast_probability_sum;
+		Ei_Dion[target] = DTargetMeanIncidentEnergy[target];
+
+		const double target_weight = std::max(0., NumPar_wall_D[target]);
+		weighted_energy += target_weight * DTargetMeanIncidentEnergy[target];
+		weighted_angle += target_weight * DTargetIncidentAngle[target];
+		weighted_fast_probability +=
+			target_weight * DTargetFastProbability[target];
+		source_weight += target_weight;
+	}
+
+	if (source_weight > 0.)
+	{
+		std::cout << "D target NEMODS=7-like incident averages: E="
+				  << weighted_energy / source_weight
+				  << " eV, angle=" << weighted_angle / source_weight
+				  << " deg, fast reflection="
+				  << weighted_fast_probability / source_weight << std::endl;
+	}
 }
 
 void ApplyDTargetIonFluxProfile(const std::vector<double> &angle_B_with_target)
@@ -981,23 +1059,34 @@ void Prepare()
 			ApplyDTargetIonFluxProfile(angle_B_with_target);
 		else if (K_DTargetSourceMode != 1)
 			throw std::runtime_error("Unsupported K_DTargetSourceMode; use 1 or 2");
+		BuildDTargetIncidentAverages();
 		// out.open("doc/recycling_D.txt");
 		if (K_Wallelement == 1)
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				const double reflection_probability =
-					K_DWTrimReflection == 1
-						? (Ei_Dion[i] >= DWTrimERMIN
-							   ? D_W_Trim.ReflectionProbability(Ei_Dion[i], angle_B_with_target[i])
-							   : 0.0)
-						: D_W.n_RefCoeff(K_Reflect, Ei_Dion[i], angle_B_with_target[i]);
-				const double fast_probability =
-					std::min(coeff_recyc_target, reflection_probability);
+				const bool sampled_incident =
+					DTargetIncidentModel == 1 && K_DWTrimReflection == 1;
+				const double reflection_probability = sampled_incident
+					? DTargetFastProbability[i]
+					: (K_DWTrimReflection == 1
+						   ? (Ei_Dion[i] >= DWTrimERMIN
+								  ? D_W_Trim.ReflectionProbability(
+										Ei_Dion[i], angle_B_with_target[i])
+								  : 0.0)
+						   : D_W.n_RefCoeff(
+								 K_Reflect, Ei_Dion[i], angle_B_with_target[i]));
+				const double fast_probability = sampled_incident
+					? reflection_probability
+					: std::min(coeff_recyc_target, reflection_probability);
 				NumPar_D_recyc[i] = NumPar_wall_D[i] * fast_probability;
 				NumPar_D2_recyc[i] =
 					(coeff_recyc_target - fast_probability) * NumPar_wall_D[i] / 2.0;
-				if (K_DWTrimReflection == 1)
+				if (sampled_incident)
+				{
+					Tn_D_recyc[i] = DTargetMeanReflectedEnergy[i] / 1.5;
+				}
+				else if (K_DWTrimReflection == 1)
 				{
 					Tn_D_recyc[i] = D_W_Trim.MeanReflectedEnergy(Ei_Dion[i], angle_B_with_target[i]) / 1.5;
 				}
@@ -1007,6 +1096,12 @@ void Prepare()
 						fast_probability * Ei_Dion[i] / 1.5;
 				else
 					Tn_D_recyc[i] = 0.0;
+				if (!sampled_incident)
+				{
+					DTargetMeanIncidentEnergy[i] = Ei_Dion[i];
+					DTargetFastProbability[i] = fast_probability;
+					DTargetMeanReflectedEnergy[i] = 1.5 * Tn_D_recyc[i];
+				}
 				// out << NumPar_D_recyc[i] << '\t' << NumPar_D2_recyc[i] << endl;
 			}
 		}

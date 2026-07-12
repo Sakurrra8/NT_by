@@ -1,5 +1,7 @@
 #include "utils.h"
+#include <cmath>
 #include <iostream>
+#include <limits>
 
 void Point::PointIndex(int x, int y)
 {
@@ -86,6 +88,123 @@ namespace Tools
         const double energy_eV =
             -temperature_eV * std::log(Random() * Random());
         return std::sqrt(2.0 * qe * energy_eV / mass);
+    }
+
+    namespace
+    {
+        double openUnitInterval(double value)
+        {
+            return std::clamp(value, 1.e-12, 1. - 1.e-12);
+        }
+
+        double sampleFluxWeightedNormal(double drift, double sigma, double xi)
+        {
+            if (!(sigma > 0.) || !std::isfinite(sigma))
+                return std::max(drift, std::numeric_limits<double>::min());
+
+            constexpr double sqrt_half = 0.70710678118654752440;
+            constexpr double sqrt_pi_over_two = 1.2533141373155002512;
+            const double a = drift / sigma;
+            const double exp_a = std::exp(-0.5 * a * a);
+            const double normalization =
+                exp_a + a * sqrt_pi_over_two * std::erfc(-a * sqrt_half);
+
+            // Strong flow away from a recycling surface is not expected at a target.
+            if (!(normalization > 1.e-14) || !std::isfinite(normalization))
+                return sigma * std::sqrt(-2. * std::log(1. - openUnitInterval(xi)));
+
+            auto cdf = [a, exp_a, normalization](double x)
+            {
+                constexpr double sqrt_half_local = 0.70710678118654752440;
+                constexpr double sqrt_pi_over_two_local = 1.2533141373155002512;
+                const double integral =
+                    exp_a - std::exp(-0.5 * (x - a) * (x - a)) +
+                    a * sqrt_pi_over_two_local *
+                        (std::erf((x - a) * sqrt_half_local) +
+                         std::erf(a * sqrt_half_local));
+                return std::clamp(integral / normalization, 0., 1.);
+            };
+
+            const double probability = openUnitInterval(xi);
+            double lower = 0.;
+            double upper = std::max(8., a + 8.);
+            while (cdf(upper) < probability && upper < 256.)
+                upper *= 2.;
+            for (int iteration = 0; iteration < 80; ++iteration)
+            {
+                const double middle = 0.5 * (lower + upper);
+                if (cdf(middle) < probability)
+                    lower = middle;
+                else
+                    upper = middle;
+            }
+            return sigma * 0.5 * (lower + upper);
+        }
+    }
+
+    IncidentFluxSample SampleIncidentFlux(
+        double ion_temperature_eV, double electron_temperature_eV,
+        double mass, const std::array<double, 3> &drift_velocity,
+        double surface_tangent_cos, double surface_tangent_sin,
+        double sheath_factor, double xi_normal,
+        double xi_gaussian_radius, double xi_gaussian_angle)
+    {
+        IncidentFluxSample sample;
+        if (!(mass > 0.) || !std::isfinite(mass))
+            return sample;
+
+        constexpr double pi_local = 3.14159265358979323846;
+        const std::array<double, 3> tangent{
+            surface_tangent_cos, surface_tangent_sin, 0.};
+        // The tangent is oriented so (-sin, cos) points into the mesh.
+        const std::array<double, 3> wallward_normal{
+            surface_tangent_sin, -surface_tangent_cos, 0.};
+        const std::array<double, 3> toroidal{0., 0., 1.};
+
+        const double temperature = std::max(0., ion_temperature_eV);
+        const double sigma = std::sqrt(qe * temperature / mass);
+        const double drift_normal =
+            drift_velocity[0] * wallward_normal[0] +
+            drift_velocity[1] * wallward_normal[1];
+        const double drift_tangent =
+            drift_velocity[0] * tangent[0] +
+            drift_velocity[1] * tangent[1];
+        const double drift_toroidal = drift_velocity[2];
+
+        const double normal_before_sheath =
+            sampleFluxWeightedNormal(drift_normal, sigma, xi_normal);
+        const double gaussian_radius =
+            sigma * std::sqrt(-2. * std::log(openUnitInterval(xi_gaussian_radius)));
+        const double gaussian_phase =
+            2. * pi_local * openUnitInterval(xi_gaussian_angle);
+        const double tangent_speed =
+            drift_tangent + gaussian_radius * std::cos(gaussian_phase);
+        const double toroidal_speed =
+            drift_toroidal + gaussian_radius * std::sin(gaussian_phase);
+
+        const double sheath_energy_eV =
+            std::max(0., sheath_factor) * std::max(0., electron_temperature_eV);
+        const double normal_after_sheath = std::sqrt(
+            normal_before_sheath * normal_before_sheath +
+            2. * qe * sheath_energy_eV / mass);
+
+        for (int component = 0; component < 3; ++component)
+            sample.velocity[component] =
+                normal_after_sheath * wallward_normal[component] +
+                tangent_speed * tangent[component] +
+                toroidal_speed * toroidal[component];
+
+        const double speed2 =
+            sqr(sample.velocity[0]) + sqr(sample.velocity[1]) +
+            sqr(sample.velocity[2]);
+        sample.energy_eV = 0.5 * mass * speed2 / qe;
+        if (speed2 > 0.)
+        {
+            const double cosine = std::clamp(
+                normal_after_sheath / std::sqrt(speed2), 0., 1.);
+            sample.angle_deg = std::acos(cosine) * 180. / pi_local;
+        }
+        return sample;
     }
 
     double intersect(double *A, double *B, int i)
