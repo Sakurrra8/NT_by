@@ -56,10 +56,10 @@ void WallReflect()
         if (K_Wallelement == 1)
         {
             if (P == &H)
-                coeff_reflect = H_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
+                coeff_reflect = H_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
             else if (P == &D)
             {
-                const double angle = P->CalAngle((int)InterscePoint[0][5]);
+                const double angle = P->CalAngle((int)InterscePoint[0][3]);
                 coeff_reflect = K_DWTrimReflection == 1
                                     ? (1.5 * P->Tn() >= DWTrimERMIN
                                            ? std::min(coeff_recyc, D_W_Trim.ReflectionProbability(1.5 * P->Tn(), angle))
@@ -67,18 +67,18 @@ void WallReflect()
                                     : D_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), angle);
             }
             else if (P == &T)
-                coeff_reflect = T_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
+                coeff_reflect = T_W.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
             else if (P == &H2 || P == &D2 || P == &T2)
                 coeff_reflect = coeff_recyc;
         }
         else if (K_Wallelement == 2)
         {
             if (P == &H)
-                coeff_reflect = H_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
+                coeff_reflect = H_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
             else if (P == &D)
-                coeff_reflect = D_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
+                coeff_reflect = D_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
             else if (P == &T)
-                coeff_reflect = T_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][5]));
+                coeff_reflect = T_C.n_RefCoeff(K_Reflect, 1.5 * P->Tn(), P->CalAngle((int)InterscePoint[0][3]));
             else if (P == &H2 || P == &D2 || P == &T2)
                 coeff_reflect = coeff_recyc;
         }

@@ -222,6 +222,8 @@ void Initialize(int Input, char *settingfile[]) {
         option_input >> K_H5Output;
       else if (option_name == "K_NNCs")
         option_input >> K_NNCs;
+      else if (option_name == "D2ElasticModel")
+        option_input >> D2ElasticModel;
       else if (option_name == "EireneRateArgumentScale") {
         option_input >> EireneRateArgumentScale;
         EireneElectronTemperatureScale = EireneRateArgumentScale;
@@ -256,6 +258,10 @@ void Initialize(int Input, char *settingfile[]) {
         option_input >> ImportanceMainPoloidalEnd;
     }
   }
+  D2ElasticModel = std::clamp(D2ElasticModel, 0, 3);
+  if (!K_H2_elastic)
+    D2ElasticModel = 0;
+  std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
   std::getline(In, line);
   In >> Inputstring >> K_dn;
   // std::cout << K_dn << endl;
@@ -336,6 +342,8 @@ void Initialize(int Input, char *settingfile[]) {
       iss >> K_H5Output;
     else if (Inputstring == "K_NNCs")
       iss >> K_NNCs;
+    else if (Inputstring == "D2ElasticModel")
+      iss >> D2ElasticModel;
     else if (Inputstring == "W_RouletteMin")
       iss >> W_RouletteMin;
     else if (Inputstring == "W_RouletteTarget")

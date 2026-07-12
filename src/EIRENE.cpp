@@ -1,12 +1,39 @@
 #include "EIRENE.h"
 #include <cstdlib>
+#include <sstream>
 #define e 2.71828
+
+namespace
+{
+    double parseFortranBound(const std::string &line)
+    {
+        const std::size_t equals = line.find('=');
+        std::string value = equals == std::string::npos ? line : line.substr(equals + 1);
+        for (std::size_t i = 0; i + 1 < value.size(); ++i)
+        {
+            if (value[i] != 'E' && value[i] != 'e' && value[i] != 'D' && value[i] != 'd')
+                continue;
+            value[i] = 'E';
+            std::size_t exponent = i + 1;
+            while (exponent < value.size() && value[exponent] == ' ')
+                value.erase(exponent, 1);
+            if (exponent < value.size() && value[exponent] != '+' && value[exponent] != '-')
+                value.insert(exponent, 1, '+');
+            break;
+        }
+        std::istringstream input(value);
+        double result = 0.;
+        input >> result;
+        return result;
+    }
+}
 
 EIRENE::EIRENE(int Fit, int Num, const string &database)
 {
     Fit_ = Fit;
     Num_ = Num;
     database_ = database;
+    std::fill(std::begin(data_), std::end(data_), 0.);
     string line;
     int b;
     string database_file;
@@ -45,6 +72,30 @@ EIRENE::EIRENE(int Fit, int Num, const string &database)
     if (!fp.is_open())
     {
         cout << "This file READING for " + path_EIRENE + " have some problem!!!\n";
+        return;
+    }
+    if (Fit_ == 0)
+    {
+        for (int i = 0; i < Num; ++i)
+            getline(fp, line);
+        string label;
+        int fit_flag = 0;
+        fp >> label >> fit_flag;
+        for (int i = 0; i < 9; ++i)
+            fp >> label >> data_[i];
+    }
+    if (Fit_ == 1)
+    {
+        for (int i = 0; i < Num; ++i)
+            getline(fp, line);
+        string label;
+        for (int i = 0; i < 15; ++i)
+            fp >> label >> data_[i];
+        getline(fp, line);
+        getline(fp, line);
+        data_[15] = parseFortranBound(line);
+        getline(fp, line);
+        data_[16] = parseFortranBound(line);
     }
     if (Fit_ == 2 || Fit_ == 8)
     {
@@ -63,7 +114,7 @@ EIRENE::EIRENE(int Fit, int Num, const string &database)
         for (int i = 0; i < 9; i++)
         {
             fp >> ex;
-            if (ex == "\end{verbatim}\end{small}")
+            if (ex == "\\end{verbatim}\\end{small}")
                 break;
             fp >> data_[i];
             // std::cout << data_[i] << endl;
@@ -95,6 +146,29 @@ EIRENE::EIRENE(int Fit, int Num, const string &database)
 double EIRENE::cal(double n, double T, double *H2dataforH8)
 {
     double v_EIRENE = 0;
+    if (Fit_ == 0)
+        return potential(T);
+    if (Fit_ == 1)
+    {
+        const double energy = std::max(T, 1.e-30);
+        const double log_energy = log(energy);
+        int first = 0;
+        int count = 9;
+        if (data_[15] > 0. && energy < data_[15])
+        {
+            first = 9;
+            count = 3;
+        }
+        else if (data_[16] > 0. && energy > data_[16])
+        {
+            first = 12;
+            count = 3;
+        }
+        for (int i = 0; i < count; ++i)
+            v_EIRENE += data_[first + i] * pow(log_energy, i);
+        v_EIRENE = exp(v_EIRENE);
+        return std::isfinite(v_EIRENE) && v_EIRENE > 0. ? v_EIRENE / 1.e4 : 0.;
+    }
     if (Fit_ == 2)
     {
         for (int i = 0; i < 9; i++)
@@ -197,6 +271,16 @@ double EIRENE::cal(double n, double T, double *H2dataforH8)
     }
 }
 
+double EIRENE::potential(double radius_bohr) const
+{
+    if (Fit_ != 0 || !(radius_bohr > 0.) || !(data_[3] > 0.))
+        return 0.;
+    const double rho = radius_bohr / data_[3];
+    const double g = rho < 1. ? data_[1] : data_[1] * data_[2];
+    const double exponential = exp(std::clamp(g * (1. - rho), -350., 350.));
+    return data_[0] * (exponential * exponential - 2. * exponential);
+}
+
 // C-R file reading.cpp
 ifstream &seekline(ifstream &in, int line) // ���򿪵��ļ�in����λ��line�С�
 {
@@ -223,6 +307,16 @@ int EIRENE::fit() const
 void EIRENE::out()
 {
     cout << Fit_ << '\t' << Num_ << '\t';
+    if (Fit_ == 0)
+    {
+        for (int i = 0; i < 9; i++)
+            cout << data_[i] << '\t';
+    }
+    if (Fit_ == 1)
+    {
+        for (int i = 0; i < 17; i++)
+            cout << data_[i] << '\t';
+    }
     if (Fit_ == 2 || Fit_ == 8)
     {
         for (int i = 0; i < 9; i++)

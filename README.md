@@ -64,6 +64,7 @@ The EAST triangular settings are intentionally kept simple for manual testing:
 
 - `MeshMode=3`
 - `K_D2Flight=0`
+- `D2ElasticModel=2`
 - `K_NNCs=1`
 - `K_database_Pra=2`
 - `K_Maxwell=1`
@@ -96,11 +97,25 @@ database reaction rates.  For the EAST D2 case, the main molecular channels are:
   neutral background profiles
 - target and wall recycling/re-emission
 
-The D2-D+ elastic event frequency uses AMJUEL H.3 `0.3T`, as requested by the
-EIRENE input. Its effective scattering angle matches the first angular moment
-from `0.3D/0.3T`; `0.3D` is not used as the total event rate. Heavy-particle
-H.2/H.3 arguments are converted automatically from D or T velocities to the H
-database mass scale, while electron temperature is left unchanged.
+The D2-D+ elastic model follows the three data records requested by the EIRENE
+input. AMJUEL H.3 `0.3T` supplies the Maxwell-averaged event frequency, H.1
+`0.3T` supplies the relative-energy total cross section and sampled impact
+parameter, and H.0 `0.3T` supplies the Morse interaction potential used for the
+classical center-of-mass deflection angle. The outgoing relative velocity is
+rotated around the incoming relative velocity before the exact two-body
+center-of-mass transformation. Heavy-particle arguments are converted from D
+or T velocities to the H database mass scale; electron temperature is not
+rescaled.
+
+`D2ElasticModel` controls comparison runs:
+
+- `0`: disable molecular ion elastic collisions
+- `1`: legacy H.3 `0.3T/0.3D` first-angular-moment approximation
+- `2`: EIRENE-default H.0/H.1/H.3 kinetics with a drifting Maxwellian ion sample
+- `3`: model 2 plus H.1-weighted `sigma*g*f` rejection sampling of the ion partner
+
+Run `make -f Makefile.local check-eirene-elastic` to verify the H.0/H.1
+database offsets, units, potential minimum, and cross-section extrapolation.
 
 AMMONX collisions are real kinematic events for both atomic and molecular test
 particles. The collision samples the matching local atom or molecule background
@@ -111,6 +126,22 @@ speed distribution rather than the fixed RMS-speed shortcut.
 The current EIRENE-matching surface model uses D-on-W TRIM-style reflection,
 local target incidence angle, and thermal wall re-emission consistent with the
 case input assumptions.
+
+### Transparent Boundaries And Additional Cells
+
+In MeshMode 3, triangle edges tagged `-1` or `-2` are EIRENE transparent
+standard surfaces, not reflecting walls. A neutral crossing one of these edges
+enters a collision-free additional-cell flight. The code ray-traces to the
+nearest exact event: a real vessel-wall segment or a transparent edge through
+which the particle re-enters the triangle mesh. No triangle density or plasma
+optical depth is accumulated outside the mesh. A particle reflected from a real
+wall remains in the additional-cell state until it re-enters the mesh.
+
+The per-species `*_transport_loss_summary.csv` records additional-cell exits,
+re-entries, real-wall hits, no-hit losses, H.0 samples, and H.0 numerical
+fallbacks. `wall_nearest_fallback` is retained as a regression diagnostic and
+should remain zero. MeshMode 3 wall and target incidence angles use the real
+surface index, not the triangle-edge number.
 
 ### D2+ Local Balance Density
 

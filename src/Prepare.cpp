@@ -647,7 +647,7 @@ void Prepare()
 			T2.MAR_[0].SetCor_cs(ne_core * R3_2_3r_H4.cal(ne_core, Te_core));
 		}
 	}
-	if (K_H2_elastic == 1)
+	if (K_H2_elastic == 1 && D2ElasticModel > 0)
 	{
 		if (K_H)
 		{
@@ -678,7 +678,7 @@ void Prepare()
 			}
 		}
 	}
-	else if (K_H2_elastic == 0)
+	else
 	{
 		if (K_H)
 		{
