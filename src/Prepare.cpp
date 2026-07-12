@@ -49,18 +49,25 @@ namespace
 		double weighted_angle = 0.;
 		double weighted_fast_probability = 0.;
 		double weighted_eirene_fast_probability = 0.;
+		double weighted_guard_energy = 0.;
+		double weighted_guard_fast_probability = 0.;
+		double weighted_guard_reflected_energy = 0.;
 		double weighted_sheath_factor = 0.;
 		double source_weight = 0.;
 		double inner_eirene_fast_probability = 0.;
 		double inner_source_weight = 0.;
 		double outer_eirene_fast_probability = 0.;
 		double outer_source_weight = 0.;
+		double inner_guard_fast_probability = 0.;
+		double outer_guard_fast_probability = 0.;
 		double minimum_sheath_factor = 0.;
 		double maximum_sheath_factor = 0.;
 		for (int target = 0; target < target_count; ++target)
 		{
 			const int grid_i = target < N_radial ? 1 : poloidalLastIndex();
 			const int grid_j = target < N_radial ? target : target - N_radial;
+			const int guard_i = target < N_radial ? 0 : N_poloidal - 1;
+			const auto tangent = Grid4.InwardTargetTangent(target);
 			const double sheath_factor = DTargetSheathFactorAtCell(grid_i, grid_j);
 			if (target == 0)
 				minimum_sheath_factor = maximum_sheath_factor = sheath_factor;
@@ -75,6 +82,9 @@ namespace
 			double reflected_energy_sum = 0.;
 			double eirene_weight_sum = 0.;
 			double eirene_fast_probability_sum = 0.;
+			double guard_energy_sum = 0.;
+			double guard_fast_probability_sum = 0.;
+			double guard_reflected_energy_sum = 0.;
 			for (int sample_index = 1; sample_index <= DTargetIncidentSamples; ++sample_index)
 			{
 				const double xi_normal = RadicalInverse(sample_index, 2);
@@ -84,16 +94,27 @@ namespace
 					target, xi_normal, xi_radius, xi_angle);
 				const auto eirene_incident = SampleEireneDTargetIncidentFlux(
 					target, xi_normal, xi_radius, xi_angle);
+				const auto guard_incident = SampleDIncidentFluxAtSurface(
+					guard_i, grid_j, tangent.first, tangent.second,
+					xi_normal, xi_radius, xi_angle);
 				const double fast_probability =
 					DTargetFastReflectionProbability(incident);
 				const double eirene_fast_probability =
 					DTargetFastReflectionProbability(eirene_incident);
+				const double guard_fast_probability =
+					DTargetFastReflectionProbability(guard_incident);
 				energy_sum += incident.energy_eV;
 				angle_sum += incident.angle_deg;
 				fast_probability_sum += fast_probability;
 				eirene_weight_sum += eirene_incident.statistical_weight;
 				eirene_fast_probability_sum +=
 					eirene_incident.statistical_weight * eirene_fast_probability;
+				guard_energy_sum += guard_incident.energy_eV;
+				guard_fast_probability_sum += guard_fast_probability;
+				if (guard_fast_probability > 0.)
+					guard_reflected_energy_sum += guard_fast_probability *
+						D_W_Trim.MeanReflectedEnergy(
+							guard_incident.energy_eV, guard_incident.angle_deg);
 				if (fast_probability > 0.)
 					reflected_energy_sum += fast_probability *
 						D_W_Trim.MeanReflectedEnergy(
@@ -120,14 +141,24 @@ namespace
 				target_weight * DTargetFastProbability[target];
 			weighted_eirene_fast_probability +=
 				target_weight * eirene_fast_probability;
+			weighted_guard_energy +=
+				target_weight * guard_energy_sum * inverse_samples;
+			weighted_guard_fast_probability +=
+				target_weight * guard_fast_probability_sum * inverse_samples;
+			weighted_guard_reflected_energy +=
+				target_weight * guard_reflected_energy_sum * inverse_samples;
 			if (target < N_radial)
 			{
 				inner_eirene_fast_probability += target_weight * eirene_fast_probability;
+				inner_guard_fast_probability += target_weight *
+					guard_fast_probability_sum * inverse_samples;
 				inner_source_weight += target_weight;
 			}
 			else
 			{
 				outer_eirene_fast_probability += target_weight * eirene_fast_probability;
+				outer_guard_fast_probability += target_weight *
+					guard_fast_probability_sum * inverse_samples;
 				outer_source_weight += target_weight;
 			}
 			weighted_sheath_factor += target_weight * sheath_factor;
@@ -156,6 +187,24 @@ namespace
 							  ? outer_eirene_fast_probability / outer_source_weight
 							  : 0.)
 					  << ")" << std::endl;
+			std::cout << "D target guard-cell counterfactual: E="
+					  << weighted_guard_energy / source_weight
+					  << " eV, fast reflection="
+					  << weighted_guard_fast_probability / source_weight
+					  << " (IT="
+					  << (inner_source_weight > 0.
+							  ? inner_guard_fast_probability / inner_source_weight
+							  : 0.)
+					  << ", OT="
+					  << (outer_source_weight > 0.
+							  ? outer_guard_fast_probability / outer_source_weight
+							  : 0.)
+					  << "), fast D energy="
+					  << (weighted_guard_fast_probability > 0.
+							  ? weighted_guard_reflected_energy /
+									weighted_guard_fast_probability
+							  : 0.)
+					  << " eV" << std::endl;
 		}
 	}
 
