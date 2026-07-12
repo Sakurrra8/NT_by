@@ -510,10 +510,10 @@ double DWTrimReflection::ReflectionProbability(double incident_energy_eV,
 	const double angle = clampValue(incident_angle_deg, angles_.front(), angles_.back());
 	const int ei = FindInterval(energies_.data(), static_cast<int>(energies_.size()), energy);
 	const int ai = FindInterval(angles_.data(), static_cast<int>(angles_.size()), angle);
-	const double log_energy = std::log(energy);
+	// EIRENE REFLC1 interpolates the ENAR grid linearly in incident energy.
 	const double energy_weight =
-		(log_energy - std::log(energies_[ei])) /
-		(std::log(energies_[ei + 1]) - std::log(energies_[ei]));
+		(energy - energies_[ei]) /
+		(energies_[ei + 1] - energies_[ei]);
 	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
 
 	return clampValue(
@@ -536,8 +536,8 @@ double DWTrimReflection::MeanReflectedEnergy(double incident_energy_eV,
 	const int ei = FindInterval(energies_.data(), static_cast<int>(energies_.size()), energy);
 	const int ai = FindInterval(angles_.data(), static_cast<int>(angles_.size()), angle);
 	const double energy_weight =
-		(std::log(energy) - std::log(energies_[ei])) /
-		(std::log(energies_[ei + 1]) - std::log(energies_[ei]));
+		(energy - energies_[ei]) /
+		(energies_[ei + 1] - energies_[ei]);
 	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
 
 	auto blockMean = [](const Block &block) {
@@ -567,8 +567,8 @@ DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 	const int ei = FindInterval(energies_.data(), static_cast<int>(energies_.size()), energy);
 	const int ai = FindInterval(angles_.data(), static_cast<int>(angles_.size()), angle);
 	const double energy_weight =
-		(std::log(energy) - std::log(energies_[ei])) /
-		(std::log(energies_[ei + 1]) - std::log(energies_[ei]));
+		(energy - energies_[ei]) /
+		(energies_[ei + 1] - energies_[ei]);
 	const double angle_weight = (angle - angles_[ai]) / (angles_[ai + 1] - angles_[ai]);
 
 	auto sampleBlock = [xi_energy, xi_polar, xi_azimuth](const Block &block) {
