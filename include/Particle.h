@@ -371,6 +371,7 @@ private:
 	int split_depth_{0};	// Number of variance-reduction split generations
 	int importance_region_{-1}; // Last independently defined physical importance region
 	SourceStratum source_stratum_{SourceStratum::Unknown};
+	SourceStratum primary_source_stratum_{SourceStratum::Unknown};
 	int D2p_origin_channel_{0};
 	int XY_[3];				// Particle position Grid Index in Tokamak
 	int GridIndex_;			// the mesh Index
@@ -425,6 +426,8 @@ private:
 	std::vector<double> pendingCxNeutralBefore_, pendingCxNeutralAfter_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> launchedWeightByStratum_;
 	std::vector<std::array<unsigned long long, static_cast<std::size_t>(SourceStratum::Count)>> launchedEventsByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> b2TrackLengthByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingB2TrackLengthByStratum_;
 	unsigned long long neutral_stall_loss_events_{0};
 	double neutral_stall_loss_weight_{0.};
 	unsigned long long core_loss_events_{0};
@@ -617,6 +620,7 @@ public:
 		int splitDepth;
 		int importanceRegion;
 		SourceStratum sourceStratum;
+		SourceStratum primarySourceStratum;
 		double sourceWall[4];
 		double lambda_now;
 		double d_flight;

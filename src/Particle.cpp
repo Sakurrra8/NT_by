@@ -715,6 +715,7 @@ void Particle::InitDBoundarySource(
 		source_stratum_ = SourceStratum::OuterSide;
 		break;
 	}
+	primary_source_stratum_ = source_stratum_;
 
 	split_depth_ = 0;
 	importance_region_ = -1;
@@ -884,6 +885,8 @@ void Particle::allocateStorage()
 	const std::size_t chargeStates = static_cast<std::size_t>(MaxCharge_ + 1);
 	launchedWeightByStratum_.assign(chargeStates, {});
 	launchedEventsByStratum_.assign(chargeStates, {});
+	b2TrackLengthByStratum_.assign(chargeStates, {});
+	pendingB2TrackLengthByStratum_.assign(chargeStates, {});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -1011,6 +1014,7 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 
 	Tn_ = A->Tn();
 	source_stratum_ = A->sourceStratum();
+	primary_source_stratum_ = A->primary_source_stratum_;
 	D2p_origin_channel_ = A->D2pOriginChannel();
 	split_depth_ = A->split_depth_;
 	importance_region_ = A->importance_region_;
@@ -1457,6 +1461,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 			XY_[1] = z - N_radial;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
 		}
+		primary_source_stratum_ = source_stratum_;
 		nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
 		if (XY_[1] >= N_radial / 2 && XY_[1] <= radialLastIndex())
 			Zone_ = 3;
@@ -1924,6 +1929,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	else if (k == 4) // neutral particle from Recombination
 	{
 		source_stratum_ = SourceStratum::Recombination;
+		primary_source_stratum_ = source_stratum_;
 		record_source_launch = true;
 		Charge_ = 0;
 		fate_[0] = 4;
@@ -2105,6 +2111,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 			source_stratum_ = SourceStratum::Argon;
 		else
 			source_stratum_ = SourceStratum::Puff;
+		primary_source_stratum_ = source_stratum_;
 		record_source_launch = true;
 		Charge_ = 0;
 		ChargeTag_ = 0;
@@ -2243,6 +2250,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	else if (k == 8)
 	{
 		source_stratum_ = SourceStratum::Puff;
+		primary_source_stratum_ = source_stratum_;
 		record_source_launch = true;
 		double Cos_temp = 0, Sin_temp = 1;
 		Charge_ = 0;
@@ -5379,6 +5387,7 @@ Particle::State Particle::SaveState() const
 	state.splitDepth = split_depth_;
 	state.importanceRegion = importance_region_;
 	state.sourceStratum = source_stratum_;
+	state.primarySourceStratum = primary_source_stratum_;
 	state.D2pOriginChannel = D2p_origin_channel_;
 	state.lambda_now = lambda_now_;
 	state.d_flight = d_flight_;
@@ -5431,6 +5440,7 @@ void Particle::RestoreState(const State &state)
 	split_depth_ = state.splitDepth;
 	importance_region_ = state.importanceRegion;
 	source_stratum_ = state.sourceStratum;
+	primary_source_stratum_ = state.primarySourceStratum;
 	D2p_origin_channel_ = state.D2pOriginChannel;
 	lambda_now_ = state.lambda_now;
 	d_flight_ = state.d_flight;
@@ -5608,6 +5618,7 @@ void Particle::BeginDeferredFlightStats(double scale)
 	pendingCxIonAfter_.assign(pendingCxIonBefore_.size(), 0.0);
 	pendingCxNeutralBefore_.assign(pendingCxIonBefore_.size(), 0.0);
 	pendingCxNeutralAfter_.assign(pendingCxIonBefore_.size(), 0.0);
+	pendingB2TrackLengthByStratum_.assign(chargeStates, {});
 }
 
 void Particle::EndDeferredFlightStats()
@@ -5641,6 +5652,11 @@ void Particle::EndDeferredFlightStats()
 			for (int m = 0; m < 3; ++m)
 				Tri_Sum_V_[t][m][c] += pendingTriV_[triVectorIndex(t, m, c)] * deferred_flight_stat_scale_;
 		}
+	for (int c = 0; c <= MaxCharge_; ++c)
+		for (std::size_t source = 0;
+			 source < static_cast<std::size_t>(SourceStratum::Count); ++source)
+			b2TrackLengthByStratum_[c][source] +=
+				pendingB2TrackLengthByStratum_[c][source] * deferred_flight_stat_scale_;
 	defer_flight_stats_ = false;
 	deferred_flight_stat_scale_ = 1.0;
 	pendingGridN_.clear();
@@ -5667,6 +5683,15 @@ void Particle::addDensityStatGrid(int i, int j, int charge, double n)
 
 void Particle::addFlightStatGrid(int i, int j, int charge, double n, double energy, const std::vector<double> &v)
 {
+	const std::size_t source = static_cast<std::size_t>(primary_source_stratum_);
+	if (charge >= 0 && charge <= MaxCharge_ &&
+		source < static_cast<std::size_t>(SourceStratum::Count))
+	{
+		auto &track_length = defer_flight_stats_
+			? pendingB2TrackLengthByStratum_
+			: b2TrackLengthByStratum_;
+		track_length[charge][source] += n;
+	}
 	if (defer_flight_stats_)
 	{
 		const std::size_t scalar = gridScalarIndex(i, j, charge);
@@ -9474,7 +9499,8 @@ void Particle::AppendSourceStratumSummary(std::ostream &out) const
 			out << name_ << ',' << charge << ','
 				<< sourceStratumName(static_cast<SourceStratum>(source)) << ','
 				<< launchedWeightByStratum_[charge][source] << ','
-				<< launchedEventsByStratum_[charge][source] << '\n';
+				<< launchedEventsByStratum_[charge][source] << ','
+				<< b2TrackLengthByStratum_[charge][source] << '\n';
 		}
 	}
 }
@@ -9504,6 +9530,10 @@ void Particle::Clear(int n)
 			weights.fill(0.0);
 		for (auto &events : launchedEventsByStratum_)
 			events.fill(0);
+		for (auto &track_length : b2TrackLengthByStratum_)
+			track_length.fill(0.0);
+		for (auto &track_length : pendingB2TrackLengthByStratum_)
+			track_length.fill(0.0);
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
 		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),
 				  std::array<double, 3>{0.0, 0.0, 0.0});
@@ -9608,6 +9638,7 @@ void Particle::Clear(int n)
 		elastic_h0_fallback_weight_ = 0.;
 		importance_region_ = -1;
 		source_stratum_ = SourceStratum::Unknown;
+		primary_source_stratum_ = SourceStratum::Unknown;
 		D2p_origin_channel_ = 0;
 		for (int i = 0; i < N_poloidal; i++)
 			for (int j = 0; j < N_radial; j++)
@@ -10478,7 +10509,11 @@ void Particle::SetChargeTag(int i) { ChargeTag_ = i; }
 
 SourceStratum Particle::sourceStratum() const { return source_stratum_; }
 
-void Particle::setSourceStratum(SourceStratum source) { source_stratum_ = source; }
+void Particle::setSourceStratum(SourceStratum source)
+{
+	source_stratum_ = source;
+	primary_source_stratum_ = source;
+}
 
 int Particle::D2pOriginChannel() const { return D2p_origin_channel_; }
 

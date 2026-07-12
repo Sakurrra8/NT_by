@@ -480,7 +480,7 @@ void SourceStratumSummaryOutput()
 {
     ofstream out(Outputpath + "source_stratum_summary.csv");
     out << std::setprecision(17);
-    out << "species,charge,source_stratum,launched_weight_s-1,launched_events\n";
+    out << "species,charge,source_stratum,launched_weight_s-1,launched_events,b2_track_length_inventory\n";
     if (K_H)
     {
         H.AppendSourceStratumSummary(out);
@@ -509,10 +509,10 @@ void SourceStratumSummaryOutput()
         Ar.AppendSourceStratumSummary(out);
 
     ofstream readme(Outputpath + "source_stratum_readme.txt");
-    readme << "source_stratum_summary.csv only reports launched/re-emitted particle weights and launched event counts.\n"
-           << "It is not a source-term decomposition.\n"
-           << "Do not compare these rows directly against EIRENE_IT, EIRENE_OT, or EIRENE_MCW source terms.\n"
-           << "A source-term comparison requires Sn_by_stratum / Tri_Sn_by_stratum diagnostics.\n";
+    readme << "source_stratum_summary.csv reports launched/re-emitted particle weights, event counts, and B2 track-length inventory.\n"
+           << "b2_track_length_inventory is the volume integral of density attributed to each primary source stratum.\n"
+           << "It can be compared with EIRENE pdena_int_b2 and pdenm_int_b2 after matching source strata.\n"
+           << "The launch columns are not collisional source-term decompositions; those require Sn_by_stratum diagnostics.\n";
 }
 
 void Dump_2D_Global(double Var[N_POLOIDAL_GRID][N_RADIAL_GRID], string name)
