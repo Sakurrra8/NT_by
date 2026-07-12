@@ -820,6 +820,7 @@ public:
 	void OutWallEro(int fate);
 	void AddTargetEro(int num_Ero_wall);
 	void OutTargetEro(int fate);
+	void WriteTargetImpactSummary(const string &path);
 	void AddPlasmaBoundaryEro(int num_Ero_wall);
 	void OutPlasmaBoundaryEro(int fate);
 

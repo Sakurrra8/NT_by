@@ -10013,6 +10013,29 @@ void Particle::AddTargetEro(int num_Ero_wall)
 	}
 }
 
+void Particle::WriteTargetImpactSummary(const string &path)
+{
+	if (AlltoTarget_.empty())
+		return;
+	ofstream out(path);
+	if (!out)
+		throw std::runtime_error("Cannot write target impact summary: " + path);
+	out << "species,target,side,radial_index,incident_flux_s-1,"
+		   "mean_Tn_eV,mean_kinetic_energy_eV\n";
+	out << std::scientific << std::setprecision(12);
+	const auto &target_stats = AlltoTarget_.front();
+	for (std::size_t target = 0;
+		 target < target_stats.All_PartoWall.size(); ++target)
+	{
+		const double mean_tn = target_stats.T_all(static_cast<int>(target));
+		out << name_ << ',' << target << ','
+			<< (target < static_cast<std::size_t>(N_radial) ? "inner" : "outer")
+			<< ',' << target % N_radial << ','
+			<< target_stats.All_PartoWall[target] << ','
+			<< mean_tn << ',' << 1.5 * mean_tn << '\n';
+	}
+}
+
 void Particle::OutTargetEro(int fate)
 {
 	string filename = Outputpath + fatename(fate) + "TargetEro.h5";

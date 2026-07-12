@@ -948,6 +948,11 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
     }
     out.close();
 
+    OutPar1->WriteTargetImpactSummary(
+        Outputpath + "target_impact_" + OutPar1->name() + ".csv");
+    OutPar2->WriteTargetImpactSummary(
+        Outputpath + "target_impact_" + OutPar2->name() + ".csv");
+
     /*pathout = Outputpath + "Vx_D_0_CX_Be";
     out.open(pathout);
     for (int i = 0; i < N_poloidal; i++)

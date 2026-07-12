@@ -57,6 +57,10 @@ void WallEro::AddPar(int num_Ero_wall, double n, double T, int source, int xy[2]
 {
     if (num_Ero_wall < 0 || num_Ero_wall >= num_wall_)
         return;
+
+    All_PartoWall[num_Ero_wall] += n;
+    All_E_PartoWall[num_Ero_wall] += n * T;
+
     int i = xy[0], j = xy[1];
     if (i < 0 || i >= N_p_ || j < 0 || j >= N_r_)
         return;
@@ -65,8 +69,6 @@ void WallEro::AddPar(int num_Ero_wall, double n, double T, int source, int xy[2]
     particleCount_[cell] += n;
     energySum_[cell] += n * T;
 
-    All_PartoWall[num_Ero_wall] += n;
-    All_E_PartoWall[num_Ero_wall] += n * T;
 }
 
 double WallEro::N(int wall, int i, int j) const
