@@ -794,7 +794,7 @@ void Particle::InitDBoundarySource(
 				B[source.plasma_i][source.plasma_j][2],
 				source.tangent_cos, source.tangent_sin);
 		}
-		else if (DTargetIncidentModel == 1)
+		else if (DTargetIncidentModel == 2)
 		{
 			incident.energy_eV = EireneRadialBoundaryIncidentEnergy(
 				source.plasma_i, source.plasma_j);
@@ -1492,7 +1492,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 					B[XY_[0]][XY_[1]][0],
 					B[XY_[0]][XY_[1]][1],
 					B[XY_[0]][XY_[1]][2]};
-				if (DTargetIncidentModel == 2)
+				if (DTargetIncidentModel == 1)
 				{
 					Tools::IncidentFluxSample best_incident;
 					double best_probability = -1.;
@@ -1519,7 +1519,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 					for (int component = 0; component < 3; ++component)
 						reference_direction[component] = incident.velocity[component];
 				}
-				else if (DTargetIncidentModel == 1)
+				else if (DTargetIncidentModel == 2)
 				{
 					incident.energy_eV = EireneTargetIncidentEnergy(z);
 					incident.angle_deg = 0.;

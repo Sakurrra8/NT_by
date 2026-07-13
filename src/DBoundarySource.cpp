@@ -307,7 +307,7 @@ void DBoundarySourceModel::Prepare()
                     EireneDFeReflection::MeanReflectedEnergy(
                         incident.energy_eV, incident.angle_deg);
         }
-        else if (DTargetIncidentModel == 1)
+        else if (DTargetIncidentModel == 2)
         {
             Tools::IncidentFluxSample incident;
             incident.energy_eV = EireneRadialBoundaryIncidentEnergy(

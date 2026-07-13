@@ -47,7 +47,7 @@ int K_DTargetSourceMode = 1;   // OP: 1 use recycled_neutral_flux_D; 2 use ni*|u
 int K_DBoundarySource = 0;     // OP: D+ FNIY recycling sources on PFR/outer B2 boundaries
 int DBoundaryLaunchModel = 0;  // 0 EIRENE surface recycling; 1 direct outward neutral sensitivity model
 int numPar_flight_DBoundary = 6000;
-int DTargetIncidentModel = 1;  // 0 legacy mean; 1 EIRENE ELSTEP/FLSTEP + sheath; 2 drifting-flux sensitivity
+int DTargetIncidentModel = 1;  // 0 legacy mean; 1 EIRENE NEMODS=7; 2 normal monoenergetic sensitivity
 int DTargetIncidentSamples = 4096;
 double DTargetSheathFactor = -1.0; // <=0: EIRENE SHEATH model; >0: fixed Te multiplier
 int K_ReflectDirection;        // OP: 1 for cosing distribution; 2 for forward-reflect distribution; 3 for mirror reflection

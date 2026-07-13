@@ -50,6 +50,10 @@ namespace
 		double weighted_fast_probability = 0.;
 		double weighted_sheath_factor = 0.;
 		double source_weight = 0.;
+		double inner_fast_probability = 0.;
+		double inner_source_weight = 0.;
+		double outer_fast_probability = 0.;
+		double outer_source_weight = 0.;
 		double minimum_sheath_factor = 0.;
 		double maximum_sheath_factor = 0.;
 		for (int target = 0; target < target_count; ++target)
@@ -64,7 +68,7 @@ namespace
 				minimum_sheath_factor = std::min(minimum_sheath_factor, sheath_factor);
 				maximum_sheath_factor = std::max(maximum_sheath_factor, sheath_factor);
 			}
-			if (DTargetIncidentModel == 1)
+			if (DTargetIncidentModel == 2)
 			{
 				Tools::IncidentFluxSample incident;
 				incident.energy_eV = EireneTargetIncidentEnergy(target);
@@ -120,6 +124,18 @@ namespace
 			weighted_angle += target_weight * DTargetIncidentAngle[target];
 			weighted_fast_probability +=
 				target_weight * DTargetFastProbability[target];
+			if (target < N_radial)
+			{
+				inner_fast_probability +=
+					target_weight * DTargetFastProbability[target];
+				inner_source_weight += target_weight;
+			}
+			else
+			{
+				outer_fast_probability +=
+					target_weight * DTargetFastProbability[target];
+				outer_source_weight += target_weight;
+			}
 			weighted_sheath_factor += target_weight * sheath_factor;
 			source_weight += target_weight;
 		}
@@ -127,12 +143,21 @@ namespace
 		if (source_weight > 0.)
 		{
 			std::cout << (DTargetIncidentModel == 1
-				? "D target EIRENE NEMODS=-3 incident averages: E="
-				: "D target drifting-flux sensitivity averages: E=")
+				? "D target EIRENE NEMODS=7 incident averages: E="
+				: "D target normal-monoenergetic sensitivity averages: E=")
 					  << weighted_energy / source_weight
 					  << " eV, angle=" << weighted_angle / source_weight
 					  << " deg, fast reflection="
 					  << weighted_fast_probability / source_weight
+					  << " (IT="
+					  << (inner_source_weight > 0.
+							  ? inner_fast_probability / inner_source_weight
+							  : 0.)
+					  << ", OT="
+					  << (outer_source_weight > 0.
+							  ? outer_fast_probability / outer_source_weight
+							  : 0.)
+					  << ")"
 					  << ", sheath factor="
 					  << weighted_sheath_factor / source_weight
 					  << " [" << minimum_sheath_factor << ", "

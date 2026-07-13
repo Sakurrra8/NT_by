@@ -299,9 +299,9 @@ void Initialize(int Input, char *settingfile[])
   std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
   std::cout << "DTargetIncidentModel: " << DTargetIncidentModel
             << (DTargetIncidentModel == 1
-                    ? " (EIRENE NEMODS=-3 normal monoenergetic, target 3Ti+0.5Te+sheath"
+                    ? " (EIRENE NEMODS=7 drifting flux plus sheath"
                     : DTargetIncidentModel == 2
-                          ? " (drifting incident-flux sensitivity"
+                          ? " (normal monoenergetic sensitivity, target 3Ti+0.5Te+sheath"
                           : " (legacy mean energy/angle")
             << ", sheath="
             << (DTargetSheathFactor <= 0. ? "EIRENE dynamic" : "fixed")
