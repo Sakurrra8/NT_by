@@ -60,16 +60,17 @@ def read_fort35_b2(path):
 
 def read_eirene_field(path, field_name):
     lines = Path(path).read_text().splitlines()
-    count = int(lines[0].split()[0])
     marker = f'*eirene data field {field_name}'
-    start = next(
-        (index + 1 for index, line in enumerate(lines) if marker in line),
+    marker_index = next(
+        (index for index, line in enumerate(lines) if marker in line),
         None,
     )
-    if start is None:
+    if marker_index is None:
         raise ValueError(f'{field_name} is missing from {path}')
+    marker_values = lines[marker_index].split()
+    count = int(marker_values[marker_values.index('size') + 1])
     values = []
-    line_index = start
+    line_index = marker_index + 1
     while len(values) < count:
         values.extend(float(value) for value in lines[line_index].split())
         line_index += 1
@@ -119,6 +120,56 @@ def read_b2_matrix(path):
     if data.ndim == 2 and data.shape[1] == 4:
         return np.transpose(data[:, 3].reshape(38, 98))
     raise ValueError(f'{path} is not a recognized B2 98x38 field')
+
+
+def source_stratum_rows(summary_path, fort44_path):
+    eirene_fields = {
+        ('D', 'tri'): read_eirene_field(fort44_path, 'pdena_int'),
+        ('D2', 'tri'): read_eirene_field(fort44_path, 'pdenm_int'),
+        ('D', 'b2'): read_eirene_field(fort44_path, 'pdena_int_b2'),
+        ('D2', 'b2'): read_eirene_field(fort44_path, 'pdenm_int_b2'),
+    }
+    stratum_index = {
+        'IT': 1,
+        'OT': 2,
+        'PFRSide1': 3,
+        'PFRSide2': 4,
+        'OuterSide': 5,
+        'Recombination': 6,
+    }
+    rows = []
+    with Path(summary_path).open(newline='') as stream:
+        reader = csv.DictReader(stream)
+        inventory_columns = {
+            'b2_track_length_inventory',
+            'tri_track_length_inventory',
+        }
+        if not inventory_columns.issubset(reader.fieldnames or []):
+            return rows
+        for record in reader:
+            species = record['species']
+            stratum = record['source_stratum']
+            if record['charge'] != '0' or species not in ('D', 'D2'):
+                continue
+            if stratum not in stratum_index:
+                continue
+            for mesh, code_column in (
+                ('tri', 'tri_track_length_inventory'),
+                ('b2', 'b2_track_length_inventory'),
+            ):
+                code = float(record[code_column])
+                ref = eirene_fields[(species, mesh)][stratum_index[stratum]]
+                row = metric_row(
+                    f'SourceStratum_{mesh}_n_{species}_0_{stratum}',
+                    np.asarray([code]),
+                    np.asarray([ref]),
+                    np.ones(1),
+                )
+                row['mesh'] = mesh
+                row['source_stratum'] = stratum
+                row['note'] = 'track-length inventory compared with fort.44 source-stratum integral'
+                rows.append(row)
+    return rows
 
 
 def map_b2_to_tri(field, b2):
@@ -365,6 +416,7 @@ def main():
         ))
 
     rows = []
+    target_profiles = []
     for name, code, ref in fields:
         if len(code) != len(ref) or len(code) != len(vol):
             raise ValueError(name + ' length mismatch')
@@ -416,6 +468,19 @@ def main():
                 row['note'] = 'direct comparison with the exported EIRENE B2 field'
                 rows.append(row)
                 plot_b2_field(outdir, name, code, ref)
+
+                for side, poloidal in (('inner', 1), ('outer', 96)):
+                    for radial_index in range(1, 37):
+                        ref_value = ref[poloidal, radial_index]
+                        code_value = code[poloidal, radial_index]
+                        target_profiles.append({
+                            'field': name,
+                            'side': side,
+                            'radial_index': radial_index,
+                            'code': code_value,
+                            'reference': ref_value,
+                            'ratio': code_value / ref_value if ref_value > 0.0 else np.nan,
+                        })
 
                 for region_name, poloidal, first_radial, last_radial in (
                     ('inner_target', 1, 1, 36),
@@ -525,6 +590,17 @@ def main():
                 'note': 'missing vol_2D.data for B2 volume weighting',
             })
 
+    source_summary = out / 'source_stratum_summary.csv'
+    fort44 = case / 'solps_output/fort.44'
+    if source_summary.exists() and fort44.exists():
+        rows.extend(source_stratum_rows(source_summary, fort44))
+
+    if target_profiles:
+        with open(outdir / 'b2_target_profiles.csv', 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=target_profiles[0].keys())
+            writer.writeheader()
+            writer.writerows(target_profiles)
+
     keys = []
     for row in rows:
         for key in row:
@@ -538,6 +614,8 @@ def main():
     for row in rows:
         print(row)
     print('wrote', outdir / 'benchmark_tri_metrics.csv')
+    if target_profiles:
+        print('wrote', outdir / 'b2_target_profiles.csv')
     if HAS_MATPLOTLIB:
         print('figures in', outdir)
     else:
