@@ -19,6 +19,8 @@ struct DBoundarySourceSegment
     DBoundarySourceRegion region{DBoundarySourceRegion::PFRSide1};
     int grid_i{-1};
     int grid_j{-1};
+    int plasma_i{-1};
+    int plasma_j{-1};
     int file_i{0};
     int file_j{0};
     int triangle{-1};

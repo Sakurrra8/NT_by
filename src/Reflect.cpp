@@ -349,6 +349,62 @@ namespace
 constexpr std::array<double, 7> kQuantileGrid{{0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0}};
 constexpr double kDegreesToRadians = 0.01745329251994329577;
 
+constexpr std::array<double, 13> kBehrischEnergy{{
+	0.0, 4.64, 10.0, 21.5, 46.4, 100.0, 215.4,
+	464.1, 1000.0, 2154.3, 4641.3, 10000.0, 21543.0}};
+constexpr std::array<double, 13> kBehrischReflection{{
+	0.1, 0.16196111407789604, 0.23256897420786862,
+	0.3754165603126227, 0.5976228746548047, 0.543, 0.46,
+	0.37, 0.29, 0.21, 0.14, 0.095, 0.04}};
+constexpr std::array<double, 13> kBehrischRange{{
+	0.0, 6.81, 14.7, 31.63, 68.1, 146.8, 316.3,
+	681.9, 1468.0, 3162.0, 6813.0, 14678.0, 31630.0}};
+constexpr std::array<std::array<double, 12>, 12> kBehrischCdf{{
+	{{1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.}},
+	{{.2, 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.}},
+	{{.1, .2, 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.}},
+	{{.025, .05, .35, 1., 1., 1., 1., 1., 1., 1., 1., 1.}},
+	{{.012, .025, .1, .45, 1., 1., 1., 1., 1., 1., 1., 1.}},
+	{{.01, .02, .05, .15, .55, 1., 1., 1., 1., 1., 1., 1.}},
+	{{.002, .005, .02, .055, .175, .625, 1., 1., 1., 1., 1., 1.}},
+	{{.001, .003, .011, .029, .079, .224, .699, 1., 1., 1., 1., 1.}},
+	{{.001, .003, .007, .016, .04, .105, .301, .771, 1., 1., 1., 1.}},
+	{{0., .001, .003, .007, .018, .05, .14, .4, .83, 1., 1., 1.}},
+	{{0., .001, .003, .006, .011, .025, .073, .215, .505, .865, 1., 1.}},
+	{{0., .001, .003, .005, .009, .015, .035, .105, .305, .6, .9, 1.}}
+}};
+
+// Ratio EREDC(D,Fe)/EREDC(H,Fe) from EIRENE REFLEC.
+constexpr double kDFeReducedEnergyScale = 57.0 / 58.0;
+
+int behrischRangeIndex(double incident_energy_eV)
+{
+	const double reduced_energy = incident_energy_eV * kDFeReducedEnergyScale;
+	for (int range = 1; range <= 12; ++range)
+		if (kBehrischEnergy[range] >= reduced_energy)
+			return range;
+	return 12;
+}
+
+double behrischMeanRawEnergy(int range)
+{
+	double mean = 0.0;
+	double previous_cdf = 0.0;
+	for (int box = 1; box <= range; ++box)
+	{
+		const double cdf = box == range
+			? 1.0
+			: kBehrischCdf[range - 1][box - 1];
+		const double lower = kBehrischRange[box - 1];
+		const double upper = box == range
+			? kBehrischEnergy[range]
+			: kBehrischRange[box];
+		mean += (cdf - previous_cdf) * 0.5 * (lower + upper);
+		previous_cdf = cdf;
+	}
+	return mean;
+}
+
 double clampValue(double value, double low, double high)
 {
 	return std::max(low, std::min(high, value));
@@ -375,6 +431,83 @@ std::vector<double> numbersInLine(const std::string &line)
 		values.push_back(value);
 	return values;
 }
+}
+
+double EireneDFeReflection::ReflectionProbability(
+	double incident_energy_eV, double incident_angle_deg)
+{
+	if (incident_energy_eV <= 1.0)
+		return 0.0;
+
+	const double reduced_energy = incident_energy_eV * kDFeReducedEnergyScale;
+	const int range = behrischRangeIndex(incident_energy_eV);
+	const int lower = range - 1;
+	const double energy_weight =
+		(reduced_energy - kBehrischEnergy[lower]) /
+		(kBehrischEnergy[range] - kBehrischEnergy[lower]);
+	const double normal_probability = clampValue(
+		linear(kBehrischReflection[lower], kBehrischReflection[range],
+			   energy_weight),
+		0.0, 1.0);
+	const double cosine = clampValue(
+		std::cos(incident_angle_deg * kDegreesToRadians), 0.0, 1.0);
+	return clampValue(1.0 - (1.0 - normal_probability) * cosine, 0.0, 1.0);
+}
+
+double EireneDFeReflection::MeanReflectedEnergy(
+	double incident_energy_eV, double incident_angle_deg)
+{
+	if (incident_energy_eV <= 1.0)
+		return 0.0;
+	const int range = behrischRangeIndex(incident_energy_eV);
+	const double cosine = clampValue(
+		std::cos(incident_angle_deg * kDegreesToRadians), 0.0, 1.0);
+	const double angular_factor = std::sqrt(cosine);
+	const double reflected_fraction =
+		(1.0 - angular_factor) +
+		behrischMeanRawEnergy(range) / kBehrischEnergy[range] * angular_factor;
+	return clampValue(incident_energy_eV * reflected_fraction,
+					 0.0, incident_energy_eV);
+}
+
+double EireneDFeReflection::SampleReflectedEnergy(
+	double incident_energy_eV, double incident_angle_deg, double xi)
+{
+	if (incident_energy_eV <= 1.0)
+		return 0.0;
+	xi = clampValue(xi, 0.0, 1.0);
+	const int range = behrischRangeIndex(incident_energy_eV);
+	double previous_cdf = 0.0;
+	double sampled_raw_energy = kBehrischEnergy[range];
+	for (int box = 1; box <= range; ++box)
+	{
+		const double cdf = box == range
+			? 1.0
+			: kBehrischCdf[range - 1][box - 1];
+		if (cdf > xi || box == range)
+		{
+			const double lower = kBehrischRange[box - 1];
+			const double upper = box == range
+				? kBehrischEnergy[range]
+				: kBehrischRange[box];
+			const double probability = cdf - previous_cdf;
+			const double fraction = probability > 0.0
+				? (xi - previous_cdf) / probability
+				: 0.0;
+			sampled_raw_energy = linear(lower, upper, fraction);
+			break;
+		}
+		previous_cdf = cdf;
+	}
+
+	const double cosine = clampValue(
+		std::cos(incident_angle_deg * kDegreesToRadians), 0.0, 1.0);
+	const double angular_factor = std::sqrt(cosine);
+	const double reflected_fraction =
+		(1.0 - angular_factor) +
+		sampled_raw_energy / kBehrischEnergy[range] * angular_factor;
+	return clampValue(incident_energy_eV * reflected_fraction,
+					 0.0, incident_energy_eV);
 }
 
 double DWTrimReflection::SampleQuantile(const std::array<double, 7> &values, double xi)
@@ -642,7 +775,7 @@ DWReflectionSample DWTrimReflection::Sample(double incident_energy_eV,
 	result.cos_polar = clampValue(
 		bilinear(q00.cos_polar, q10.cos_polar, q01.cos_polar, q11.cos_polar,
 				 energy_weight, angle_weight),
-		0.0, 1.0);
+		0.08716, 0.999999);
 	result.cos_azimuth = clampValue(
 		bilinear(q00.cos_azimuth, q10.cos_azimuth, q01.cos_azimuth, q11.cos_azimuth,
 				 energy_weight, angle_weight),

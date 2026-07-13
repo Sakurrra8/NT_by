@@ -289,7 +289,7 @@ void Initialize(int Input, char *settingfile[])
     }
   }
   D2ElasticModel = std::clamp(D2ElasticModel, 0, 3);
-  DTargetIncidentModel = std::clamp(DTargetIncidentModel, 0, 1);
+  DTargetIncidentModel = std::clamp(DTargetIncidentModel, 0, 2);
   DTargetIncidentSamples = std::max(256, DTargetIncidentSamples);
   K_DBoundarySource = std::clamp(K_DBoundarySource, 0, 1);
   DBoundaryLaunchModel = std::clamp(DBoundaryLaunchModel, 0, 1);
@@ -298,7 +298,12 @@ void Initialize(int Input, char *settingfile[])
     D2ElasticModel = 0;
   std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
   std::cout << "DTargetIncidentModel: " << DTargetIncidentModel
-            << " (sheath="
+            << (DTargetIncidentModel == 1
+                    ? " (EIRENE NEMODS=-3 normal monoenergetic, target 3Ti+0.5Te+sheath"
+                    : DTargetIncidentModel == 2
+                          ? " (drifting incident-flux sensitivity"
+                          : " (legacy mean energy/angle")
+            << ", sheath="
             << (DTargetSheathFactor <= 0. ? "EIRENE dynamic" : "fixed")
             << ", factor=" << DTargetSheathFactor
             << ", averaging samples=" << DTargetIncidentSamples << ")"

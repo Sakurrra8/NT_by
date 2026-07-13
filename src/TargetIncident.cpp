@@ -32,6 +32,29 @@ double DTargetSheathFactorAtCell(int grid_i, int grid_j)
     return std::max(0., -std::log(sheath_argument));
 }
 
+double EireneTargetIncidentEnergy(int target)
+{
+    if (target < 0 || target >= 2 * N_radial)
+        throw std::out_of_range("D target incident energy has invalid target index");
+
+    const int grid_i = target < N_radial ? 0 : N_poloidal - 1;
+    const int grid_j = target < N_radial ? target : target - N_radial;
+    // INFCOP assigns 3 Ti + 0.5 Te to the main poloidal target flux.
+    return std::max(
+        0., 3. * Ti[grid_i][grid_j] + 0.5 * Te[grid_i][grid_j] +
+                DTargetSheathFactorAtCell(grid_i, grid_j) *
+                    Te[grid_i][grid_j]);
+}
+
+double EireneRadialBoundaryIncidentEnergy(int grid_i, int grid_j)
+{
+    // INFCOP assigns 2 Ti to the main radial PFR/outer-boundary flux.
+    return std::max(
+        0., 2. * Ti[grid_i][grid_j] +
+                DTargetSheathFactorAtCell(grid_i, grid_j) *
+                    Te[grid_i][grid_j]);
+}
+
 Tools::IncidentFluxSample SampleDTargetIncidentFlux(
     int target, double xi_normal,
     double xi_gaussian_radius, double xi_gaussian_angle)

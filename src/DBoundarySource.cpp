@@ -121,10 +121,6 @@ void DBoundarySourceModel::Prepare()
 {
     if (!loaded_)
         throw std::runtime_error("D boundary source was enabled but FNIY was not loaded");
-    if (K_DWTrimReflection != 1 || K_Wallelement != 1)
-        throw std::runtime_error(
-            "D boundary source currently requires D-on-W TRIM reflection");
-
     using Key = std::pair<int, int>;
     std::map<Key, std::vector<DBoundarySourceSegment>> candidates;
     for (std::size_t triangle = 0; triangle < Grid4.tris_.size(); ++triangle)
@@ -172,6 +168,11 @@ void DBoundarySourceModel::Prepare()
             segment.region = region;
             segment.grid_i = grid_i;
             segment.grid_j = grid_j;
+            segment.plasma_i = grid_i;
+            segment.plasma_j =
+                region == DBoundarySourceRegion::OuterSide
+                    ? N_radial - 1
+                    : 0;
             segment.file_i = grid_i - 1;
             segment.file_j = region == DBoundarySourceRegion::OuterSide ? 36 : -1;
             segment.triangle = static_cast<int>(triangle);
@@ -259,6 +260,14 @@ void DBoundarySourceModel::Prepare()
     const double recycling = std::max(0., coeff_ercyc_wall);
     for (auto &segment : segments_)
     {
+        const auto fast_probability =
+            [&](const Tools::IncidentFluxSample &incident)
+        {
+            return std::min(
+                recycling,
+                EireneDFeReflection::ReflectionProbability(
+                    incident.energy_eV, incident.angle_deg));
+        };
         double energy_sum = 0.;
         double angle_sum = 0.;
         double fast_sum = 0.;
@@ -269,7 +278,7 @@ void DBoundarySourceModel::Prepare()
                  sample_index <= DTargetIncidentSamples; ++sample_index)
             {
                 const auto incident = SampleDPlasmaBoundaryOutflow(
-                    segment.grid_i, segment.grid_j,
+                    segment.plasma_i, segment.plasma_j,
                     segment.tangent_cos, segment.tangent_sin,
                     RadicalInverse(sample_index, 2),
                     RadicalInverse(sample_index, 3),
@@ -282,21 +291,35 @@ void DBoundarySourceModel::Prepare()
         {
             Tools::IncidentFluxSample incident;
             incident.energy_eV =
-                2. * Ti[segment.grid_i][segment.grid_j] +
-                3. * Te[segment.grid_i][segment.grid_j];
+                2. * Ti[segment.plasma_i][segment.plasma_j] +
+                3. * Te[segment.plasma_i][segment.plasma_j];
             incident.angle_deg = Tools::CalBFieldToWallNormalAngle(
-                B[segment.grid_i][segment.grid_j][0],
-                B[segment.grid_i][segment.grid_j][1],
-                B[segment.grid_i][segment.grid_j][2],
+                B[segment.plasma_i][segment.plasma_j][0],
+                B[segment.plasma_i][segment.plasma_j][1],
+                B[segment.plasma_i][segment.plasma_j][2],
                 segment.tangent_cos, segment.tangent_sin);
-            const double fast =
-                DFastReflectionProbability(incident, recycling);
+            const double fast = fast_probability(incident);
             energy_sum = incident.energy_eV * DTargetIncidentSamples;
             angle_sum = incident.angle_deg * DTargetIncidentSamples;
             fast_sum = fast * DTargetIncidentSamples;
             if (fast > 0.)
                 reflected_energy_sum = fast * DTargetIncidentSamples *
-                    D_W_Trim.MeanReflectedEnergy(
+                    EireneDFeReflection::MeanReflectedEnergy(
+                        incident.energy_eV, incident.angle_deg);
+        }
+        else if (DTargetIncidentModel == 1)
+        {
+            Tools::IncidentFluxSample incident;
+            incident.energy_eV = EireneRadialBoundaryIncidentEnergy(
+                segment.plasma_i, segment.plasma_j);
+            incident.angle_deg = 0.;
+            const double fast = fast_probability(incident);
+            energy_sum = incident.energy_eV * DTargetIncidentSamples;
+            angle_sum = 0.;
+            fast_sum = fast * DTargetIncidentSamples;
+            if (fast > 0.)
+                reflected_energy_sum = fast * DTargetIncidentSamples *
+                    EireneDFeReflection::MeanReflectedEnergy(
                         incident.energy_eV, incident.angle_deg);
         }
         else
@@ -305,19 +328,18 @@ void DBoundarySourceModel::Prepare()
                  sample_index <= DTargetIncidentSamples; ++sample_index)
             {
                 const auto incident = SampleDIncidentFluxAtSurface(
-                    segment.grid_i, segment.grid_j,
+                    segment.plasma_i, segment.plasma_j,
                     segment.tangent_cos, segment.tangent_sin,
                     RadicalInverse(sample_index, 2),
                     RadicalInverse(sample_index, 3),
                     RadicalInverse(sample_index, 5));
-                const double fast =
-                    DFastReflectionProbability(incident, recycling);
+                const double fast = fast_probability(incident);
                 energy_sum += incident.energy_eV;
                 angle_sum += incident.angle_deg;
                 fast_sum += fast;
                 if (fast > 0.)
                     reflected_energy_sum += fast *
-                        D_W_Trim.MeanReflectedEnergy(
+                        EireneDFeReflection::MeanReflectedEnergy(
                             incident.energy_eV, incident.angle_deg);
             }
         }
@@ -381,7 +403,8 @@ void DBoundarySourceModel::WriteSummary(const std::string &path) const
     std::ofstream output(path);
     if (!output)
         throw std::runtime_error("Cannot write D boundary source summary: " + path);
-    output << "region,grid_i,grid_j,file_i,file_j,triangle,edge,x0,y0,x1,y1,"
+    output << "region,grid_i,grid_j,plasma_i,plasma_j,file_i,file_j,"
+              "triangle,edge,x0,y0,x1,y1,"
               "surface_area_m2,ion_flux_s-1,mean_incident_energy_eV,"
               "mean_incident_angle_deg,fast_probability,"
               "mean_reflected_energy_eV,D_source_s-1,D2_source_s-1\n";
@@ -389,6 +412,7 @@ void DBoundarySourceModel::WriteSummary(const std::string &path) const
     for (const auto &segment : segments_)
         output << DBoundarySourceRegionName(segment.region) << ','
                << segment.grid_i << ',' << segment.grid_j << ','
+               << segment.plasma_i << ',' << segment.plasma_j << ','
                << segment.file_i << ',' << segment.file_j << ','
                << segment.triangle << ',' << segment.edge << ','
                << segment.x0 << ',' << segment.y0 << ','

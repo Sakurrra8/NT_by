@@ -63,5 +63,52 @@ int main(int argc, char **argv)
 
     if (std::abs(sampled_mean_energy - tabulated_mean_energy) > 0.02)
         return 1;
+
+    const auto grazing_sample = reflection.Sample(
+        500., 85., 1., 0., 0.5, minimum_energy_eV);
+    if (grazing_sample.cos_polar < 0.08716 ||
+        grazing_sample.cos_polar > 0.999999)
+    {
+        std::cerr << "D-on-W polar-angle sample is outside EIRENE REFLC1 bounds\n";
+        return 1;
+    }
+
+    constexpr double behrisch_grid_energy_eV = 10. * 58. / 57.;
+    constexpr double expected_normal_probability = 0.23256897420786862;
+    const double normal_probability = EireneDFeReflection::ReflectionProbability(
+        behrisch_grid_energy_eV, 0.);
+    const double oblique_probability = EireneDFeReflection::ReflectionProbability(
+        behrisch_grid_energy_eV, 60.);
+    const double expected_oblique_probability =
+        1. - 0.5 * (1. - expected_normal_probability);
+    if (EireneDFeReflection::ReflectionProbability(1., 0.) != 0. ||
+        std::abs(normal_probability - expected_normal_probability) > 1.e-12 ||
+        std::abs(oblique_probability - expected_oblique_probability) > 1.e-12)
+    {
+        std::cerr << "EIRENE Behrisch reflection probability mismatch\n";
+        return 1;
+    }
+
+    double behrisch_energy_sum = 0.;
+    for (int index = 1; index <= samples; ++index)
+    {
+        const double energy = EireneDFeReflection::SampleReflectedEnergy(
+            20., 35., radicalInverse(index, 2));
+        if (!std::isfinite(energy) || energy < 0. || energy > 20.)
+        {
+            std::cerr << "Invalid EIRENE Behrisch energy sample\n";
+            return 1;
+        }
+        behrisch_energy_sum += energy;
+    }
+    const double behrisch_sampled_mean = behrisch_energy_sum / samples;
+    const double behrisch_expected_mean =
+        EireneDFeReflection::MeanReflectedEnergy(20., 35.);
+    std::cout << "behrisch_sampled_mean_energy_eV="
+              << behrisch_sampled_mean << '\n'
+              << "behrisch_expected_mean_energy_eV="
+              << behrisch_expected_mean << '\n';
+    if (std::abs(behrisch_sampled_mean - behrisch_expected_mean) > 0.002)
+        return 1;
     return 0;
 }

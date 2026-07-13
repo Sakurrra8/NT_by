@@ -3,7 +3,10 @@
 #include "Particle.h"
 #include "DBoundarySource.h"
 
+#include <cmath>
 #include <filesystem>
+#include <sstream>
+#include <stdexcept>
 
 namespace
 {
@@ -15,6 +18,51 @@ namespace
         Path_Ei_Dion_l, Path_Ei_Dion_r, Path_bb, Path_bpol,
         Path_brad, Path_btor, Path_Epol, Path_Erad, Path_Dn;
     int a, b, c;
+
+    void TargetSectionRead(const std::string &path_l,
+                           const std::string &path_r,
+                           const std::string &section,
+                           double values[])
+    {
+        const auto read_side = [&](const std::string &path, int offset)
+        {
+            std::ifstream input(path);
+            if (!input)
+                throw std::runtime_error("Cannot open target profile: " + path);
+
+            std::string line;
+            bool found = false;
+            int count = 0;
+            while (std::getline(input, line))
+            {
+                if (!found)
+                {
+                    found = line.find(section) != std::string::npos;
+                    continue;
+                }
+                if (!line.empty() && line.front() == '#')
+                    break;
+
+                std::istringstream row(line);
+                double coordinate = 0.0;
+                double value = 0.0;
+                if (!(row >> coordinate >> value))
+                    continue;
+                values[offset + count] = std::abs(value);
+                if (++count == N_radial)
+                    return;
+            }
+
+            if (!found)
+                throw std::runtime_error(
+                    "Target profile section '" + section + "' is missing in " + path);
+            throw std::runtime_error(
+                "Target profile section '" + section + "' is incomplete in " + path);
+        };
+
+        read_side(path_l, 0);
+        read_side(path_r, N_radial);
+    }
 }
 
 void Read()
@@ -238,9 +286,10 @@ void Read()
 
     if (K_Ei == 1)
     {
-        Path_Ei_Dion_l = Casepath + "ei_Dion_l.data";
-        Path_Ei_Dion_r = Casepath + "ei_Dion_r.data";
-        TargetRead(Path_Ei_Dion_l, Path_Ei_Dion_r, Ei_Dion);
+        Path_Ei_Dion_l = Casepath + "2D_data/ei_Dion_l.data";
+        Path_Ei_Dion_r = Casepath + "2D_data/ei_Dion_r.data";
+        TargetSectionRead(
+            Path_Ei_Dion_l, Path_Ei_Dion_r, "D@S@+1@N@", Ei_Dion);
     }
 
     // Dn read

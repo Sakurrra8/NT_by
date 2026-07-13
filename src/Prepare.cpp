@@ -42,7 +42,7 @@ namespace
 		DTargetFastProbability.assign(target_count, 0.);
 		DTargetMeanIncidentEnergy.assign(target_count, 0.);
 		DTargetMeanReflectedEnergy.assign(target_count, 0.);
-		if (DTargetIncidentModel != 1 || K_DWTrimReflection != 1 || K_Wallelement != 1)
+		if (DTargetIncidentModel == 0 || K_DWTrimReflection != 1 || K_Wallelement != 1)
 			return;
 
 		double weighted_energy = 0.;
@@ -64,36 +64,56 @@ namespace
 				minimum_sheath_factor = std::min(minimum_sheath_factor, sheath_factor);
 				maximum_sheath_factor = std::max(maximum_sheath_factor, sheath_factor);
 			}
-			double energy_sum = 0.;
-			double angle_sum = 0.;
-			double fast_probability_sum = 0.;
-			double reflected_energy_sum = 0.;
-			for (int sample_index = 1; sample_index <= DTargetIncidentSamples; ++sample_index)
+			if (DTargetIncidentModel == 1)
 			{
-				const auto incident = SampleDTargetIncidentFlux(
-					target,
-					RadicalInverse(sample_index, 2),
-					RadicalInverse(sample_index, 3),
-					RadicalInverse(sample_index, 5));
-				const double fast_probability =
+				Tools::IncidentFluxSample incident;
+				incident.energy_eV = EireneTargetIncidentEnergy(target);
+				incident.angle_deg = 0.;
+				Ei_Dion[target] = incident.energy_eV;
+				DTargetMeanIncidentEnergy[target] = incident.energy_eV;
+				DTargetIncidentAngle[target] = incident.angle_deg;
+				DTargetFastProbability[target] =
 					DTargetFastReflectionProbability(incident);
-				energy_sum += incident.energy_eV;
-				angle_sum += incident.angle_deg;
-				fast_probability_sum += fast_probability;
-				if (fast_probability > 0.)
-					reflected_energy_sum += fast_probability *
+				if (DTargetFastProbability[target] > 0.)
+					DTargetMeanReflectedEnergy[target] =
 						D_W_Trim.MeanReflectedEnergy(
 							incident.energy_eV, incident.angle_deg);
 			}
+			else
+			{
+				double energy_sum = 0.;
+				double angle_sum = 0.;
+				double fast_probability_sum = 0.;
+				double reflected_energy_sum = 0.;
+				for (int sample_index = 1;
+					 sample_index <= DTargetIncidentSamples; ++sample_index)
+				{
+					const auto incident = SampleDTargetIncidentFlux(
+						target,
+						RadicalInverse(sample_index, 2),
+						RadicalInverse(sample_index, 3),
+						RadicalInverse(sample_index, 5));
+					const double fast_probability =
+						DTargetFastReflectionProbability(incident);
+					energy_sum += incident.energy_eV;
+					angle_sum += incident.angle_deg;
+					fast_probability_sum += fast_probability;
+					if (fast_probability > 0.)
+						reflected_energy_sum += fast_probability *
+							D_W_Trim.MeanReflectedEnergy(
+								incident.energy_eV, incident.angle_deg);
+				}
 
-			const double inverse_samples = 1. / DTargetIncidentSamples;
-			DTargetMeanIncidentEnergy[target] = energy_sum * inverse_samples;
-			DTargetIncidentAngle[target] = angle_sum * inverse_samples;
-			DTargetFastProbability[target] = fast_probability_sum * inverse_samples;
-			if (fast_probability_sum > 0.)
-				DTargetMeanReflectedEnergy[target] =
-					reflected_energy_sum / fast_probability_sum;
-			Ei_Dion[target] = DTargetMeanIncidentEnergy[target];
+				const double inverse_samples = 1. / DTargetIncidentSamples;
+				DTargetMeanIncidentEnergy[target] = energy_sum * inverse_samples;
+				DTargetIncidentAngle[target] = angle_sum * inverse_samples;
+				DTargetFastProbability[target] =
+					fast_probability_sum * inverse_samples;
+				if (fast_probability_sum > 0.)
+					DTargetMeanReflectedEnergy[target] =
+						reflected_energy_sum / fast_probability_sum;
+				Ei_Dion[target] = DTargetMeanIncidentEnergy[target];
+			}
 
 			const double target_weight = std::max(0., NumPar_wall_D[target]);
 			weighted_energy += target_weight * DTargetMeanIncidentEnergy[target];
@@ -106,7 +126,9 @@ namespace
 
 		if (source_weight > 0.)
 		{
-			std::cout << "D target NEMODS=7-like incident averages: E="
+			std::cout << (DTargetIncidentModel == 1
+				? "D target EIRENE NEMODS=-3 incident averages: E="
+				: "D target drifting-flux sensitivity averages: E=")
 					  << weighted_energy / source_weight
 					  << " eV, angle=" << weighted_angle / source_weight
 					  << " deg, fast reflection="
@@ -114,7 +136,8 @@ namespace
 					  << ", sheath factor="
 					  << weighted_sheath_factor / source_weight
 					  << " [" << minimum_sheath_factor << ", "
-					  << maximum_sheath_factor << "]" << std::endl;
+					  << maximum_sheath_factor << "]";
+			std::cout << std::endl;
 		}
 	}
 
@@ -978,8 +1001,10 @@ void Prepare()
 	{
 		if (K_Ei == 2)
 		{
-			Ei_Dion[i] = 2. * Ti[1][i] + 3. * 1.0 * Te[1][i];
-			Ei_Dion[i + N_radial] = 2. * Ti[poloidalLastIndex()][i] + 3. * 1.0 * Te[poloidalLastIndex()][i];
+			Ei_Dion[i] = 2. * Ti[1][i] + 3. * Te[1][i];
+			Ei_Dion[i + N_radial] =
+				2. * Ti[poloidalLastIndex()][i] +
+				3. * Te[poloidalLastIndex()][i];
 		}
 	}
 
@@ -1084,9 +1109,9 @@ void Prepare()
 		{
 			for (int i = 0; i < N_radial * 2; i++)
 			{
-				const bool sampled_incident =
-					DTargetIncidentModel == 1 && K_DWTrimReflection == 1;
-				const double reflection_probability = sampled_incident
+				const bool prepared_incident =
+					DTargetIncidentModel != 0 && K_DWTrimReflection == 1;
+				const double reflection_probability = prepared_incident
 					? DTargetFastProbability[i]
 					: (K_DWTrimReflection == 1
 						   ? (Ei_Dion[i] >= DWTrimERMIN
@@ -1095,13 +1120,13 @@ void Prepare()
 								  : 0.0)
 						   : D_W.n_RefCoeff(
 								 K_Reflect, Ei_Dion[i], angle_B_with_target[i]));
-				const double fast_probability = sampled_incident
+				const double fast_probability = prepared_incident
 					? reflection_probability
 					: std::min(coeff_recyc_target, reflection_probability);
 				NumPar_D_recyc[i] = NumPar_wall_D[i] * fast_probability;
 				NumPar_D2_recyc[i] =
 					(coeff_recyc_target - fast_probability) * NumPar_wall_D[i] / 2.0;
-				if (sampled_incident)
+				if (prepared_incident)
 				{
 					Tn_D_recyc[i] = DTargetMeanReflectedEnergy[i] / 1.5;
 				}
@@ -1115,7 +1140,7 @@ void Prepare()
 						fast_probability * Ei_Dion[i] / 1.5;
 				else
 					Tn_D_recyc[i] = 0.0;
-				if (!sampled_incident)
+				if (!prepared_incident)
 				{
 					DTargetMeanIncidentEnergy[i] = Ei_Dion[i];
 					DTargetFastProbability[i] = fast_probability;

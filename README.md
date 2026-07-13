@@ -123,17 +123,19 @@ velocity, updates all three velocity components, and recalculates the test
 particle energy after the event. The validation inputs use the full Maxwell
 speed distribution rather than the fixed RMS-speed shortcut.
 
-The current EIRENE-matching surface model uses D-on-W TRIM-style reflection and
-thermal wall re-emission. `DTargetIncidentModel=1` replaces the single target
-energy/angle with an EIRENE `NEMODS=7`-style incident distribution: a local
-drifting Maxwellian flux restricted to velocities directed into the target,
-followed by normal sheath acceleration of `DTargetSheathFactor*Te`. The TRIM
-reflection probability and reflected-state sample use each incident sample's
-energy and angle. A fixed low-discrepancy average over
-`DTargetIncidentSamples` sets the D/D2 source weights; fast-D histories then
-sample the corresponding reflection-conditioned incident distribution.
-`DTargetIncidentModel=0` retains the former `2*Ti+3*Te` mean-energy and local
-B-to-target-normal angle model for A/B tests. Run
+The target model uses the D-on-W TRIM database selected by the EIRENE input.
+`DTargetIncidentModel=1` matches the automatically generated EIRENE recycling
+source (`NEMODS=-3`): every source ion is monoenergetic and normally incident.
+For the main target-face flux, the incident energy is reconstructed from
+EIRENE's `ELSTEP/FLSTEP` expression, `3*Ti + 0.5*Te`, and the dynamic sheath
+energy is then added. For this input's target normals (`NINCT=-1/+1`),
+`INFCOP` obtains those plasma values from the left/right B2 guard cells. The
+optional `K_Ei=1`
+reader still selects the `D@S@+1@N@` section of `ei_Dion_l/r.data` for legacy
+mode 0, but that diagnostic is not used by mode 1. `DTargetIncidentModel=2`
+retains the drifting Maxwellian-flux plus sheath model as a sensitivity case,
+while mode 0 retains the configured mean-energy and B-to-target-normal angle
+path. Run
 `make -f Makefile.local check-target-incident` to verify the analytic flux
 moments and sheath-energy increment.
 
@@ -141,16 +143,17 @@ The optional `K_DBoundarySource=1` path reconstructs EIRENE interface strata
 3--5 from the species-resolved SOLPS `fnay_Dplus.dat` field. Negative flux on
 the lower radial boundary supplies the two PFR-side strata; positive flux on
 the upper radial boundary supplies the outer-side stratum. The file values are
-face-integrated D+ rates in s^-1. Each ion flux is folded with the same local
-`NEMODS=7`-style incident distribution and D-on-W surface model as the target:
-fast products launch D atoms and the remaining recycled nuclei launch thermal
-D2 molecules. Source points are sampled on the exact plasma/non-plasma
-triangle edge and emitted into the plasma triangle. `D_boundary_source.csv`
-records the geometry, FNIY strength, incident moments, D/D2 split, and provides
-an explicit source-nuclei closure check. `numPar_flight_DBoundary` controls the
-combined Monte Carlo history budget for the three strata. For controlled A/B
-tests, `DTargetIncidentModel=0` also switches these boundary strata to the
-former `2*Ti+3*Te` energy and local B-to-surface-normal angle.
+face-integrated D+ rates in s^-1. For EIRENE mode 1, the source state comes from
+the radial guard cell, has normal incidence, and uses the radial-boundary energy
+`2*Ti + sheath`; the optional inclined-face flux term is not present in the
+available export. These transparent PFR/outer surfaces use EIRENE's default
+D-on-Fe modified Behrisch model (`ILREF=2`, `EWALL=0.0388 eV`), not the target's
+D-on-W TRIM model. Fast products launch cosine-distributed D atoms and the
+remaining recycled nuclei launch thermal D2 molecules. Source points are
+sampled on the exact plasma/non-plasma triangle edge and emitted into the
+plasma triangle. `D_boundary_source.csv` records both geometry and guard-cell
+indices, FNIY strength, incident moments, D/D2 split, and the source-nuclei
+closure. `numPar_flight_DBoundary` controls the combined history budget.
 
 ### Transparent Boundaries And Additional Cells
 

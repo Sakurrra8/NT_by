@@ -19,7 +19,7 @@ K_Ar                0       # option: Ar pump near Target
 K_database          2       # option: 1: ADAS, 2: EIRENE
 K_database_Pra      2       # EIRENE H.10/H.8 energy-weighted rates
 K_Maxwell           1       # EIRENE-aligned Maxwellian background/product velocity sampling
-K_Ei                2       # retain the established target-energy model for this comparison
+K_Ei                2       # legacy fallback; model 1 reconstructs EIRENE ELSTEP/FLSTEP + sheath
 K_WallRefl          1       # option: 1: Trim database, 2: Fixed parameters
 K_backScatter       1       # option: 1: Chance backing-scatter; 2: Real backing-scatter;
 K_MarColl           1       # option: 1: 2 Separate sub-reactions; 2: 1 Sum-reaction;
@@ -76,7 +76,7 @@ D2ElasticModel      3       # 0 off; 1 H.3 moment; 2 H.0/H.1/H.3; 3 EIRENE-like 
 MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
 K_DWTargetActualAngle 1     # use local B-to-target-normal incidence angle
-DTargetIncidentModel 1      # 0 fixed mean E/angle; 1 NEMODS=7-like drifting flux plus sheath
+DTargetIncidentModel 1      # 0 legacy mean; 1 EIRENE NEMODS=-3 normal monoenergetic; 2 drifting-flux sensitivity
 DTargetSheathFactor -1.0    # <=0 EIRENE SHEATH from local D+ flow; >0 fixed Te multiplier
 DTargetIncidentSamples 4096 # low-discrepancy samples per target for source-weight averaging
 K_DTargetSourceMode 1       # 1 use recycled_neutral_flux_D; 2 use ni*abs(ua)*abs(b.normal)*target_area and TRIM split

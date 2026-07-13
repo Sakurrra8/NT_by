@@ -98,4 +98,19 @@ public:
 							  double minimum_energy_eV = 0.0) const;
 };
 
+// EIRENE ILREF=2 default surface model for D incident on Fe.
+class EireneDFeReflection
+{
+public:
+	static constexpr double ThermalTemperatureEV = 0.0388;
+
+	static double ReflectionProbability(double incident_energy_eV,
+										double incident_angle_deg);
+	static double MeanReflectedEnergy(double incident_energy_eV,
+								  double incident_angle_deg);
+	static double SampleReflectedEnergy(double incident_energy_eV,
+									double incident_angle_deg,
+									double xi);
+};
+
 #endif

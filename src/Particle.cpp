@@ -760,7 +760,7 @@ void Particle::InitDBoundarySource(
 		GridIndex_ = -1;
 
 		const auto outflow = SampleDPlasmaBoundaryOutflow(
-			source.grid_i, source.grid_j,
+			source.plasma_i, source.plasma_j,
 			source.tangent_cos, source.tangent_sin,
 			Tools::Random(), Tools::Random(), Tools::Random());
 		for (int component = 0; component < 3; ++component)
@@ -783,20 +783,22 @@ void Particle::InitDBoundarySource(
 	if (this == &D)
 	{
 		Tools::IncidentFluxSample incident;
-		double incident_direction[3] = {
-			B[source.grid_i][source.grid_j][0],
-			B[source.grid_i][source.grid_j][1],
-			B[source.grid_i][source.grid_j][2]};
 		if (DTargetIncidentModel == 0)
 		{
 			incident.energy_eV =
-				2. * Ti[source.grid_i][source.grid_j] +
-				3. * Te[source.grid_i][source.grid_j];
+				2. * Ti[source.plasma_i][source.plasma_j] +
+				3. * Te[source.plasma_i][source.plasma_j];
 			incident.angle_deg = Tools::CalBFieldToWallNormalAngle(
-				B[source.grid_i][source.grid_j][0],
-				B[source.grid_i][source.grid_j][1],
-				B[source.grid_i][source.grid_j][2],
+				B[source.plasma_i][source.plasma_j][0],
+				B[source.plasma_i][source.plasma_j][1],
+				B[source.plasma_i][source.plasma_j][2],
 				source.tangent_cos, source.tangent_sin);
+		}
+		else if (DTargetIncidentModel == 1)
+		{
+			incident.energy_eV = EireneRadialBoundaryIncidentEnergy(
+				source.plasma_i, source.plasma_j);
+			incident.angle_deg = 0.;
 		}
 		else
 		{
@@ -806,11 +808,13 @@ void Particle::InitDBoundarySource(
 			for (int attempt = 0; attempt < DTargetIncidentSamples; ++attempt)
 			{
 				incident = SampleDIncidentFluxAtSurface(
-					source.grid_i, source.grid_j,
+					source.plasma_i, source.plasma_j,
 					source.tangent_cos, source.tangent_sin,
 					Tools::Random(), Tools::Random(), Tools::Random());
-				const double probability =
-					DFastReflectionProbability(incident, coeff_ercyc_wall);
+				const double probability = std::min(
+					std::max(0., coeff_ercyc_wall),
+					EireneDFeReflection::ReflectionProbability(
+						incident.energy_eV, incident.angle_deg));
 				if (probability > best_probability)
 				{
 					best_probability = probability;
@@ -824,21 +828,18 @@ void Particle::InitDBoundarySource(
 			}
 			if (!accepted)
 				incident = best_incident;
-			for (int component = 0; component < 3; ++component)
-				incident_direction[component] = incident.velocity[component];
 		}
-		const DWReflectionSample reflected = D_W_Trim.Sample(
+		const double reflected_energy = EireneDFeReflection::SampleReflectedEnergy(
 			incident.energy_eV, incident.angle_deg,
-			Tools::Random(), Tools::Random(), Tools::Random(), 2. * T_wall);
-		Tn_ = (2. / 3.) * reflected.energy_eV;
-		speed = std::sqrt(2. * qe * std::max(0., reflected.energy_eV) / mass_);
-		setDWTrimDirection(
-			V_, reflected, source.tangent_cos, source.tangent_sin,
-			incident_direction);
+			Tools::Random());
+		Tn_ = (2. / 3.) * reflected_energy;
+		speed = std::sqrt(2. * qe * std::max(0., reflected_energy) / mass_);
+		Tools::calculateReflectionVelocity(
+			V_, source.tangent_cos, source.tangent_sin, 0);
 	}
 	else
 	{
-		Tn_ = T_wall;
+		Tn_ = EireneDFeReflection::ThermalTemperatureEV;
 		speed = Tools::MaxwellianFluxSpeed(Tn_, mass_);
 		Tools::calculateReflectionVelocity(
 			V_, source.tangent_cos, source.tangent_sin, 0);
@@ -1491,7 +1492,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 					B[XY_[0]][XY_[1]][0],
 					B[XY_[0]][XY_[1]][1],
 					B[XY_[0]][XY_[1]][2]};
-				if (DTargetIncidentModel == 1)
+				if (DTargetIncidentModel == 2)
 				{
 					Tools::IncidentFluxSample best_incident;
 					double best_probability = -1.;
@@ -1517,6 +1518,14 @@ void Particle::Init(int k, int z, double scattering_cosine)
 						incident = best_incident;
 					for (int component = 0; component < 3; ++component)
 						reference_direction[component] = incident.velocity[component];
+				}
+				else if (DTargetIncidentModel == 1)
+				{
+					incident.energy_eV = EireneTargetIncidentEnergy(z);
+					incident.angle_deg = 0.;
+					reference_direction[0] = target_sin;
+					reference_direction[1] = -target_cos;
+					reference_direction[2] = 0.;
 				}
 				else
 				{
