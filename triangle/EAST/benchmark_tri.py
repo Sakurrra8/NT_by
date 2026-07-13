@@ -58,6 +58,42 @@ def read_fort35_b2(path):
     return b2
 
 
+def read_eirene_field(path, field_name):
+    lines = Path(path).read_text().splitlines()
+    count = int(lines[0].split()[0])
+    marker = f'*eirene data field {field_name}'
+    start = next(
+        (index + 1 for index, line in enumerate(lines) if marker in line),
+        None,
+    )
+    if start is None:
+        raise ValueError(f'{field_name} is missing from {path}')
+    values = []
+    line_index = start
+    while len(values) < count:
+        values.extend(float(value) for value in lines[line_index].split())
+        line_index += 1
+    return np.asarray(values[:count])
+
+
+def read_eirene_neutral_triangles(path):
+    fields = {}
+    for species, density_name, energy_name in (
+        ('D', 'pdena', 'edena'),
+        ('D2', 'pdenm', 'edenm'),
+    ):
+        density_cm3 = read_eirene_field(path, density_name)
+        energy_density = read_eirene_field(path, energy_name)
+        fields[f'n_{species}_0'] = density_cm3 * 1.0e6
+        fields[f'T_{species}_0'] = np.divide(
+            (2.0 / 3.0) * energy_density,
+            density_cm3,
+            out=np.zeros_like(energy_density),
+            where=density_cm3 > 0.0,
+        )
+    return fields
+
+
 def tri_volume(r, z, triangles):
     rr = r[triangles]
     zz = z[triangles]
@@ -307,15 +343,17 @@ def main():
     wall = np.loadtxt(wall_path, skiprows=1) if wall_path.exists() else None
 
     fields = []
+    fort46 = case / 'solps_output/fort.46'
+    eirene_triangles = read_eirene_neutral_triangles(fort46)
     direct = [
-        ('n_D_0', out / 'n_D_0_Tri', case / 'D_0_n_Tri'),
-        ('n_D2_0', out / 'n_D2_0_Tri', case / 'D2_0_n_Tri'),
-        ('T_D_0', out / 'T_D_0_Tri', case / 'D_0_T_Tri'),
-        ('T_D2_0', out / 'T_D2_0_Tri', case / 'D2_0_T_Tri'),
+        ('n_D_0', out / 'n_D_0_Tri'),
+        ('n_D2_0', out / 'n_D2_0_Tri'),
+        ('T_D_0', out / 'T_D_0_Tri'),
+        ('T_D2_0', out / 'T_D2_0_Tri'),
     ]
-    for name, code_path, ref_path in direct:
-        if code_path.exists() and ref_path.exists():
-            fields.append((name, np.loadtxt(code_path), np.loadtxt(ref_path)))
+    for name, code_path in direct:
+        if code_path.exists():
+            fields.append((name, np.loadtxt(code_path), eirene_triangles[name]))
 
     d2ion_path = out / 'n_D2_1_Tri'
     solps_d2ion_path = case / '2D_data/nDmoleculeion_2D.data'
@@ -335,6 +373,24 @@ def main():
         rows.append(row)
         plot_field(outdir, triangulation, wall, name, code, ref, args.xlim, args.ylim)
 
+    field_values = {name: (code, ref) for name, code, ref in fields}
+    inner_tail_triangles = (
+        (b2[:, 0] == 1) & (b2[:, 1] >= 30) & (b2[:, 1] <= 36)
+    )
+    for name in ('n_D2_0', 'T_D2_0'):
+        if name not in field_values or not np.any(inner_tail_triangles):
+            continue
+        code, ref = field_values[name]
+        row = metric_row(
+            f'Tri_inner_target_r30_36_{name}',
+            code[inner_tail_triangles],
+            ref[inner_tail_triangles],
+            vol[inner_tail_triangles],
+        )
+        row['mesh'] = 'tri'
+        row['region'] = 'inner_target_b2_i1_radial_30_36'
+        rows.append(row)
+
     if not args.skip_b2_sources:
         vol_path = case / 'vol_2D.data'
         if not vol_path.exists():
@@ -342,6 +398,44 @@ def main():
         if vol_path.exists():
             b2_vol = read_b2_matrix(vol_path)
             rows.append(b2_tri_volume_row(b2_vol, vol, b2))
+            b2_neutral_fields = [
+                ('B2_n_D_0', 'n_D_0', 'nDatom_2D.data'),
+                ('B2_n_D2_0', 'n_D2_0', 'nDmolecule_2D.data'),
+                ('B2_T_D_0', 'T_D_0', 'tDatom_2D.data'),
+                ('B2_T_D2_0', 'T_D2_0', 'tDmolecule_2D.data'),
+            ]
+            for name, code_name, ref_name in b2_neutral_fields:
+                code_path = out / code_name
+                ref_path = case / '2D_data' / ref_name
+                if not code_path.exists() or not ref_path.exists():
+                    continue
+                code = read_b2_matrix(code_path)
+                ref = read_b2_matrix(ref_path)
+                row = metric_row(name, code.ravel(), ref.ravel(), b2_vol.ravel())
+                row['mesh'] = 'b2'
+                row['note'] = 'direct comparison with the exported EIRENE B2 field'
+                rows.append(row)
+                plot_b2_field(outdir, name, code, ref)
+
+                for region_name, poloidal, first_radial, last_radial in (
+                    ('inner_target', 1, 1, 36),
+                    ('inner_target_r30_36', 1, 30, 36),
+                    ('outer_target', 96, 1, 36),
+                ):
+                    radial = slice(first_radial, last_radial + 1)
+                    region_row = metric_row(
+                        f'{name}_{region_name}',
+                        code[poloidal, radial],
+                        ref[poloidal, radial],
+                        b2_vol[poloidal, radial],
+                    )
+                    region_row['mesh'] = 'b2'
+                    region_row['region'] = region_name
+                    region_row['note'] = (
+                        f'B2 poloidal index {poloidal}, radial indices '
+                        f'{first_radial}-{last_radial}'
+                    )
+                    rows.append(region_row)
             code_d2ion_path = out / 'n_D2_1'
             ref_d2ion_path = case / '2D_data/nDmoleculeion_2D.data'
             if code_d2ion_path.exists() and ref_d2ion_path.exists():

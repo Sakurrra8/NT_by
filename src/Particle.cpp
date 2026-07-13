@@ -5814,6 +5814,10 @@ void Particle::NumParStat()
 	X_[0] = X_new_[0];
 	X_[1] = X_new_[1];
 	X_[2] = X_new_[2];
+	const double kinetic_energy_eV =
+		0.5 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) +
+					   Tools::sqr(V_[2])) /
+		qe;
 	// std::cout << "dt_trace: " << dt_trace_ << endl;
 	bool valid_b2_stat_cell =
 		Zone_ < 6 && Zone_ > 1 &&
@@ -5845,14 +5849,14 @@ void Particle::NumParStat()
 				const double n = Weight_ * (defer_flight_stats_ ? 1.0 : NumPar_now) * dt_trace_;
 				if (K_T_array == 1)
 				{
-					FT_.accumulateGrid(XY_[0], XY_[1], 1.5 * Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now * dt_trace_);
+					FT_.accumulateGrid(XY_[0], XY_[1], kinetic_energy_eV, V_[0], V_[1], V_[2], Weight_ * NumPar_now * dt_trace_);
 				}
-				addFlightStatGrid(XY_[0], XY_[1], Charge_, n, 1.5 * Tn_ * n, V_);
+				addFlightStatGrid(XY_[0], XY_[1], Charge_, n, kinetic_energy_eV * n, V_);
 			}
 			else if (K_flight == 2)
 			{
 				const double n = Weight_ * (defer_flight_stats_ ? 1.0 : NumPar_now) * dt;
-				addFlightStatGrid(XY_[0], XY_[1], Charge_, n, Tn_ * n, V_);
+				addFlightStatGrid(XY_[0], XY_[1], Charge_, n, kinetic_energy_eV * n, V_);
 			}
 		}
 
@@ -5874,12 +5878,12 @@ void Particle::NumParStat()
 					FT_.accumulateGrid(XY_[0], XY_[1], 1.5 * Tn_, V_[0], V_[1], V_[2], Weight_ * NumPar_now * dt_trace_);
 				}*/
 				const double n = Weight_ * (defer_flight_stats_ ? 1.0 : NumPar_now) * dt_trace_;
-				addFlightStatTri(Tri_Index_, Charge_, n, 1.5 * Tn_ * n, V_);
+				addFlightStatTri(Tri_Index_, Charge_, n, kinetic_energy_eV * n, V_);
 			}
 			else if (K_flight == 2)
 			{
 				const double n = Weight_ * (defer_flight_stats_ ? 1.0 : NumPar_now) * dt;
-				addFlightStatTri(Tri_Index_, Charge_, n, Tn_ * n, V_);
+				addFlightStatTri(Tri_Index_, Charge_, n, kinetic_energy_eV * n, V_);
 			}
 		}
 
@@ -8599,7 +8603,8 @@ void Particle::Stat(int n)
 						V_D_1_[i][j][m][0] = Sum_V_D_1_[i][j][m][0] / Num_V_D_1_[i][j][0];
 					}
 					E_[i][j][0] = Sum_E_[i][j][0] / Sum_n_[i][j][0];
-					T_[i][j][0] = 2. / 3. * (E_[i][j][0] - 0.5 * mass_ * (Tools::sqr(V_Grid_[i][j][0][0]) + Tools::sqr(V_Grid_[i][j][1][0]) + Tools::sqr(V_Grid_[i][j][2][0])) / 1.6e-19);
+					// EIRENE tDatom/tDmolecule includes directed kinetic energy.
+					T_[i][j][0] = 2. / 3. * E_[i][j][0];
 				}
 				n_[i][j][0] = Sum_n_[i][j][0] / Volume[i][j];
 				for (int m = 0; m < 4; m++)
@@ -8617,7 +8622,7 @@ void Particle::Stat(int n)
 							V_Grid_[i][j][m][k] = Sum_V_[i][j][m][k] / Sum_n_[i][j][k];
 						}
 						E_[i][j][k] = Sum_E_[i][j][k] / Sum_n_[i][j][k];
-						T_[i][j][k] = 2. / 3. * (E_[i][j][k] - 0.5 * mass_ * (Tools::sqr(V_Grid_[i][j][0][k]) + Tools::sqr(V_Grid_[i][j][1][k]) + Tools::sqr(V_Grid_[i][j][2][k])) / 1.6e-19);
+						T_[i][j][k] = 2. / 3. * E_[i][j][k];
 					}
 					n_[i][j][k] = Sum_n_[i][j][k] / Volume[i][j];
 					for (int m = 0; m < Num_array_ + 1; m++)
@@ -8861,7 +8866,7 @@ void Particle::Stat_Tri(int n)
 					Tri_V_Grid_[i][m][0] = Tri_Sum_V_[i][m][0] / Tri_Sum_n_[i][0];
 				}
 				Tri_E_[i][0] = Tri_Sum_E_[i][0] / Tri_Sum_n_[i][0];
-				Tri_T_[i][0] = 2. / 3. * (Tri_E_[i][0] - 0.5 * mass_ * (Tools::sqr(Tri_V_Grid_[i][0][0]) + Tools::sqr(Tri_V_Grid_[i][1][0]) + Tools::sqr(Tri_V_Grid_[i][2][0])) / 1.602e-19);
+				Tri_T_[i][0] = 2. / 3. * Tri_E_[i][0];
 			}
 			Tri_n_[i][0] = Tri_Sum_n_[i][0] / Grid4.triVolume(i);
 		}
@@ -8876,7 +8881,7 @@ void Particle::Stat_Tri(int n)
 						Tri_V_Grid_[i][m][k] = Tri_Sum_V_[i][m][k] / Tri_Sum_n_[i][k];
 					}
 					Tri_E_[i][k] = Tri_Sum_E_[i][k] / Tri_Sum_n_[i][k];
-					Tri_T_[i][k] = 2. / 3. * (Tri_E_[i][k] - 0.5 * mass_ * (Tools::sqr(Tri_V_Grid_[i][0][k]) + Tools::sqr(Tri_V_Grid_[i][1][k]) + Tools::sqr(Tri_V_Grid_[i][2][k])) / 1.602e-19);
+					Tri_T_[i][k] = 2. / 3. * Tri_E_[i][k];
 				}
 				Tri_n_[i][k] = Tri_Sum_n_[i][k] / Grid4.triVolume(i);
 			}
