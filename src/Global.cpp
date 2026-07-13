@@ -37,7 +37,7 @@ int K_Prob;                    // OP: 1: add the cross-section; 2: add the colli
 int K_CX_impurity;             // OP: CX collision recation
 std::array<int, 5> K_Puff{};   // OP: Puff, 0 and 1 for different puff ports
 int K_D2Flight;                // OP: D2 flight
-int D2ElasticModel = 2;        // 0 off, 1 H.3 moment, 2 H.0/H.1/H.3, 3 with rejection sampling
+int D2ElasticModel = 2;        // 0 off, 1 H.3 moment, 2 EIRENE default, 3 sigma*v rejection sensitivity
 int K_abnormal_transport;      // OP: abnormal transport
 int K_flight;                  // OP: 1 for mean free path; 2 for fixed time step; 3 for
 int K_Reflect;                 // OP: 1 for empirical formula; 2 for Trim database; 3 for calculate from Trim
