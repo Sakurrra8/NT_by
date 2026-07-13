@@ -81,6 +81,116 @@ through the local DS branching ratios, and reported with the local `P/L`
 density estimator. It is neither injected nor transported as a finite-orbit
 test ion in the validation inputs.
 
+## Input Setting Reference
+
+This reference follows
+`Inputfile/settingfile/setting_Trimesh_D_5.log`, which is the template for the
+current EAST density scan. The settings through `coeff_puff` are read
+**positionally**: keep those lines in the same order and do not remove a line
+when disabling a feature. In particular, the historical spellings
+`K_Rflect`, `K_RflectDirection`, and `coeff_ercyc_wall` are intentional input
+labels; their values are stored in the code variables `K_Reflect`,
+`K_ReflectDirection`, and the wall recycling coefficient. The later optional
+settings are searched by name.
+
+Paths are interpreted from the run working directory unless stated otherwise.
+`DBoundaryFluxFile` is relative to `Casepath`, while `DWTrimDatabase` names a
+directory below `Inputpath/database/`.
+
+### Paths And Mesh
+
+| Setting | Current value | Effect |
+| --- | ---: | --- |
+| `Inputpath` | `Inputfile/` | Root for code input tables and geometry support files. |
+| `Casepath` | `case_input/2MW-5e19/` | SOLPS/EIRENE case root containing `2D_data/`, `profiles_data/`, and mesh data. This is the only path changed between the density-scan setting files. |
+| `Outputpath` | `Outputfile/test/data/` | Destination for generated densities, rates, audits, and optional HDF5 files. |
+| `Databasepath` | `Inputfile/database/` | Root of the EIRENE/AMJUEL/HYDHEL/AMMONX reaction database. It must be valid when `K_database=2`; otherwise the particles can be transported without the intended collisions. |
+| `N_poloidal`, `N_radial` | `98`, `38` | B2 grid dimensions, including guard cells. They must match the exported SOLPS case. |
+| `MeshMode` | `3` | `1`: structured orthogonal grid; `2`: legacy full/external grid; `3`: triangular neutral mesh coupled to B2 cells. The EAST validation uses mode 3. |
+
+### Species And Sources
+
+| Setting | Current value | Effect |
+| --- | ---: | --- |
+| `K_H`, `K_D`, `K_T` | `0`, `1`, `0` | Enable H, D, and T test-particle systems. The current case transports only deuterium neutrals. |
+| `K_back` | `2` | Select the hydrogenic plasma background isotope: `1=H`, `2=D`, `3=T`. |
+| `K_DT` | `0` | Enable mixed D-T simulation branches. Keep off for the pure-D validation case. |
+| `Ratio_T` | `0` | Tritium fraction of the hydrogenic background used by mixed-isotope branches. |
+| `K_CX_DT` | `0` | Enable cross-isotope D-T/T-D charge exchange. It is inactive when `K_DT=0`. |
+| `K_Recyc` | `1` | Launch target-recycling D/D2 histories from the prepared target source. |
+| `K_Rec` | `1` | Launch neutral histories produced by plasma recombination. This is a volume source, separate from target recycling. |
+| `K_Puff[0..4]` | all `0` | Five hard-coded gas-puff/pumping-location toggles. All zero means that the validation case has no puff source. |
+| `K_Methane`, `K_C`, `K_Ar` | all `0` | Enable CD4, carbon, or argon source/transport branches. They are excluded from the D/D2 comparison. |
+| `numPar_flight` | `50000` | Monte Carlo history budget used for volume/grid sources such as recombination. |
+| `numPar_flight_Target` | `50000` | Total history budget shared by target-recycled atomic and molecular sources. |
+| `numPar_flight_D2`, `Num_D2_pump` | `0`, `0` | D2 pump history budget and represented source rate. Both must be positive, together with `K_D=1`, to create an artificial D2 pump source. They do not control D2 made by recycling or reactions. |
+| `numPar_flight_T2`, `Num_T2_pump` | `0`, `0` | Equivalent T2 pump controls. |
+| `numPar_flight_CD4`, `Num_CD4_pump` | `0`, `0` | Equivalent methane-source controls; `K_Methane` must also be enabled. |
+
+### Collision And Transport
+
+| Setting | Current value | Effect |
+| --- | ---: | --- |
+| `K_database` | `2` | Main hydrogenic collision database: `1=ADAS`, `2=EIRENE/AMJUEL/HYDHEL`. Use 2 for direct EIRENE validation. |
+| `K_database_Pra` | `2` | Product-energy/momentum treatment: `1=legacy ADAS-style`, `2=EIRENE H.10/H.8 energy-weighted rates`. |
+| `K_Maxwell` | `1` | Background/product velocity sampler: `1=full Maxwellian`, `2=legacy fixed RMS-speed shortcut`. |
+| `K_H2_elastic` | `1` | Master switch for D2-D+ molecular elastic collisions. Setting it to zero forces `D2ElasticModel=0`. |
+| `D2ElasticModel` | `2` | `0`: off; `1`: H.3 first-moment approximation; `2`: H.0/H.1/H.3 two-body kinematics with a drifting Maxwellian ion; `3`: mode 2 plus H.1 `sigma*v` rejection sampling of the ion partner. Mode 3 is the closest current kinetic-parity option, while mode 2 is the validation baseline. |
+| `K_NNCs` | `1` | Enable AMMONX neutral-neutral D-D, D-D2, D2-D, and D2-D2 collisions against the fixed neutral background. |
+| `K_MarColl` | `1` | Molecular-ion loss representation: `1=separate DS1/DS2/DS3 branches`; `2=legacy summed MAR channel`. Separate branches are required for product-aware D tracking and local D2+ balance. |
+| `K_CX_impurity` | `1` | Enable charge exchange for enabled impurity species such as C and Ar. It has no effect while those species switches are zero. |
+| `K_Prob` | `1` | `1`: sum local reaction frequencies first and sample from the total; `2`: legacy sum of individual finite-step probabilities. Mode 1 is used for physical collision competition. |
+| `K_flight` | `1` | Neutral flight algorithm: `1`: sample a mean free time/path from the local total rate; `2`: fixed-`dt` collision checks; `3`: legacy null-collision/delta tracking using a global minimum mean free time. |
+| `dt` | `1e-8 s` | Fixed neutral step for `K_flight=2` and requested charged-particle step when optional D2+ flight is enabled. It does not replace the sampled neutral free-flight time in mode 1. |
+| `t_max` | `10` | Legacy maximum-time input. It is parsed but is not currently used as an active termination condition. |
+| `K_D2Flight` | `0` | `0`: EIRENE `NFOL=-1` local D2+ production/loss balance, with no D2+ orbit; `1`: experimental fixed-time D2+ test-ion transport and secondary D-product tracking. This does not enable a D2 gas source. |
+| `K_EcrossBDrift` | `0` | Add E-cross-B drift to charged test-particle pushes. It does not affect neutral D/D2. |
+| `K_abnormal_transport` | `1` | Enable anomalous cross-field diffusion for charged tracked particles. Neutral particles return before this operator, and the switch has no D2+ effect while `K_D2Flight=0`. |
+| `K_dn` | `1` | Anomalous diffusivity source: `1`: fixed 0.3 m^2/s; `2`: read the SOLPS radial profile from `Casepath/dn3da.data` in the main chamber. Used only when anomalous charged transport is active. |
+
+### Wall, Target, And Interface Sources
+
+| Setting | Current value | Effect |
+| --- | ---: | --- |
+| `K_Wallelement` | `1` | Global legacy wall material selector: `1=W`, `2=C`. The current comparison is an all-W wall case. |
+| `K_WallRefl` | `1` | Legacy positional compatibility flag (`1=TRIM`, `2=fixed` in the old input convention). The active current reflection backend is selected by `K_Rflect` and, for D-on-W, `K_DWTrimReflection`. |
+| `K_Rflect` | `2` | Reflection coefficient source stored as `K_Reflect`: `1`: Eckstein empirical formula; `2`: tabulated TRIM `Rn/RE` files; `3`: alternate generated TRIM tables. |
+| `K_RflectDirection` | `3` | Reflected direction model: `1=cosine`; `2=forward/half-cosine`; `3=specular`. The D-on-W distribution model may provide its own sampled direction. |
+| `K_backScatter` | `1` | Enable stochastic reflected-atom versus thermal-molecule recycling in the legacy structured-grid wall path. MeshMode 3 performs this branching directly from the reflection and recycling coefficients. |
+| `backGridBoundry` | `1` | Legacy structured-grid charged-particle boundary recovery switch. MeshMode 3 uses triangle-boundary and additional-cell logic instead. |
+| `coeff_recyc_target` | `1` | Fraction of incident target nuclei returned as recycled neutrals. The reflected atomic part is bounded by this value; the remainder is emitted as molecules. |
+| `coeff_ercyc_wall` | `1` | Equivalent recycling coefficient for vessel-wall impacts. The misspelling is part of the positional input format. |
+| `coeff_puff` | `0.99` | Local recycling/pumping coefficient at any enabled `K_Puff` location; inactive when all puff switches are zero. |
+| `K_DWTrimReflection` | `1` | `1`: use the selected differential D-on-W TRIM distribution for reflection probability, energy, and angle; `0`: use the legacy `K_Rflect` D-W coefficient model. |
+| `DWTrimDatabase` | `D_on_W` | D-on-W database directory below `Inputpath/database/`. |
+| `DWTrimERMIN_eV` | `1 eV` | Minimum incident energy for fast D-on-W reflection. Below it, fast reflection is disabled and recycled nuclei enter the thermal branch. |
+| `SurfaceTemperature_eV` | `0.1 eV` | Wall temperature used for thermal Maxwellian-flux re-emission. |
+| `K_DWTargetActualAngle` | `1` | `1`: derive the target incidence reference from local B and the actual target normal; `0`: use a fixed 60-degree value. |
+| `K_Ei` | `2` | Legacy target incident-energy input for `DTargetIncidentModel=0`: `1`: read `ei_Dion_l/r.data`; `2`: use `2*Ti+3*Te`; `3`: legacy Ti-only path. It does not set the mode-1 sampled ion energy. |
+| `DTargetIncidentModel` | `1` | `0`: legacy mean energy/angle; `1`: EIRENE `NEMODS=7` drifting Maxwellian ion flux plus sheath; `2`: normal monoenergetic sensitivity model. |
+| `DTargetSheathFactor` | `-1` | For target incident modes, values `<=0` use the EIRENE-style dynamic sheath from local D+ flow; positive values use a fixed multiple of `Te`. |
+| `DTargetIncidentSamples` | `4096` | Low-discrepancy samples per target element for incident/reflection source averages. Values below 256 are raised to 256. |
+| `K_DTargetSourceMode` | `1` | Target source strength: `1`: read `recycled_neutral_flux_D_l/r.data`; `2`: reconstruct from local `ni*abs(ua)*abs(b.normal)*target_area`. |
+| `K_DBoundarySource` | `1` | Add EIRENE interface strata 3-5 from outward D+ `FNIY`. Requires `K_D=1`. |
+| `DBoundaryFluxFile` | `2D_data/fnay_Dplus.dat` | Species-resolved face-integrated D+ flux file, relative to `Casepath`. |
+| `DBoundaryLaunchModel` | `0` | `0`: EIRENE-style surface recycling into fast D plus thermal D2; `1`: direct outward-D sensitivity source. |
+| `numPar_flight_DBoundary` | `6000` | Combined history budget for the two PFR-side and one outer-side interface strata. |
+
+### Variance Reduction, Logs, And Output
+
+| Setting | Current value | Effect |
+| --- | ---: | --- |
+| `K_Roulette` | `0` | Enable low-weight Russian roulette. It is disabled for the baseline comparison. |
+| `W_RouletteMin`, `W_RouletteTarget` | `0.05`, `0.2` | Trigger weight and surviving target weight used only when roulette is enabled. |
+| `K_Splitting` | `0` | Enable regional importance splitting. It is disabled for the baseline comparison. |
+| `W_SplitMax`, `W_SplitTarget`, `W_SplitMin` | `2`, `1`, `0.05` | Split trigger, desired child weight, and minimum child weight. They are inactive when `K_Splitting=0`. |
+| `MaxSplit`, `MaxSplitDepth` | `4`, `1` | Maximum children per split and maximum split generations per source history. |
+| `ImportanceOutside`, `ImportanceDivertor`, `ImportanceMainChamber` | `1`, `2`, `1` | Regional importance values used to decide splitting/roulette at region changes. |
+| `ImportanceMainPoloidalBegin`, `ImportanceMainPoloidalEnd` | `25`, `72` | B2 poloidal-index interval classified as the main chamber; the remainder is classified with the divertor logic. |
+| `K_log` | `0` | Write particle trajectory/velocity logs for supported non-hydrogenic species. Potentially large. |
+| `StepLog` | `0` | Enable detailed per-step diagnostic logging. Use only for short debugging runs. |
+| `K_H5Output` | `0` | Write HDF5 particle/wall statistics, including D-on-W wall and target data. CSV/text diagnostics remain available when this is off. |
+
 ## Physical Model
 
 ### Neutral D And D2
@@ -111,8 +221,10 @@ rescaled.
 
 - `0`: disable molecular ion elastic collisions
 - `1`: legacy H.3 `0.3T/0.3D` first-angular-moment approximation
-- `2`: EIRENE-default H.0/H.1/H.3 kinetics with a drifting Maxwellian ion sample
-- `3`: model 2 plus H.1-weighted `sigma*g*f` rejection sampling of the ion partner
+- `2`: H.0/H.1/H.3 kinetics with a drifting Maxwellian ion sample
+- `3`: model 2 plus H.1-weighted `sigma*g*f` rejection sampling of the ion
+  partner; this is the closest current option to EIRENE conditional partner
+  sampling
 
 Run `make -f Makefile.local check-eirene-elastic` to verify the H.0/H.1
 database offsets, units, potential minimum, and cross-section extrapolation.
