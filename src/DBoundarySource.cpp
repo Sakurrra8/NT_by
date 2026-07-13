@@ -263,10 +263,7 @@ void DBoundarySourceModel::Prepare()
         const auto fast_probability =
             [&](const Tools::IncidentFluxSample &incident)
         {
-            return std::min(
-                recycling,
-                EireneDFeReflection::ReflectionProbability(
-                    incident.energy_eV, incident.angle_deg));
+            return DFastReflectionProbability(incident, recycling);
         };
         double energy_sum = 0.;
         double angle_sum = 0.;
@@ -304,7 +301,7 @@ void DBoundarySourceModel::Prepare()
             fast_sum = fast * DTargetIncidentSamples;
             if (fast > 0.)
                 reflected_energy_sum = fast * DTargetIncidentSamples *
-                    EireneDFeReflection::MeanReflectedEnergy(
+                    D_W_Trim.MeanReflectedEnergy(
                         incident.energy_eV, incident.angle_deg);
         }
         else if (DTargetIncidentModel == 2)
@@ -319,7 +316,7 @@ void DBoundarySourceModel::Prepare()
             fast_sum = fast * DTargetIncidentSamples;
             if (fast > 0.)
                 reflected_energy_sum = fast * DTargetIncidentSamples *
-                    EireneDFeReflection::MeanReflectedEnergy(
+                    D_W_Trim.MeanReflectedEnergy(
                         incident.energy_eV, incident.angle_deg);
         }
         else
@@ -339,7 +336,7 @@ void DBoundarySourceModel::Prepare()
                 fast_sum += fast;
                 if (fast > 0.)
                     reflected_energy_sum += fast *
-                        EireneDFeReflection::MeanReflectedEnergy(
+                        D_W_Trim.MeanReflectedEnergy(
                             incident.energy_eV, incident.angle_deg);
             }
         }

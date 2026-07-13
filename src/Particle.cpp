@@ -783,6 +783,10 @@ void Particle::InitDBoundarySource(
 	if (this == &D)
 	{
 		Tools::IncidentFluxSample incident;
+		double reference_direction[3] = {
+			B[source.plasma_i][source.plasma_j][0],
+			B[source.plasma_i][source.plasma_j][1],
+			B[source.plasma_i][source.plasma_j][2]};
 		if (DTargetIncidentModel == 0)
 		{
 			incident.energy_eV =
@@ -799,6 +803,9 @@ void Particle::InitDBoundarySource(
 			incident.energy_eV = EireneRadialBoundaryIncidentEnergy(
 				source.plasma_i, source.plasma_j);
 			incident.angle_deg = 0.;
+			reference_direction[0] = source.tangent_sin;
+			reference_direction[1] = -source.tangent_cos;
+			reference_direction[2] = 0.;
 		}
 		else
 		{
@@ -811,10 +818,8 @@ void Particle::InitDBoundarySource(
 					source.plasma_i, source.plasma_j,
 					source.tangent_cos, source.tangent_sin,
 					Tools::Random(), Tools::Random(), Tools::Random());
-				const double probability = std::min(
-					std::max(0., coeff_ercyc_wall),
-					EireneDFeReflection::ReflectionProbability(
-						incident.energy_eV, incident.angle_deg));
+				const double probability = DFastReflectionProbability(
+					incident, coeff_ercyc_wall);
 				if (probability > best_probability)
 				{
 					best_probability = probability;
@@ -828,14 +833,17 @@ void Particle::InitDBoundarySource(
 			}
 			if (!accepted)
 				incident = best_incident;
+			for (int component = 0; component < 3; ++component)
+				reference_direction[component] = incident.velocity[component];
 		}
-		const double reflected_energy = EireneDFeReflection::SampleReflectedEnergy(
+		const DWReflectionSample sample = D_W_Trim.Sample(
 			incident.energy_eV, incident.angle_deg,
-			Tools::Random());
-		Tn_ = (2. / 3.) * reflected_energy;
-		speed = std::sqrt(2. * qe * std::max(0., reflected_energy) / mass_);
-		Tools::calculateReflectionVelocity(
-			V_, source.tangent_cos, source.tangent_sin, 0);
+			Tools::Random(), Tools::Random(), Tools::Random(), 2. * T_wall);
+		Tn_ = (2. / 3.) * sample.energy_eV;
+		speed = std::sqrt(2. * qe * std::max(0., sample.energy_eV) / mass_);
+		setDWTrimDirection(
+			V_, sample, source.tangent_cos, source.tangent_sin,
+			reference_direction);
 	}
 	else
 	{
