@@ -896,6 +896,8 @@ void Particle::allocateStorage()
 	launchedEventsByStratum_.assign(chargeStates, {});
 	b2TrackLengthByStratum_.assign(chargeStates, {});
 	pendingB2TrackLengthByStratum_.assign(chargeStates, {});
+	triTrackLengthByStratum_.assign(chargeStates, {});
+	pendingTriTrackLengthByStratum_.assign(chargeStates, {});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -5658,6 +5660,7 @@ void Particle::BeginDeferredFlightStats(double scale)
 	pendingCxNeutralBefore_.assign(pendingCxIonBefore_.size(), 0.0);
 	pendingCxNeutralAfter_.assign(pendingCxIonBefore_.size(), 0.0);
 	pendingB2TrackLengthByStratum_.assign(chargeStates, {});
+	pendingTriTrackLengthByStratum_.assign(chargeStates, {});
 }
 
 void Particle::EndDeferredFlightStats()
@@ -5696,6 +5699,11 @@ void Particle::EndDeferredFlightStats()
 			 source < static_cast<std::size_t>(SourceStratum::Count); ++source)
 			b2TrackLengthByStratum_[c][source] +=
 				pendingB2TrackLengthByStratum_[c][source] * deferred_flight_stat_scale_;
+	for (int c = 0; c <= MaxCharge_; ++c)
+		for (std::size_t source = 0;
+			 source < static_cast<std::size_t>(SourceStratum::Count); ++source)
+			triTrackLengthByStratum_[c][source] +=
+				pendingTriTrackLengthByStratum_[c][source] * deferred_flight_stat_scale_;
 	defer_flight_stats_ = false;
 	deferred_flight_stat_scale_ = 1.0;
 	pendingGridN_.clear();
@@ -5748,6 +5756,15 @@ void Particle::addFlightStatGrid(int i, int j, int charge, double n, double ener
 
 void Particle::addFlightStatTri(int tri, int charge, double n, double energy, const std::vector<double> &v)
 {
+	const std::size_t source = static_cast<std::size_t>(primary_source_stratum_);
+	if (charge >= 0 && charge <= MaxCharge_ &&
+		source < static_cast<std::size_t>(SourceStratum::Count))
+	{
+		auto &track_length = defer_flight_stats_
+			? pendingTriTrackLengthByStratum_
+			: triTrackLengthByStratum_;
+		track_length[charge][source] += n;
+	}
 	if (defer_flight_stats_)
 	{
 		const std::size_t scalar = triScalarIndex(tri, charge);
@@ -9539,7 +9556,8 @@ void Particle::AppendSourceStratumSummary(std::ostream &out) const
 				<< sourceStratumName(static_cast<SourceStratum>(source)) << ','
 				<< launchedWeightByStratum_[charge][source] << ','
 				<< launchedEventsByStratum_[charge][source] << ','
-				<< b2TrackLengthByStratum_[charge][source] << '\n';
+				<< b2TrackLengthByStratum_[charge][source] << ','
+				<< triTrackLengthByStratum_[charge][source] << '\n';
 		}
 	}
 }
@@ -9572,6 +9590,10 @@ void Particle::Clear(int n)
 		for (auto &track_length : b2TrackLengthByStratum_)
 			track_length.fill(0.0);
 		for (auto &track_length : pendingB2TrackLengthByStratum_)
+			track_length.fill(0.0);
+		for (auto &track_length : triTrackLengthByStratum_)
+			track_length.fill(0.0);
+		for (auto &track_length : pendingTriTrackLengthByStratum_)
 			track_length.fill(0.0);
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
 		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),

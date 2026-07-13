@@ -428,6 +428,8 @@ private:
 	std::vector<std::array<unsigned long long, static_cast<std::size_t>(SourceStratum::Count)>> launchedEventsByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> b2TrackLengthByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingB2TrackLengthByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> triTrackLengthByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingTriTrackLengthByStratum_;
 	unsigned long long neutral_stall_loss_events_{0};
 	double neutral_stall_loss_weight_{0.};
 	unsigned long long core_loss_events_{0};
