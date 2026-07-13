@@ -172,6 +172,81 @@ def source_stratum_rows(summary_path, fort44_path):
     return rows
 
 
+def inner_target_d2_source_shape_row(output_data, case, target_profiles):
+    target_path = output_data / 'target_incident_D.csv'
+    fort44_path = case / 'solps_output/fort.44'
+    area_path = case / '2D_data/sarea_l.data'
+    if not target_path.exists() or not fort44_path.exists() or not area_path.exists():
+        return None
+
+    with target_path.open(newline='') as stream:
+        target_rows = {
+            int(record['target']): record
+            for record in csv.DictReader(stream)
+        }
+    if not all(index in target_rows for index in range(1, 37)):
+        return None
+
+    code = np.asarray([
+        float(target_rows[index]['D2_source_s-1'])
+        for index in range(1, 37)
+    ])
+    resolved_area = read_eirene_field(fort44_path, 'sarea_res')
+    resolved_molecule_recycling = read_eirene_field(
+        fort44_path, 'ewldmr_res'
+    )
+    inner_segment_area = np.abs(np.loadtxt(area_path)[:, 1])[1:37]
+    segment_offset = next(
+        (
+            offset
+            for offset in range(len(resolved_area) - len(inner_segment_area) + 1)
+            if np.allclose(
+                resolved_area[offset:offset + len(inner_segment_area)],
+                inner_segment_area,
+                rtol=1.0e-10,
+                atol=1.0e-12,
+            )
+        ),
+        None,
+    )
+    if segment_offset is None:
+        return None
+
+    reference = (
+        resolved_molecule_recycling[
+            segment_offset:segment_offset + len(inner_segment_area)
+        ]
+        * inner_segment_area
+    )
+    if np.sum(code) <= 0.0 or np.sum(reference) <= 0.0:
+        return None
+
+    code_share = code / np.sum(code)
+    reference_share = reference / np.sum(reference)
+    for radial_index, (code_value, ref_value) in enumerate(
+        zip(code_share, reference_share), start=1
+    ):
+        target_profiles.append({
+            'field': 'Target_D2_source_shape',
+            'side': 'inner',
+            'radial_index': radial_index,
+            'code': code_value,
+            'reference': ref_value,
+            'ratio': code_value / ref_value if ref_value > 0.0 else np.nan,
+        })
+
+    row = source_metric_row(
+        'Target_D2_source_shape_inner', code_share, reference_share
+    )
+    row['mesh'] = 'target'
+    row['region'] = 'inner_target_radial_1_36'
+    row['note'] = (
+        'normalized radial shape only: code D2_source_s-1 versus '
+        'EIRENE ewldmr_res times resolved segment area; absolute units differ'
+    )
+    return row
+
+
 def map_b2_to_tri(field, b2):
     out = np.full(b2.shape[0], np.nan)
     ok = (
@@ -594,6 +669,12 @@ def main():
     fort44 = case / 'solps_output/fort.44'
     if source_summary.exists() and fort44.exists():
         rows.extend(source_stratum_rows(source_summary, fort44))
+
+    target_source_row = inner_target_d2_source_shape_row(
+        out, case, target_profiles
+    )
+    if target_source_row is not None:
+        rows.append(target_source_row)
 
     if target_profiles:
         with open(outdir / 'b2_target_profiles.csv', 'w', newline='') as f:
