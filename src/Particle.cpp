@@ -437,10 +437,13 @@ namespace
 		return false;
 	}
 
-	double h2IonElasticScatteringCosine(double relative_speed)
+	double h2IonElasticScatteringCosine(
+		double relative_speed, double neutral_mass, double ion_mass)
 	{
-		if (!(relative_speed > 0.) || !std::isfinite(relative_speed))
+		if (!(relative_speed > 0.) || !std::isfinite(relative_speed) ||
+			!(neutral_mass > 0.) || !(ion_mass > 0.))
 			return std::numeric_limits<double>::quiet_NaN();
+		// H.1 is tabulated against the equivalent proton laboratory energy.
 		const double proton_lab_energy = 0.5 * Hmass * relative_speed * relative_speed / qe;
 		const double total_cross_section = R0_3T_H1.cal(0., proton_lab_energy);
 		constexpr double bohr_radius_m = 5.29177210903e-11;
@@ -449,9 +452,12 @@ namespace
 		const double maximum_impact_parameter =
 			std::sqrt(total_cross_section / pi) / bohr_radius_m;
 		const double impact_parameter = maximum_impact_parameter * std::sqrt(Tools::Random());
-		const double reference_reduced_mass = (2. / 3.) * Hmass;
+		// VELOEL evaluates the H.0 potential with the actual test/background
+		// reduced mass, including isotope substitution.
+		const double reduced_mass =
+			neutral_mass * ion_mass / (neutral_mass + ion_mass);
 		const double relative_energy =
-			0.5 * reference_reduced_mass * relative_speed * relative_speed / qe;
+			0.5 * reduced_mass * relative_speed * relative_speed / qe;
 		double closest_approach = 0.;
 		if (!h2IonElasticClosestApproach(relative_energy, impact_parameter, closest_approach))
 			return std::numeric_limits<double>::quiet_NaN();
@@ -3350,12 +3356,22 @@ double Particle::D2ElasticScatteringCosine(int isotope) const
 double Particle::SampleD2ElasticScatteringCosine(int isotope)
 {
 	double *ion_velocity = nullptr;
+	double ion_mass = 0.;
 	if (isotope == 1)
+	{
 		ion_velocity = V_H_1_now.data();
+		ion_mass = Hmass;
+	}
 	else if (isotope == 2)
+	{
 		ion_velocity = V_D_1_now.data();
+		ion_mass = Dmass;
+	}
 	else if (isotope == 3)
+	{
 		ion_velocity = V_T_1_now.data();
+		ion_mass = Tmass;
+	}
 	else
 		return 0.;
 
@@ -3394,7 +3410,8 @@ double Particle::SampleD2ElasticScatteringCosine(int isotope)
 		Tools::sqr(V_[0] - ion_velocity[0]) +
 		Tools::sqr(V_[1] - ion_velocity[1]) +
 		Tools::sqr(V_[2] - ion_velocity[2]));
-	const double scattering_cosine = h2IonElasticScatteringCosine(relative_speed);
+	const double scattering_cosine =
+		h2IonElasticScatteringCosine(relative_speed, mass_, ion_mass);
 	if (std::isfinite(scattering_cosine))
 		return scattering_cosine;
 	++elastic_h0_fallback_events_;
