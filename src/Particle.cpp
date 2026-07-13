@@ -1758,8 +1758,10 @@ void Particle::Init(int k, int z, double scattering_cosine)
 				}
 				else if (InterscePoint[0][4] == 1) // target
 				{
-					const double wall_cos = Grid4.Cos_Target((int)InterscePoint[0][3]);
-					const double wall_sin = Grid4.Sin_Target((int)InterscePoint[0][3]);
+					const auto target_tangent = Grid4.InwardTargetTangent(
+						static_cast<int>(InterscePoint[0][3]));
+					const double wall_cos = target_tangent.first;
+					const double wall_sin = target_tangent.second;
 					if (use_dw_trim)
 					{
 						apply_dw_trim_velocity(wall_cos, wall_sin, CalAngle((int)InterscePoint[0][3]), vel);
@@ -1783,7 +1785,10 @@ void Particle::Init(int k, int z, double scattering_cosine)
 				}
 				else if (InterscePoint[0][4] == 1) // target
 				{
-					Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target((int)InterscePoint[0][3]), Grid4.Sin_Target((int)InterscePoint[0][3]), 0);
+					const auto target_tangent = Grid4.InwardTargetTangent(
+						static_cast<int>(InterscePoint[0][3]));
+					Tools::calculateReflectionVelocity(
+						V_, target_tangent.first, target_tangent.second, 0);
 				}
 				else
 				{
@@ -1797,7 +1802,10 @@ void Particle::Init(int k, int z, double scattering_cosine)
 			}
 			if (z == 2 || Charge_ > 0)
 			{
-				Tools::calculateReflectionVelocity(V_, Grid4.Cos_Target((int)InterscePoint[0][3]), Grid4.Sin_Target((int)InterscePoint[0][3]), 0);
+				const auto target_tangent = Grid4.InwardTargetTangent(
+					static_cast<int>(InterscePoint[0][3]));
+				Tools::calculateReflectionVelocity(
+					V_, target_tangent.first, target_tangent.second, 0);
 				ChargeTag_ = 0;
 			}
 		}
@@ -1812,8 +1820,10 @@ void Particle::Init(int k, int z, double scattering_cosine)
 			}
 			else if (InterscePoint[0][4] == 1)
 			{
-				Cos_temp = Grid4.Cos_Target((int)InterscePoint[0][3]);
-				Sin_temp = Grid4.Sin_Target((int)InterscePoint[0][3]);
+				const auto target_tangent = Grid4.InwardTargetTangent(
+					static_cast<int>(InterscePoint[0][3]));
+				Cos_temp = target_tangent.first;
+				Sin_temp = target_tangent.second;
 			}
 			else
 			{
@@ -1853,7 +1863,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 			if (InterscePoint[0][4] == 11)
 				Zone_ = 6;
 			if (InterscePoint[0][4] == 1)
-				Zone_ = 4;
+				Zone_ = InterscePoint[0][3] < N_radial ? 4 : 5;
 
 			if (z == 0) // reflect of neutral particle
 			{
