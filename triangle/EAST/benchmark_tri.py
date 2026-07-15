@@ -682,6 +682,7 @@ def main():
                 out / 'Sn_Ion_D2_0',
                 out / 'Sn_Diss1_D2_0',
                 out / 'Sn_Diss2_D2_0',
+                out / 'Sn_CX_D2_0',
             ]
             if all(path.exists() for path in d2_sink_paths):
                 code_sink = np.sum(
@@ -712,7 +713,7 @@ def main():
                     row['mesh'] = 'b2'
                     row['region'] = region_name
                     row['note'] = (
-                        'code 2.2.9 + 2.2.5g + 2.2.10 event rates in s^-1; '
+                        'code 2.2.9 + 2.2.5g + 2.2.10 + 3.2.3 event rates in s^-1; '
                         'EIRENE -srcml converted from A/cm^3 using B2 cell volume'
                     )
                     if code_density is not None:
