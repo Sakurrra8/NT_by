@@ -329,7 +329,9 @@ void DBoundarySourceModel::Prepare()
             for (int sample_index = 1;
                  sample_index <= DTargetIncidentSamples; ++sample_index)
             {
-                const auto incident = SampleDIncidentFluxAtSurface(
+                // Interface strata 3-5 use EIRENE NEMODS=6: drifting
+                // Maxwellian flux without target-sheath acceleration.
+                const auto incident = SampleDPlasmaBoundaryOutflow(
                     segment.plasma_i, segment.plasma_j,
                     segment.tangent_cos, segment.tangent_sin,
                     RadicalInverse(sample_index, 2),

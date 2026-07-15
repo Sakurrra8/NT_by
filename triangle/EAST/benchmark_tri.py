@@ -677,6 +677,65 @@ def main():
                     )
                 rows.append(row)
                 plot_b2_field(outdir, name, code, ref)
+
+            d2_sink_paths = [
+                out / 'Sn_Ion_D2_0',
+                out / 'Sn_Diss1_D2_0',
+                out / 'Sn_Diss2_D2_0',
+            ]
+            if all(path.exists() for path in d2_sink_paths):
+                code_sink = np.sum(
+                    [read_b2_matrix(path) for path in d2_sink_paths], axis=0
+                )
+                ref_sink = np.maximum(
+                    0.,
+                    -read_eirene_b2_field(fort44, 'srcml')
+                    * b2_vol * 1.0e6 / 1.602176634e-19,
+                )
+                code_density_path = out / 'n_D2_0'
+                code_density = (
+                    read_b2_matrix(code_density_path)
+                    if code_density_path.exists() else None
+                )
+                ref_density = read_eirene_b2_field(fort44, 'dmb2')
+                for region_name, region in (
+                    ('all', (slice(None), slice(None))),
+                    ('inner_target', (1, slice(1, 37))),
+                    ('inner_target_r30_36', (1, slice(30, 37))),
+                    ('outer_target', (96, slice(1, 37))),
+                ):
+                    row = source_metric_row(
+                        f'B2_D2_sink_vs_srcml_{region_name}',
+                        code_sink[region].ravel(),
+                        ref_sink[region].ravel(),
+                    )
+                    row['mesh'] = 'b2'
+                    row['region'] = region_name
+                    row['note'] = (
+                        'code 2.2.9 + 2.2.5g + 2.2.10 event rates in s^-1; '
+                        'EIRENE -srcml converted from A/cm^3 using B2 cell volume'
+                    )
+                    if code_density is not None:
+                        code_inventory = np.sum(
+                            code_density[region] * b2_vol[region]
+                        )
+                        ref_inventory = np.sum(
+                            ref_density[region] * b2_vol[region]
+                        )
+                        code_loss = np.sum(code_sink[region])
+                        ref_loss = np.sum(ref_sink[region])
+                        if code_loss > 0. and ref_loss > 0.:
+                            code_lifetime = code_inventory / code_loss
+                            ref_lifetime = ref_inventory / ref_loss
+                            row['code_inventory_over_sink_s'] = code_lifetime
+                            row['ref_inventory_over_sink_s'] = ref_lifetime
+                            row['inventory_over_sink_ratio'] = (
+                                code_lifetime / ref_lifetime
+                            )
+                    rows.append(row)
+                plot_b2_field(
+                    outdir, 'B2_D2_sink_vs_srcml', code_sink, ref_sink
+                )
         else:
             rows.append({
                 'field': 'B2_source_comparison_skipped',

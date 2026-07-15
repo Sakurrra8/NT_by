@@ -809,9 +809,11 @@ void Particle::InitDBoundarySource(
 			bool accepted = false;
 			for (int attempt = 0; attempt < DTargetIncidentSamples; ++attempt)
 			{
-				incident = SampleDIncidentFluxAtSurface(
-					source.plasma_i, source.plasma_j,
-					source.tangent_cos, source.tangent_sin,
+                // Interface strata 3-5 use NEMODS=6, without the
+                // NEMODS=7 sheath acceleration applied at targets.
+                incident = SampleDPlasmaBoundaryOutflow(
+                    source.plasma_i, source.plasma_j,
+                    source.tangent_cos, source.tangent_sin,
 					Tools::Random(), Tools::Random(), Tools::Random());
 				const double probability = std::min(
 					std::max(0., coeff_ercyc_wall),
