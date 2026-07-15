@@ -1507,6 +1507,7 @@ void Particle::Init(int k, int z, double scattering_cosine)
 					{
 						incident = SampleDTargetIncidentFlux(
 							z, Tools::Random(), Tools::Random(), Tools::Random());
+						incident.angle_deg = DTargetIncidentAngle[z];
 						const double probability =
 							DTargetFastReflectionProbability(incident);
 						if (probability > best_probability)

@@ -165,7 +165,7 @@ directory below `Inputpath/database/`.
 | `DWTrimDatabase` | `D_on_W` | D-on-W database directory below `Inputpath/database/`. |
 | `DWTrimERMIN_eV` | `1 eV` | Minimum incident energy for fast D-on-W reflection. Below it, fast reflection is disabled and recycled nuclei enter the thermal branch. |
 | `SurfaceTemperature_eV` | `0.1 eV` | Wall temperature used for thermal Maxwellian-flux re-emission. |
-| `K_DWTargetActualAngle` | `1` | `1`: derive the target incidence reference from local B and the actual target normal; `0`: use a fixed 60-degree value. |
+| `K_DWTargetActualAngle` | `1` | Target incidence angle passed to D-on-W TRIM: `1`: local B-to-actual-target-normal angle; `0`: fixed 60 degrees. The mode-1 incident energy remains sampled from the NEMODS=7 distribution. |
 | `K_Ei` | `2` | Legacy target incident-energy input for `DTargetIncidentModel=0`: `1`: read `ei_Dion_l/r.data`; `2`: use `2*Ti+3*Te`; `3`: legacy Ti-only path. It does not set the mode-1 sampled ion energy. |
 | `DTargetIncidentModel` | `1` | `0`: legacy mean energy/angle; `1`: EIRENE `NEMODS=7` drifting Maxwellian ion flux plus sheath; `2`: normal monoenergetic sensitivity model. |
 | `DTargetSheathFactor` | `-1` | For target incident modes, values `<=0` use the EIRENE-style dynamic sheath from local D+ flow; positive values use a fixed multiple of `Te`. |
@@ -239,8 +239,8 @@ The target model uses the D-on-W TRIM database selected by the EIRENE input.
 `DTargetIncidentModel=1` matches the automatically generated EIRENE recycling
 source (`NEMODS=7` in input block 14). It samples the local drifting Maxwellian
 ion flux directed into the surface, then adds the dynamic sheath acceleration
-along the surface normal. Each sampled energy and incidence angle is passed to
-the D-on-W TRIM model. The D/D2 source split is a fixed low-discrepancy average,
+along the surface normal. The sampled energy and the configured B-to-target-normal
+incidence angle are passed to the D-on-W TRIM model. The D/D2 source split is a fixed low-discrepancy average,
 and fast-D histories sample the corresponding reflection-conditioned incident
 distribution. For this input's target normals (`NINCT=-1/+1`), the plasma state
 comes from the left/right B2 guard cells. `DTargetIncidentModel=2` is the

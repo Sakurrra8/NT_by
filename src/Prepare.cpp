@@ -92,11 +92,12 @@ namespace
 				for (int sample_index = 1;
 					 sample_index <= DTargetIncidentSamples; ++sample_index)
 				{
-					const auto incident = SampleDTargetIncidentFlux(
+					auto incident = SampleDTargetIncidentFlux(
 						target,
 						RadicalInverse(sample_index, 2),
 						RadicalInverse(sample_index, 3),
 						RadicalInverse(sample_index, 5));
+					incident.angle_deg = DTargetIncidentAngle[target];
 					const double fast_probability =
 						DTargetFastReflectionProbability(incident);
 					energy_sum += incident.energy_eV;
