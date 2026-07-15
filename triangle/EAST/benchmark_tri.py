@@ -95,6 +95,15 @@ def read_eirene_neutral_triangles(path):
     return fields
 
 
+def read_eirene_b2_field(path, field_name, scale=1.0):
+    active = read_eirene_field(path, field_name)
+    if active.size != 96 * 36:
+        raise ValueError(f'{field_name} has unexpected B2 size {active.size}')
+    field = np.zeros((98, 38))
+    field[1:97, 1:37] = active.reshape(36, 96).T * scale
+    return field
+
+
 def tri_volume(r, z, triangles):
     rr = r[triangles]
     zz = z[triangles]
@@ -172,9 +181,10 @@ def source_stratum_rows(summary_path, fort44_path):
     return rows
 
 
-def inner_target_d2_source_shape_row(output_data, case, target_profiles):
+def inner_target_d2_source_shape_row(
+    output_data, case, fort44_path, target_profiles
+):
     target_path = output_data / 'target_incident_D.csv'
-    fort44_path = case / 'solps_output/fort.44'
     area_path = case / '2D_data/sarea_l.data'
     if not target_path.exists() or not fort44_path.exists() or not area_path.exists():
         return None
@@ -439,6 +449,11 @@ def main():
     parser.add_argument('--root', default='.', help='Repository root. Default: current directory')
     parser.add_argument('--case', default='case_input/2MW-5e19')
     parser.add_argument('--output', default='Outputfile/10087101')
+    parser.add_argument(
+        '--eirene-output',
+        default=None,
+        help='Directory containing fort.44 and fort.46. Default: case/solps_output',
+    )
     parser.add_argument('--outdir', default=None, help='Default: output/fig/tri_benchmark')
     parser.add_argument('--xlim', nargs=2, type=float, default=[1.30, 1.80])
     parser.add_argument('--ylim', nargs=2, type=float, default=[-1.12, -0.60])
@@ -451,6 +466,11 @@ def main():
 
     root = Path(args.root)
     case = root / args.case
+    eirene_output = (
+        case / 'solps_output'
+        if args.eirene_output is None
+        else root / args.eirene_output
+    )
     output_root = root / args.output
     out = output_root / 'data'
     if args.outdir is None:
@@ -469,7 +489,8 @@ def main():
     wall = np.loadtxt(wall_path, skiprows=1) if wall_path.exists() else None
 
     fields = []
-    fort46 = case / 'solps_output/fort.46'
+    fort44 = eirene_output / 'fort.44'
+    fort46 = eirene_output / 'fort.46'
     eirene_triangles = read_eirene_neutral_triangles(fort46)
     direct = [
         ('n_D_0', out / 'n_D_0_Tri'),
@@ -526,18 +547,17 @@ def main():
             b2_vol = read_b2_matrix(vol_path)
             rows.append(b2_tri_volume_row(b2_vol, vol, b2))
             b2_neutral_fields = [
-                ('B2_n_D_0', 'n_D_0', 'nDatom_2D.data'),
-                ('B2_n_D2_0', 'n_D2_0', 'nDmolecule_2D.data'),
-                ('B2_T_D_0', 'T_D_0', 'tDatom_2D.data'),
-                ('B2_T_D2_0', 'T_D2_0', 'tDmolecule_2D.data'),
+                ('B2_n_D_0', 'n_D_0', 'dab2', 1.0),
+                ('B2_n_D2_0', 'n_D2_0', 'dmb2', 1.0),
+                ('B2_T_D_0', 'T_D_0', 'tab2', 1.0 / 1.602176634e-19),
+                ('B2_T_D2_0', 'T_D2_0', 'tmb2', 1.0 / 1.602176634e-19),
             ]
-            for name, code_name, ref_name in b2_neutral_fields:
+            for name, code_name, ref_name, ref_scale in b2_neutral_fields:
                 code_path = out / code_name
-                ref_path = case / '2D_data' / ref_name
-                if not code_path.exists() or not ref_path.exists():
+                if not code_path.exists():
                     continue
                 code = read_b2_matrix(code_path)
-                ref = read_b2_matrix(ref_path)
+                ref = read_eirene_b2_field(fort44, ref_name, ref_scale)
                 row = metric_row(name, code.ravel(), ref.ravel(), b2_vol.ravel())
                 row['mesh'] = 'b2'
                 row['note'] = 'direct comparison with the exported EIRENE B2 field'
@@ -577,12 +597,11 @@ def main():
                     )
                     rows.append(region_row)
             code_d2ion_path = out / 'n_D2_1'
-            ref_d2ion_path = case / '2D_data/nDmoleculeion_2D.data'
-            if code_d2ion_path.exists() and ref_d2ion_path.exists():
+            if code_d2ion_path.exists():
                 row = metric_row(
                     'B2_n_D2_1',
                     read_b2_matrix(code_d2ion_path).ravel(),
-                    read_b2_matrix(ref_d2ion_path).ravel(),
+                    read_eirene_b2_field(fort44, 'dib2').ravel(),
                     b2_vol.ravel(),
                 )
                 row['mesh'] = 'b2'
@@ -666,12 +685,11 @@ def main():
             })
 
     source_summary = out / 'source_stratum_summary.csv'
-    fort44 = case / 'solps_output/fort.44'
     if source_summary.exists() and fort44.exists():
         rows.extend(source_stratum_rows(source_summary, fort44))
 
     target_source_row = inner_target_d2_source_shape_row(
-        out, case, target_profiles
+        out, case, fort44, target_profiles
     )
     if target_source_row is not None:
         rows.append(target_source_row)

@@ -1,0 +1,6 @@
+input_file=/home/bianyu/SOLPS_3.0.8/solps-iter/runs/EAST_62421/2MW-5e19-new-test2-wo-n-n/input.dat
+NFILE=30800
+NFILE_last_digit=0
+NGSTAL=1
+NSTRAI=6
+requested_reactions=2.1.5,3.2.3,2.2.9,2.2.5g,2.2.10,2.2.11,2.2.12,2.2.14
