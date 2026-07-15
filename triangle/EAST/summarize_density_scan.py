@@ -80,7 +80,9 @@ def main():
 
         summary = {'density_e19_m-3': density, 'job_id': job_id}
         for alias, field in SUMMARY_FIELDS.items():
-            row = metrics[field]
+            row = metrics.get(field)
+            if row is None:
+                continue
             bias = first_number(
                 row, ('volume_weighted_rel_bias', 'relative_bias')
             )
