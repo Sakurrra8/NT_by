@@ -235,6 +235,22 @@ velocity, updates all three velocity components, and recalculates the test
 particle energy after the event. The validation inputs use the full Maxwell
 speed distribution rather than the fixed RMS-speed shortcut.
 
+This AMMONX treatment is a fixed-background binary approximation, not EIRENE's
+nonlinear `IBGK=111/112` model. EIRENE maintains separate pair backgrounds for
+D-D, D-D2, D2-D, and D2-D2 and updates them with `MODBGK`. Therefore
+`K_NNCs=1` only matches an EIRENE deck whose four `FREAC` multipliers are
+enabled; it does not by itself establish model parity. For a reference with
+`FREAC=1e-30`, use `K_NNCs=0`. For an enabled reference, first converge the
+EIRENE BGK time cycles and keep all neutral inputs from that same run.
+
+The runtime `D_0_T_Tri` and `D2_0_T_Tri` files are thermal temperatures. Their
+matching `*_V_Tri` files contain the drift velocity that is added during
+Maxwellian sampling. When preparing them from `fort.46`, compute the drift from
+`VX/Y/ZDEN* / (mass * PDEN*)` and subtract its kinetic energy from `EDEN*/PDEN*`
+before converting the remainder to temperature. In contrast, the reported NT
+and EIRENE density-temperature tallies use total kinetic energy, including the
+drift contribution.
+
 The target model uses the D-on-W TRIM database selected by the EIRENE input.
 `DTargetIncidentModel=1` matches the automatically generated EIRENE recycling
 source (`NEMODS=7` in input block 14). It samples the local drifting Maxwellian

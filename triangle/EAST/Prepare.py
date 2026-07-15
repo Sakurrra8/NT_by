@@ -39,6 +39,8 @@ config = {'font.family': 'serif', 'mathtext.fontset': 'stix', 'font.size': 20,
 rcParams.update(config)
 
 mass_D = 3.34e-27
+electron_charge = 1.602176634e-19
+atomic_mass_unit = 1.66053906660e-27
 
 class SOLPS:
     def __init__(self, path, IfT):
@@ -75,10 +77,23 @@ class SOLPS:
             self.T_e = np.loadtxt(fname=self.path + "2D_data/te_2D.dat", skiprows=1)
             self.T_e = np.transpose(self.T_e[:, 3].reshape(38, 98))
         
-        self.n_D_0_Tri = np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'pdena')) * 1e6
-        self.n_D2_0_Tri = np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'pdenm')) * 1e6
-        self.T_D_0_Tri = 2./3 * np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'edena') / self.n_D_0_Tri) * 1e6
-        self.T_D2_0_Tri = 2./3 * np.array(self.read_eirene_field(self.path+"solps_output/fort.46", 'edenm') / self.n_D2_0_Tri) * 1e6
+        fort46 = self.path + "solps_output/fort.46"
+        (
+            self.n_D_0_Tri,
+            self.T_D_0_Tri,
+            self.T_D_0_thermal_Tri,
+            self.V_D_0_Tri,
+        ) = self.read_eirene_neutral_moments(
+            fort46, 'pdena', 'edena', 'dena', 2.0
+        )
+        (
+            self.n_D2_0_Tri,
+            self.T_D2_0_Tri,
+            self.T_D2_0_thermal_Tri,
+            self.V_D2_0_Tri,
+        ) = self.read_eirene_neutral_moments(
+            fort46, 'pdenm', 'edenm', 'denm', 4.0
+        )
 
         
         self.Te_1D_Inner = np.transpose(self.T_e[1, 1:37].reshape(1,36))
@@ -95,6 +110,20 @@ class SOLPS:
         self.Te_matrix = [self.Te_matrix_1, self.Te_matrix_2, self.Te_matrix_3, self.Te_matrix_4, self.Te_matrix_5, self.Te_matrix_6]
 
         self.Mu = self.n_D_1 * np.abs(self.Ua_Dion_2D) * 3.34e-27 * self.Vol
+
+    def export_neutral_tri_background(self, output_path):
+        output_path = os.fspath(output_path)
+        os.makedirs(output_path, exist_ok=True)
+        fields = {
+            'D_0_n_Tri': self.n_D_0_Tri,
+            'D2_0_n_Tri': self.n_D2_0_Tri,
+            'D_0_T_Tri': self.T_D_0_thermal_Tri,
+            'D2_0_T_Tri': self.T_D2_0_thermal_Tri,
+            'D_0_V_Tri': self.V_D_0_Tri,
+            'D2_0_V_Tri': self.V_D2_0_Tri,
+        }
+        for name, values in fields.items():
+            np.savetxt(os.path.join(output_path, name), values)
     
     def Te_matrix_cal(self):
         for i in range(98):
@@ -120,14 +149,15 @@ class SOLPS:
         with open(filename, 'r') as f:
             lines = f.readlines()
             
-        # 获取总单元数
-        n_cells = int(lines[0].split()[0])
-        
         # 寻找字段起始行
         start_line = -1
+        n_cells = 0
+        marker = f"*eirene data field {field_name} "
         for i, line in enumerate(lines):
-            if f"*eirene data field {field_name}" in line:
+            if line.startswith(marker):
                 start_line = i + 1
+                marker_values = line.split()
+                n_cells = int(marker_values[marker_values.index('size') + 1])
                 break
                 
         if start_line == -1:
@@ -141,6 +171,49 @@ class SOLPS:
             data.extend([float(v) for v in vals])
             current_line += 1
         return data[:n_cells]
+
+    def read_eirene_neutral_moments(
+        self, filename, density_name, energy_name, momentum_suffix, mass_number
+    ):
+        density_cm3 = np.asarray(
+            self.read_eirene_field(filename, density_name)
+        )
+        energy_density = np.asarray(
+            self.read_eirene_field(filename, energy_name)
+        )
+        total_energy = np.divide(
+            energy_density,
+            density_cm3,
+            out=np.zeros_like(energy_density),
+            where=density_cm3 > 0.0,
+        )
+        momentum = np.column_stack([
+            self.read_eirene_field(
+                filename, component + momentum_suffix
+            )
+            for component in ('vx', 'vy', 'vz')
+        ])
+        mass_kg = mass_number * atomic_mass_unit
+        velocity = np.divide(
+            momentum,
+            density_cm3[:, None] * (mass_kg * 1.0e3),
+            out=np.zeros_like(momentum),
+            where=density_cm3[:, None] > 0.0,
+        ) * 1.0e-2
+        flow_energy = (
+            0.5 * mass_kg * np.sum(velocity * velocity, axis=1)
+            / electron_charge
+        )
+        total_temperature = (2.0 / 3.0) * total_energy
+        thermal_temperature = (
+            (2.0 / 3.0) * np.maximum(total_energy - flow_energy, 0.0)
+        )
+        return (
+            density_cm3 * 1.0e6,
+            total_temperature,
+            thermal_temperature,
+            velocity,
+        )
 
 class Neutral:
     def __init__(self, path, IfT):
