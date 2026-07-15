@@ -900,6 +900,7 @@ void Particle::allocateStorage()
 	pendingB2TrackLengthByStratum_.assign(chargeStates, {});
 	triTrackLengthByStratum_.assign(chargeStates, {});
 	pendingTriTrackLengthByStratum_.assign(chargeStates, {});
+	targetLaunchAudit_.assign(static_cast<std::size_t>(2 * N_radial), {});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -1431,6 +1432,8 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	bool record_source_launch = false;
 	bool thermal_surface_emission = false;
 	bool prescribed_reflection_speed = false;
+	int target_launch_index = -1;
+	double target_launch_position_fraction = 0.5;
 	if (k != 3 || InterscePoint[0][4] != 11)
 	{
 		in_additional_cell_ = false;
@@ -1454,8 +1457,14 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		Charge_ = 0;
 		ChargeTag_ = 0;
 		boundary_start_ = 0;
-		X_[0] = Grid4.Mid_Target(z, 0);
-		X_[1] = Grid4.Mid_Target(z, 1);
+		target_launch_index = z;
+		target_launch_position_fraction =
+			Tools::SampleAxisymmetricSurfaceFraction(
+				Grid4.Target(z, 0), Grid4.Target(z, 2), Tools::Random());
+		X_[0] = Grid4.Target(z, 0) + target_launch_position_fraction *
+			(Grid4.Target(z, 2) - Grid4.Target(z, 0));
+		X_[1] = Grid4.Target(z, 1) + target_launch_position_fraction *
+			(Grid4.Target(z, 3) - Grid4.Target(z, 1));
 		X_[2] = 0;
 
 		if (z < N_radial)
@@ -1463,27 +1472,21 @@ void Particle::Init(int k, int z, double scattering_cosine)
 			// IT/OT must be checked against the final SOLPS/EIRENE target-side
 			// geometry. If reversed, only these two labels need to be swapped.
 			source_stratum_ = SourceStratum::IT;
-			XY_[0] = 1;
-			XY_[1] = z;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
 		}
 		else
 		{
 			source_stratum_ = SourceStratum::OT;
-			XY_[0] = poloidalLastIndex();
-			XY_[1] = z - N_radial;
 			Tri_Index_ = Grid4.targetIndex(z, 0);
 		}
 		primary_source_stratum_ = source_stratum_;
-		nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]);
-		if (XY_[1] >= N_radial / 2 && XY_[1] <= radialLastIndex())
-			Zone_ = 3;
-		else if (XY_[0] <= 24)
-			Zone_ = 4;
-		else if (XY_[0] <= 72)
-			Zone_ = 2;
-		else
-			Zone_ = 5;
+		if (!nudgePointInsideTriangle(Tri_Index_, X_[0], X_[1]))
+			throw std::runtime_error(
+				"Cannot place target recycling source inside plasma triangle");
+		synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
+		if (XY_[0] < 0 || XY_[1] < 0)
+			throw std::runtime_error(
+				"Target recycling triangle has no valid B2 mapping");
 		GridIndex_ = XY_[0] * N_radial + XY_[1];
 		const auto target_tangent = Grid4.InwardTargetTangent(z);
 		const double target_cos = target_tangent.first;
@@ -1507,7 +1510,6 @@ void Particle::Init(int k, int z, double scattering_cosine)
 					{
 						incident = SampleDTargetIncidentFlux(
 							z, Tools::Random(), Tools::Random(), Tools::Random());
-						incident.angle_deg = DTargetIncidentAngle[z];
 						const double probability =
 							DTargetFastReflectionProbability(incident);
 						if (probability > best_probability)
@@ -2427,6 +2429,8 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		V_[i] *= vel;
 	if (importance_region_ < 0)
 		importance_region_ = PhysicalImportanceRegion();
+	if (target_launch_index >= 0)
+		recordTargetLaunch(target_launch_index, target_launch_position_fraction);
 	if (record_source_launch)
 		recordSourceLaunch();
 	// std::cout << V_[0] << V_[1] << V_[2] << endl;
@@ -5380,6 +5384,91 @@ void Particle::recordSourceLaunch()
 		Weight_ * (defer_flight_stats_ ? deferred_flight_stat_scale_ : NumPar_now);
 	launchedWeightByStratum_[Charge_][stratum] += represented_weight;
 	launchedEventsByStratum_[Charge_][stratum] += 1;
+}
+
+void Particle::recordTargetLaunch(int target, double position_fraction)
+{
+	if (target < 0 || target >= static_cast<int>(targetLaunchAudit_.size()))
+		return;
+	TargetLaunchAudit &audit = targetLaunchAudit_[target];
+	const double represented_weight = diagnosticEventWeight();
+	const double speed = std::sqrt(
+		Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
+	const double energy_eV =
+		mass_ > 0. ? 0.5 * mass_ * speed * speed / qe : 0.;
+	const auto tangent = Grid4.InwardTargetTangent(target);
+	const double inward_cosine = speed > 0.
+		? (V_[0] * -tangent.second + V_[1] * tangent.first) / speed
+		: 0.;
+
+	++audit.events;
+	audit.represented_weight += represented_weight;
+	audit.position_fraction_weighted += represented_weight * position_fraction;
+	audit.energy_weighted += represented_weight * energy_eV;
+	audit.speed_weighted += represented_weight * speed;
+	audit.inward_cosine_weighted += represented_weight * inward_cosine;
+
+	const int expected_triangle = Grid4.targetIndex(target, 0);
+	if (Tri_Index_ != expected_triangle ||
+		!Grid4.Ifingrid(expected_triangle, X_[0], X_[1]))
+		++audit.invalid_position_events;
+	if (!(inward_cosine > 0.))
+		++audit.outward_velocity_events;
+
+	int b2_i = -1;
+	int b2_j = -1;
+	if (expected_triangle >= 0 &&
+		static_cast<std::size_t>(expected_triangle) < Grid4.tris_.size() &&
+		Grid4.if_in_plasmagrid(expected_triangle) == 1)
+	{
+		b2_i = Grid4.b2_index(expected_triangle, 0);
+		b2_j = Grid4.b2_index(expected_triangle, 1);
+	}
+	if (XY_[0] != b2_i || XY_[1] != b2_j)
+		++audit.b2_mismatch_events;
+}
+
+void Particle::WriteTargetLaunchAudit(const string &path) const
+{
+	std::ofstream out(path);
+	out << "target,side,radial_index,triangle,triangle_edge,b2_i,b2_j,"
+		   "r0,z0,r1,z1,inward_normal_r,inward_normal_z,events,"
+		   "represented_weight_s-1,mean_position_fraction,mean_energy_eV,"
+		   "mean_speed_m_s,mean_inward_cosine,invalid_position_events,"
+		   "outward_velocity_events,b2_mismatch_events\n";
+	for (int target = 0; target < static_cast<int>(targetLaunchAudit_.size()); ++target)
+	{
+		const TargetLaunchAudit &audit = targetLaunchAudit_[target];
+		const double inverse_weight =
+			audit.represented_weight > 0. ? 1. / audit.represented_weight : 0.;
+		const int triangle = Grid4.targetIndex(target, 0);
+		int b2_i = -1;
+		int b2_j = -1;
+		if (triangle >= 0 &&
+			static_cast<std::size_t>(triangle) < Grid4.tris_.size() &&
+			Grid4.if_in_plasmagrid(triangle) == 1)
+		{
+			b2_i = Grid4.b2_index(triangle, 0);
+			b2_j = Grid4.b2_index(triangle, 1);
+		}
+		const auto tangent = Grid4.InwardTargetTangent(target);
+		out << target << ','
+			<< (target < N_radial ? "IT" : "OT") << ','
+			<< target % N_radial << ','
+			<< triangle << ',' << Grid4.targetIndex(target, 1) << ','
+			<< b2_i << ',' << b2_j << ','
+			<< Grid4.Target(target, 0) << ',' << Grid4.Target(target, 1) << ','
+			<< Grid4.Target(target, 2) << ',' << Grid4.Target(target, 3) << ','
+			<< -tangent.second << ',' << tangent.first << ','
+			<< audit.events << ',' << audit.represented_weight << ','
+			<< audit.position_fraction_weighted * inverse_weight << ','
+			<< audit.energy_weighted * inverse_weight << ','
+			<< audit.speed_weighted * inverse_weight << ','
+			<< audit.inward_cosine_weighted * inverse_weight << ','
+			<< audit.invalid_position_events << ','
+			<< audit.outward_velocity_events << ','
+			<< audit.b2_mismatch_events << '\n';
+	}
 }
 
 void Particle::ApplyRussianRoulette()
@@ -9603,6 +9692,8 @@ void Particle::Clear(int n)
 			track_length.fill(0.0);
 		for (auto &track_length : pendingTriTrackLengthByStratum_)
 			track_length.fill(0.0);
+		std::fill(targetLaunchAudit_.begin(), targetLaunchAudit_.end(),
+				  TargetLaunchAudit{});
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
 		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),
 				  std::array<double, 3>{0.0, 0.0, 0.0});

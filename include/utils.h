@@ -48,6 +48,8 @@ namespace Tools
     double Random();
     double Maxwell(double E, double Mass);
     double MaxwellianFluxSpeed(double temperature_eV, double mass);
+    double SampleAxisymmetricSurfaceFraction(double radius0, double radius1,
+                                             double xi);
     IncidentFluxSample SampleIncidentFlux(
         double ion_temperature_eV, double electron_temperature_eV,
         double mass, const std::array<double, 3> &drift_velocity,

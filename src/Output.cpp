@@ -81,6 +81,8 @@ void Output()
                      << NumPar_D2_recyc[i] << '\n';
         }
         Out_temp.close();
+        D.WriteTargetLaunchAudit(Outputpath + "target_launch_D.csv");
+        D2.WriteTargetLaunchAudit(Outputpath + "target_launch_D2.csv");
         if (K_DBoundarySource)
             D_BoundarySource.WriteSummary(Outputpath + "D_boundary_source.csv");
     }

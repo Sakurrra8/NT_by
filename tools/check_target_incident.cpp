@@ -32,6 +32,7 @@ int main()
     double base_energy_sum = 0.;
     double sheath_energy_sum = 0.;
     double cosine_sum = 0.;
+    double surface_fraction_sum = 0.;
     double maximum_sheath_increment_error = 0.;
     for (int index = 1; index <= samples; ++index)
     {
@@ -58,6 +59,8 @@ int main()
         base_energy_sum += base.energy_eV;
         sheath_energy_sum += sheath.energy_eV;
         cosine_sum += wallward_speed / speed;
+        surface_fraction_sum += Tools::SampleAxisymmetricSurfaceFraction(
+            1., 2., (static_cast<double>(index) - 0.5) / samples);
         maximum_sheath_increment_error = std::max(
             maximum_sheath_increment_error,
             std::abs(
@@ -67,6 +70,24 @@ int main()
     const double base_mean_energy = base_energy_sum / samples;
     const double sheath_mean_energy = sheath_energy_sum / samples;
     const double mean_cosine = cosine_sum / samples;
+    const double mean_surface_fraction = surface_fraction_sum / samples;
+    const double expected_surface_fraction = 5. / 9.;
+
+    constexpr double wall_temperature_eV = 0.1;
+    double emitted_energy_sum = 0.;
+    double emitted_cosine_sum = 0.;
+    std::vector<double> direction(3, 0.);
+    for (int index = 0; index < samples; ++index)
+    {
+        const double launch_speed = Tools::MaxwellianFluxSpeed(
+            wall_temperature_eV, 2. * deuterium_mass);
+        Tools::calculateReflectionVelocity(direction, 0.6, 0.8, 0);
+        emitted_energy_sum +=
+            0.5 * 2. * deuterium_mass * launch_speed * launch_speed / qe;
+        emitted_cosine_sum += -0.8 * direction[0] + 0.6 * direction[1];
+    }
+    const double mean_emitted_energy = emitted_energy_sum / samples;
+    const double mean_emitted_cosine = emitted_cosine_sum / samples;
     std::cout << "base_mean_energy_eV=" << base_mean_energy << '\n'
               << "expected_base_mean_energy_eV=" << 2. * ti_eV << '\n'
               << "sheath_mean_energy_eV=" << sheath_mean_energy << '\n'
@@ -74,12 +95,22 @@ int main()
               << 2. * ti_eV + sheath_factor * te_eV << '\n'
               << "mean_cosine=" << mean_cosine << '\n'
               << "expected_mean_cosine=" << 2. / 3. << '\n'
+              << "mean_surface_fraction=" << mean_surface_fraction << '\n'
+              << "expected_surface_fraction=" << expected_surface_fraction << '\n'
+              << "mean_D2_emitted_energy_eV=" << mean_emitted_energy << '\n'
+              << "expected_D2_emitted_energy_eV="
+              << 2. * wall_temperature_eV << '\n'
+              << "mean_D2_inward_cosine=" << mean_emitted_cosine << '\n'
+              << "expected_D2_inward_cosine=" << 2. / 3. << '\n'
               << "max_sheath_increment_error_eV="
               << maximum_sheath_increment_error << '\n';
 
     if (std::abs(base_mean_energy - 2. * ti_eV) > 0.02 ||
         std::abs(sheath_mean_energy - (2. * ti_eV + sheath_factor * te_eV)) > 0.02 ||
         std::abs(mean_cosine - 2. / 3.) > 0.002 ||
+        std::abs(mean_surface_fraction - expected_surface_fraction) > 1.e-5 ||
+        std::abs(mean_emitted_energy - 2. * wall_temperature_eV) > 0.003 ||
+        std::abs(mean_emitted_cosine - 2. / 3.) > 0.006 ||
         maximum_sheath_increment_error > 1.e-10)
         return 1;
     return 0;

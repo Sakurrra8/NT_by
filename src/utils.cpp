@@ -90,6 +90,31 @@ namespace Tools
         return std::sqrt(2.0 * qe * energy_eV / mass);
     }
 
+    double SampleAxisymmetricSurfaceFraction(double radius0, double radius1,
+                                             double xi)
+    {
+        const double probability = std::clamp(xi, 0.0, 1.0);
+        if (!(radius0 > 0.0) || !(radius1 > 0.0) ||
+            !std::isfinite(radius0) || !std::isfinite(radius1))
+            return probability;
+
+        const double delta_radius = radius1 - radius0;
+        const double mean_radius = radius0 + 0.5 * delta_radius;
+        if (!(mean_radius > 0.0) ||
+            std::abs(delta_radius) <=
+                1.e-14 * std::max(radius0, radius1))
+            return probability;
+
+        const double discriminant = std::max(
+            0.0, radius0 * radius0 +
+                     2.0 * delta_radius * probability * mean_radius);
+        const double denominator = radius0 + std::sqrt(discriminant);
+        if (!(denominator > 0.0))
+            return probability;
+        return std::clamp(
+            2.0 * probability * mean_radius / denominator, 0.0, 1.0);
+    }
+
     namespace
     {
         double openUnitInterval(double value)
