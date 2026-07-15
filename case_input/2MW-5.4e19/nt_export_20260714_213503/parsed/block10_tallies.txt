@@ -1,0 +1,53 @@
+*** 10. Data for additional tallies                                     
+     8     7     0     0     0     0
+** 10a. Volume tallies - tracklength estimator                          
+     1     1     0     1
+RADIAL PARTICLE FLUXES, VOLUME-AVERAGED                                 
+D ATOMS                 #/CM**2/S               
+     1     1     0     2
+RADIAL PARTICLE FLUXES, VOLUME-AVERAGED                                 
+D2 MOLECULES            #/CM**2/S               
+     1     1     0     1
+RADIAL ENERGY FLUXES, VOLUME-AVERAGED                                   
+D ATOMS                 EV/CM**2/S              
+     1     1     0     2
+RADIAL ENERGY FLUXES, VOLUME-AVERAGED                                   
+D2 MOLECULES            #/CM**2/S               
+     1     1     0     1
+PARALLEL PARTICLE FLUXES, VOLUME-AVERAGED                               
+D ATOMS                 #/CM**2/S               
+     1     1     0     2
+PARALLEL PARTICLE FLUXES, VOLUME-AVERAGED                               
+D2 MOLECULES                                    
+     1     1     0     1
+PARALLEL ENERGY FLUXES, VOLUME-AVERAGED                                 
+D ATOMS                 EV/CM**2/S              
+     1     1     0     2
+PARALLEL ENERGY FLUXES, VOLUME-AVERAGED                                 
+D2 MOLECULES            EV/CM**2/S              
+** 10b. Volume tallies - collisional estimator                          
+     3     1     0     2
+D2 REACTION 08 EVENT RATE
+D2 R08                 AMP/CM**3
+     3     1     0     2
+D2 REACTION 09 EVENT RATE
+D2 R09                 AMP/CM**3
+     3     1     0     2
+D2 REACTION 10 EVENT RATE
+D2 R10                 AMP/CM**3
+     3     1     0     2
+D2 REACTION 12 EVENT RATE
+D2 R12                 AMP/CM**3
+     3     1     0     3
+D2+ REACTION 13 EVENT RATE
+D2+ R13                AMP/CM**3
+     3     1     0     3
+D2+ REACTION 14 EVENT RATE
+D2+ R14                AMP/CM**3
+     3     1     0     3
+D2+ REACTION 15 EVENT RATE
+D2+ R15                AMP/CM**3
+** 10c. Volume tallies - algebraic expressions                          
+** 10d. Surface tallies                                                 
+** 10e. Surface tallies - algebraic expressions                         
+** 10f. Data for energy spectra                                         

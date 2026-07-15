@@ -1,0 +1,18 @@
+CURRENT CASE EXPORT CAPABILITY
+==============================
+- NFILE=30800: this input does NOT save/read individual-stratum tally arrays.
+  Existing total fort.44/fort.46 cannot reconstruct PDENA/PDENM/PPAT/PPML by ISTRA.
+  For a new run, preserve the other NFILE digits and change the last digit to 1.
+- NGSTAL=1: surface spatial tally storage is enabled.
+- NSTRAI=6. In this input, strata 1..5 are interface surface sources and stratum 6 is volumetric recombination.
+- Existing custom COLV reaction tallies:
+    COLV[1] -> reaction 8 (2.2.9): D2 REACTION 08 EVENT RATE
+    COLV[2] -> reaction 9 (2.2.5g): D2 REACTION 09 EVENT RATE
+    COLV[3] -> reaction 10 (2.2.10): D2 REACTION 10 EVENT RATE
+    COLV[4] -> reaction 12 (3.2.3): D2 REACTION 12 EVENT RATE
+    COLV[5] -> reaction 13 (2.2.12): D2+ REACTION 13 EVENT RATE
+    COLV[6] -> reaction 14 (2.2.11): D2+ REACTION 14 EVENT RATE
+    COLV[7] -> reaction 15 (2.2.14): D2+ REACTION 15 EVENT RATE
+- Requested reactions not explicitly present as custom COLV labels: 2.1.5
+  2.1.5 may still be obtainable from a standard atom electron-impact source because it is the only D-atom EI channel here,
+  but it is not an independently labelled reaction-event tally in block 10b.

@@ -1,0 +1,20 @@
+*** 11. Data for numerical and graphical output                         
+FFFFF FFFFF FFFFF FFFFF FFFFF FFFFF FFFFF
+TFFFF FFF
+     0
+     0
+FFFFF FFFFF FFFFF F
+     1    37     1     1    99     1     0     0     0     0
+F                          0
+F                          0
+F                          0
+F                          0
+F                          0
+F                          0
+F                          0
+F                          0
+ 1.18760E+02 1.18760E+02 1.99104E+02 3.10500E+00 0.00000E+00
+ 1.00000E+01 1.00000E+01 0.00000E+00 0.00000E+00 1.00000E+01 1.00000E+01
+ 1.00000E+01 1.00000E+01 0.00000E+00
+     0     0     0     0     0     0     0     0     0     0     2
+     0

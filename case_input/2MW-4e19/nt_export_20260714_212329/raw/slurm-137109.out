@@ -1,0 +1,18 @@
+node2
+~/SOLPS_3.0.8/solps-iter ~/SOLPS_3.0.8/solps-iter/runs/EAST_62421/2MW-4e19-new-test2-wo-n-n 
+Welcome to SOLPS-ITER!
+Documentation can be found at:
+https://sharepoint.iter.org/departments/POP/CM/IMAS/SOLPS-ITER
+and
+https://user.iter.org/?uid=Q92BAQ
+(both require a valid ITER IDM account)
+The full SOLPS-ITER manual can be found in $SOLPSTOP/doc/solps/solps.pdf
+or online at:
+https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/solps-doc/solps.pdf
+The Eirene manual is located at http://www.eirene.de/
+Running at DLUT.
+Using compiler ifort64.
+Loading cached SETUP/setup.csh.DLUT.ifort64.env.local.bianyu.
+SOLPS-ITER MPI mode turned on
+Using SOLPSTOP = /home/bianyu/SOLPS_3.0.8/solps-iter
+~/SOLPS_3.0.8/solps-iter/runs/EAST_62421/2MW-4e19-new-test2-wo-n-n 

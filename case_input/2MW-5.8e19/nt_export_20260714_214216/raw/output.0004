@@ -1,0 +1,264 @@
+ PLNXTB CALLED FROM EIRENE.F
+ K,IFRST1,IFRST2            3           0           0
+
+
+ SUB-STRATUM WEIGHT REDEFINED
+ IVOLSI,ISTRA,SORWGT                1           6     6.6261E+02
+ SOURCE STRENGTH REDEFINED
+ ISTRA, FLUX, EIFLUX             6     6.6261E+02    -5.2549E+03
+
+ STRATUM ISTRA=            7  TURNED OFF, BECAUSE THE SUM OF THE FLUXES
+ FROM THE SUBSTRATA DEFINED BY SORWGT(SUBSTRATUM,STRATUM) IS .LE. ZERO
+
+
+
+ LOOP OVER STRATA STARTS AT CPU TIME (SEC) :
+ STARTTIM     1.5101E-01
+ CPU TIME ASSIGNED TO STRATA (SEC) :
+ WEIGHTED ALLOCATION BETWEEN NPTS AND FLUX
+ STRATUM, TIME           1     3.8385E+01
+ STRATUM, TIME           2     4.1486E+01
+ STRATUM, TIME           3     2.1369E+00
+ STRATUM, TIME           4     2.2299E+00
+ STRATUM, TIME           5     9.1793E+00
+ STRATUM, TIME           6     6.5833E+00
+ STRATUM, TIME           7     0.0000E+00
+
+
+ negative random seeds found
+
+
+ BEGIN TO WORK ON STRATUM NO.            2
+
+
+ NINITL(ISTRA) SET TO       241351
+
+
+
+******************************************************                          
+*                                                    *                          
+*  LAUNCH PARTICLES FOR STRATUM NUMBER ISTRA=     2  *                          
+*                                                    *                          
+******************************************************                          
+
+
+
+ XTIM(ISTRA)=    41.4857451876747     
+
+ ALL REQUESTED TRAJECTORIES COMPLETED
+ M.C. HISTORIES FOLLOWED UNTIL THAT TIME FOR THIS STRATUM
+ ISTRA,IPANU,TIMUSED                2        4638     7.3780E-01
+
+
+ BEGIN TO WORK ON STRATUM NO.            5
+
+
+ NINITL(ISTRA) SET TO       241352
+
+
+
+******************************************************                          
+*                                                    *                          
+*  LAUNCH PARTICLES FOR STRATUM NUMBER ISTRA=     5  *                          
+*                                                    *                          
+******************************************************                          
+
+
+
+ XTIM(ISTRA)=    9.17933390686008     
+
+ ALL REQUESTED TRAJECTORIES COMPLETED
+ M.C. HISTORIES FOLLOWED UNTIL THAT TIME FOR THIS STRATUM
+ ISTRA,IPANU,TIMUSED                5        2000     1.8060E-01
+
+
+ TOTAL WEIGHT OF PRIMARY SOURCE PARTICLES
+ BULK IONS, ATOMS, MOLECULES, TEST IONS
+ WTPLS,WTATM,WTMOL,WTION,WTPHOT          
+  -2.0000E+03     0.0000E+00     0.0000E+00     0.0000E+00     0.0000E+00
+ TOTAL NUMBER OF MONTE CARLO HISTORIES
+ NPART        2000
+ TOTAL SOURCE STRENGTH FOR TEST PARTICLE SPECIES
+ FLUXT=       4.8946E+03
+
+
+
+ EIRENE RECOMMENDED RESCALING OF VOLUME-AVERAGED TALLIES
+ DUE TO STATISTICAL ERRORS IN BALANCE
+ FATM,FMOL,FION,FPHOT            
+   9.7502E-01     9.3520E-01     9.5215E-01     1.0000E+00
+
+
+
+ RESCALING OF TRACKLENGTH TALLIES COMPLETED
+ RESCALING FACTORS:
+ FATM,FMOL,FION,FPHOT            
+   9.7502E-01     9.3520E-01     9.5215E-01     1.0000E+00
+
+
+
+
+
+
+
+*****************************************************                           
+*                                                   *                           
+*  SUBR. EMISSIVITY CALLED, FOR STRATUM NO.      5  *                           
+*                                                   *                           
+*****************************************************                           
+
+
+
+
+ AFTER INTEGRATION OVER COMPUTATIONAL DOMAIN
+ LINE no.  1, BA_ALPHA:
+ EINSTEIN COEFFICIENT  4.4100E+07
+ TRANSITION ENERGY     1.8896E+00
+
+ FLUX (AMP) AND POWER (WATT) BY 
+                    COUPL. TO ATOMIC NEUTRAL HYDR.   1.6040121E+02   3.0309145E+02
+  TALLY ADDV(IADV) prepared. IADV=           9
+                        COUPL. TO ATOMIC HYDR. ION   7.9519443E+01   1.5025861E+02
+  TALLY ADDV(IADV) prepared. IADV=          10
+              COUPL. TO DIATOMIC NEUTRAL HYDR. MOL   2.5747991E+00   4.8652973E+00
+  TALLY ADDV(IADV) prepared. IADV=          11
+                  COUPL. TO DIATOMIC HYDR. MOL ION   1.4911007E+01   2.8175589E+01
+  TALLY ADDV(IADV) prepared. IADV=          12
+                      COUPL. TO NEGATIVE HYDR. ION   2.8912709E+00   5.4632970E+00
+  TALLY ADDV(IADV) prepared. IADV=          13
+                     COUPL. TO TRIATOMIC HYDR. ION   5.4934151E-05   1.0380265E-04
+  TALLY ADDV(IADV) prepared. IADV=          14
+
+                TOTAL FLUX (AMP) AND POWER (WATT)    2.6029779E+02   4.9185434E+02
+  TALLY ADDV(IADV) prepared. IADV=          15
+
+
+ LINE no.  2, BA_BETA:
+ EINSTEIN COEFFICIENT  8.4190E+06
+ TRANSITION ENERGY     2.5509E+00
+
+ FLUX (AMP) AND POWER (WATT) BY 
+                    COUPL. TO ATOMIC NEUTRAL HYDR.   1.2332950E+01   3.1460583E+01
+  TALLY ADDV(IADV) prepared. IADV=           9
+                        COUPL. TO ATOMIC HYDR. ION   2.3480013E+01   5.9896043E+01
+  TALLY ADDV(IADV) prepared. IADV=          10
+              COUPL. TO DIATOMIC NEUTRAL HYDR. MOL   1.6261367E-01   4.1481730E-01
+  TALLY ADDV(IADV) prepared. IADV=          11
+                  COUPL. TO DIATOMIC HYDR. MOL ION   1.2187710E+00   3.1090086E+00
+  TALLY ADDV(IADV) prepared. IADV=          12
+                      COUPL. TO NEGATIVE HYDR. ION   9.1081338E-02   2.3234279E-01
+  TALLY ADDV(IADV) prepared. IADV=          13
+                     COUPL. TO TRIATOMIC HYDR. ION   3.0257439E-06   7.7184834E-06
+  TALLY ADDV(IADV) prepared. IADV=          14
+
+                TOTAL FLUX (AMP) AND POWER (WATT)    3.7285431E+01   9.5112802E+01
+  TALLY ADDV(IADV) prepared. IADV=          15
+
+
+ LINE no.  3, BA_GAMMA:
+ EINSTEIN COEFFICIENT  2.5300E+06
+ TRANSITION ENERGY     2.8570E+00
+
+ FLUX (AMP) AND POWER (WATT) BY 
+                    COUPL. TO ATOMIC NEUTRAL HYDR.   1.6501530E+00   4.7145693E+00
+  TALLY ADDV(IADV) prepared. IADV=           9
+                        COUPL. TO ATOMIC HYDR. ION   9.8824742E+00   2.8234722E+01
+  TALLY ADDV(IADV) prepared. IADV=          10
+              COUPL. TO DIATOMIC NEUTRAL HYDR. MOL   1.9145442E-02   5.4699485E-02
+  TALLY ADDV(IADV) prepared. IADV=          11
+                  COUPL. TO DIATOMIC HYDR. MOL ION   1.5960893E-01   4.5601068E-01
+  TALLY ADDV(IADV) prepared. IADV=          12
+                      COUPL. TO NEGATIVE HYDR. ION   8.2758756E-03   2.3644590E-02
+  TALLY ADDV(IADV) prepared. IADV=          13
+                     COUPL. TO TRIATOMIC HYDR. ION   3.5012880E-07   1.0003355E-06
+  TALLY ADDV(IADV) prepared. IADV=          14
+
+                TOTAL FLUX (AMP) AND POWER (WATT)    1.1719658E+01   3.3483647E+01
+  TALLY ADDV(IADV) prepared. IADV=          15
+
+
+ LINE no.  4, BA_DELTA:
+ EINSTEIN COEFFICIENT  9.7320E+05
+ TRANSITION ENERGY     3.0233E+00
+
+ FLUX (AMP) AND POWER (WATT) BY 
+                    COUPL. TO ATOMIC NEUTRAL HYDR.   3.2532911E-01   9.8357830E-01
+  TALLY ADDV(IADV) prepared. IADV=           9
+                        COUPL. TO ATOMIC HYDR. ION   5.1314539E+00   1.5514095E+01
+  TALLY ADDV(IADV) prepared. IADV=          10
+              COUPL. TO DIATOMIC NEUTRAL HYDR. MOL   3.4962739E-03   1.0570401E-02
+  TALLY ADDV(IADV) prepared. IADV=          11
+                  COUPL. TO DIATOMIC HYDR. MOL ION   2.9967625E-02   9.0602117E-02
+  TALLY ADDV(IADV) prepared. IADV=          12
+                      COUPL. TO NEGATIVE HYDR. ION   1.2737772E-03   3.8510529E-03
+  TALLY ADDV(IADV) prepared. IADV=          13
+                     COUPL. TO TRIATOMIC HYDR. ION   6.2538733E-08   1.8907543E-07
+  TALLY ADDV(IADV) prepared. IADV=          14
+
+                TOTAL FLUX (AMP) AND POWER (WATT)    5.4915208E+00   1.6602697E+01
+  TALLY ADDV(IADV) prepared. IADV=          15
+
+
+ LINE no.  5, LY_ALPHA:
+ EINSTEIN COEFFICIENT  4.6990E+08
+ TRANSITION ENERGY     1.0204E+01
+
+ FLUX (AMP) AND POWER (WATT) BY 
+                    COUPL. TO ATOMIC NEUTRAL HYDR.   3.8795215E+03   3.9585666E+04
+  TALLY ADDV(IADV) prepared. IADV=           9
+                        COUPL. TO ATOMIC HYDR. ION   3.3058785E+02   3.3732356E+03
+  TALLY ADDV(IADV) prepared. IADV=          10
+              COUPL. TO DIATOMIC NEUTRAL HYDR. MOL   7.5442129E+01   7.6979260E+02
+  TALLY ADDV(IADV) prepared. IADV=          11
+                  COUPL. TO DIATOMIC HYDR. MOL ION   6.2329389E+01   6.3599348E+02
+  TALLY ADDV(IADV) prepared. IADV=          12
+                      COUPL. TO NEGATIVE HYDR. ION   5.7967182E+00   5.9148262E+01
+  TALLY ADDV(IADV) prepared. IADV=          13
+                     COUPL. TO TRIATOMIC HYDR. ION   8.3497312E-03   8.5198567E-02
+  TALLY ADDV(IADV) prepared. IADV=          14
+
+                TOTAL FLUX (AMP) AND POWER (WATT)    4.3536859E+03   4.4423921E+04
+  TALLY ADDV(IADV) prepared. IADV=          15
+
+
+ LINE no.  6, LY_BETA:
+ EINSTEIN COEFFICIENT  5.5750E+07
+ TRANSITION ENERGY     1.2093E+01
+
+ FLUX (AMP) AND POWER (WATT) BY 
+                    COUPL. TO ATOMIC NEUTRAL HYDR.   2.0277477E+02   2.4522228E+03
+  TALLY ADDV(IADV) prepared. IADV=           9
+                        COUPL. TO ATOMIC HYDR. ION   1.0052628E+02   1.2156978E+03
+  TALLY ADDV(IADV) prepared. IADV=          10
+              COUPL. TO DIATOMIC NEUTRAL HYDR. MOL   3.2549898E+00   3.9363676E+01
+  TALLY ADDV(IADV) prepared. IADV=          11
+                  COUPL. TO DIATOMIC HYDR. MOL ION   1.8850082E+01   2.2796032E+02
+  TALLY ADDV(IADV) prepared. IADV=          12
+                      COUPL. TO NEGATIVE HYDR. ION   3.6550646E+00   4.4201913E+01
+  TALLY ADDV(IADV) prepared. IADV=          13
+                     COUPL. TO TRIATOMIC HYDR. ION   6.9446234E-05   8.3983642E-04
+  TALLY ADDV(IADV) prepared. IADV=          14
+
+                TOTAL FLUX (AMP) AND POWER (WATT)    3.2906126E+02   3.9794474E+03
+  TALLY ADDV(IADV) prepared. IADV=          15
+
+
+ IF3COP IS CALLED, ISTRAA,ISTRAE
+           5           5
+
+ RECYCLING SOURCE FROM IF3COP            5
+  0.481770E+04 -0.638403E+05 -0.126229E+06 -0.614067E-20
+ CUMULATED CPU TIME USED UNTIL END OF STRATUM ISTRA
+ ISTRA, CPU(S)            5   1.18918991088867     
+
+
+
+
+ STRATUM NO.            7  ABANDONED
+
+
+
+
+ EIRENE USED    1.60419082641602       CPU SECONDS
+
+

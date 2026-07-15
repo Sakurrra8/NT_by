@@ -1,0 +1,9 @@
+*** 1. Data for operating mode                                          
+    -1     1   100 30800     1     1     0     1     0
+    -1     1     0     1     1     9     1     0     1
+TFFTF FFFFF TFFTF F
+CFILE AMJUEL Database/AMdata/amjuel.tex           
+CFILE HYDHEL Database/AMdata/hydhel.tex           
+CFILE SPUTER Database/Surfacedata/SPUTER          
+CFILE TRIM   Database/Surfacedata/TRIM/trim.dat   
+CFILE AMMONX Database/AMdata/AMMONX_Arrh-elast.tex

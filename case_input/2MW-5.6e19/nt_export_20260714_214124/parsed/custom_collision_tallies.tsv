@@ -1,0 +1,8 @@
+colv_index	definition	title	unit	reaction_no	reaction_label
+1	3     1     0     2	D2 REACTION 08 EVENT RATE	D2 R08                 AMP/CM**3	8	2.2.9
+2	3     1     0     2	D2 REACTION 09 EVENT RATE	D2 R09                 AMP/CM**3	9	2.2.5g
+3	3     1     0     2	D2 REACTION 10 EVENT RATE	D2 R10                 AMP/CM**3	10	2.2.10
+4	3     1     0     2	D2 REACTION 12 EVENT RATE	D2 R12                 AMP/CM**3	12	3.2.3
+5	3     1     0     3	D2+ REACTION 13 EVENT RATE	D2+ R13                AMP/CM**3	13	2.2.12
+6	3     1     0     3	D2+ REACTION 14 EVENT RATE	D2+ R14                AMP/CM**3	14	2.2.11
+7	3     1     0     3	D2+ REACTION 15 EVENT RATE	D2+ R15                AMP/CM**3	15	2.2.14

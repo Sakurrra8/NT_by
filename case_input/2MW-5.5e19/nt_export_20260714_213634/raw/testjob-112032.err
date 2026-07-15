@@ -1,0 +1,8 @@
+set_openmp: Command not found.
+set_mpi: Command not found.
+cp: cannot stat ‘../baserun/b2fpardf’: No such file or directory
+cp: cannot stat ‘../baserun/b2frates’: No such file or directory
+cp: cannot stat ‘b2.log’: No such file or directory
+cp: cannot stat ‘b2.log.gz’: No such file or directory
+cp: omitting directory ‘batch_av’
+cp: omitting directory ‘run_av’

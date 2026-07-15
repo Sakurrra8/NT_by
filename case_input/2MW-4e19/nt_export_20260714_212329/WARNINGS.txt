@@ -1,0 +1,3 @@
+DPLUS_INDEX was not supplied. All-species FNAX/FNAY were exported, but no zsel file was made.
+After confirming the B2PLOT species index, rerun for example:
+  DPLUS_INDEX=0 bash export_solps_eirene_compare.sh

@@ -1,0 +1,270 @@
+rm -rf b2pl.exe.dir >& /dev/null ; mkdir b2pl.exe.dir ; cp b2mn.dat b2fgmtry b2fparam b2fstate b2fplasma b2frates b2ftrack AMJUEL fort.33 fort.34 fort.35 b2pl.exe.dir
+[ -e param.dg ] && cp param.dg b2pl.exe.dir/ || ( [ -e ../baserun/param.dg ] && cp ../baserun/param.dg b2pl.exe.dir/ || echo > /dev/null )
+cp fort.44 fort.46 input.dat b2pl.exe.dir/
+cd b2pl.exe.dir
+rm -f b2pl.prt b2plot.ps
+cd b2pl.exe.dir ; ln -s ../HYDHEL ../METHANE ../SPUTER ../H2VIBR ../AMMONX ../fort.21 ../fort.22 . ; time /home/bianyu/SOLPS_3.0.8/solps-iter/modules/B2.5/builds/couple_SOLPS-ITER.DLUT.ifort64/b2pl.exe  ; ( [ -e b2plot.ps ] && mv -f b2plot.ps .. ) ; rm -f b2pl.prt b2mn.dat b2fgmtry b2fparam b2fstate b2fplasma b2frates b2ftrack AMJUEL fort.33 fort.34 fort.35 .quit param.dg >& /dev/null
+VERSION set to: 03.000.008
+VERSION set to: 03.000.008
+VERSION set to: 03.000.008
+VERSION set to: 03.000.008
+ Running with VERSION 03.000.008 3.0.8-317-gd3d9147              
+ Allocated space for b2mod_geo_corner
+VERSION set to: 03.000.008
+In cfrure_opt: expected qcb, found vol
+ Reading skipped!
+In cfrure_opt: expected cell_width, found fch
+ Reading skipped!
+In cfrure_opt: expected cell_height, found fch
+ Reading skipped!
+In cfrure_opt: expected qcb, found gs
+ Reading skipped!
+b2CreateMap: create map for a nx=96, ny=36 B2 grid
+b2CreateMap: found 1 special vertex (x-point), 2 including duplicates.
+b2CreateMap: have faces with missing mapping data (ignored)
+b2CreateMap: finished setting up map
+b2CreateMap: map contains  3724 unique cells
+b2CreateMap: map contains  3822 unique x-aligned faces
+b2CreateMap: map contains  3762 unique y-aligned faces
+b2CreateMap: map contains  3860 unique vertices
+VERSION set to: 03.000.008
+ Allocating space for b2mod_numerics
+ Allocated space for b2mod_numerics
+ Reading namelist numerics from ../b2.numerics.parameters
+ Read namelist numerics from ../b2.numerics.parameters
+
+
+
+ PRINTOUT FROM EIRENE PRE-PROCESSING:
+ BROWSE INPUT FOR STORAGE NEEDS (FIND_PARAM.F)
+ IUNIN =           45
+
+* EIRENE input file generated with uinp v. 2.2
+
+ *** 1. DATA FOR OPERATING MODE
+get_solpstop: SOLPSTOP = /home/bianyu/SOLPS_3.0.8/solps-iter
+ PATH SET FOR FILE HYDHEL
+ PATH = Database/AMdata/hydhel.tex
+ PATH SET FOR FILE SPUTER
+ PATH = Database/Surfacedata/SPUTER
+ PATH SET FOR FILE TRIM
+ PATH = Database/Surfacedata/TRIM/trim.dat
+ PATH SET FOR FILE AMMONX
+ PATH = Database/AMdata/AMMONX_Arrh-elast.tex
+ *** 2. DATA FOR VOXEL GRID GENERATION
+ *** 3. DATA FOR BREP SURFACES
+ *** 3A. DATA FOR NON-DEFAULT STANDARD SURFACES
+ *** 3B. DATA FOR ADDITIONAL SURFACES
+ *** 4. DATA FOR SPECIES SPECIFICATION AND
+        ATOMIC PHYSICS MODULE
+        ATOMIC REACTION CARDS, NREACI DATA FIELDS
+ *** 4A. NEUTRAL ATOMS SPECIES CARDS, NATMI SPECIES
+ *** 4B. NEUTRAL MOLECULE SPECIES CARDS, NMOLI SPECIES
+ *** 4C. TEST IONS SPECIES CARDS, NIONI SPECIES
+ *** 5. DATA FOR PLASMA BACKGROUND
+ *** 5A. BULK ION SPECIES CARDS, NPLSI SPECIES
+ *** 5B. PLASMA BACKGROUND DATA
+ FIND_PARAM: try to infer INDPRO(2) for Ti profiles
+ indpro2, npls            6           5
+ indpro(2) reset to:           16
+ WARNING FROM FIND_PARAM
+ TIIN IS PROVIDED FOR ONE SPECIES ONLY
+ DUE TO INDPRO(2) > 10
+ DIMENSION OF TIIN ARRAY OVERWRITTEN
+ BECAUSE BGK REACTIONS ARE PRESENT
+  NPLSTI =            5
+ *** 6. GENERAL DATA FOR REFLECTION MODEL
+ *** 7. DATA FOR PRIMARY SOURCES, NSTRAI STRATA
+ *   6 : Volumetric recombination D                                      
+ *** 8. ADDITIONAL DATA FOR SPECIFIC ZONES
+ *** 9. DATA FOR STATISTIC AND NON-ANALOG MODEL
+        CARDS FOR STANDARD DEVIATION
+ *** 10. DATA FOR ADDITIONAL TALLIES, COLLISION
+         ESTIMATORS AND ALGEBRAIC EXPRESSIONS
+ *** 10A. DATA FOR ADDITIONAL TALLIES
+ *** 10B. DATA FOR COLLISION ESTIMATORS
+ *** 10C. DATA FOR ALGEBRAIC EXPRESSIONS
+ *** 10D. DATA FOR ADDITIONAL SURFACE TALLIES
+ *** 10E. DATA FOR ALGEBRAIC SURFACE TALLIES
+ *** 10F. DATA FOR SPECTRA
+ *** 11. DATA FOR NUMERICAL AND GRAPHICAL OUTPUT
+ *** 12. DATA FOR DIAGNOSTIC MODULE
+ *** 13. DATA FOR ITERATIVE AND TIME DEP. OPTION
+ *** 14. DATA FOR INTERFACING ROUTINE "INFCOP"
+NRKNOT      =     4167
+NTRII       =     8010
+
+ AUTOMATED STORAGE SETTING (FIND_PARAM.F)
+
+N1ST        =       37
+N2ND        =       99
+N3RD        =        1
+NADD        =        2
+NTOR        =        1
+NRTAL       =        0
+NLIM        =       64
+NSTS        =        7
+NPLG        =       99
+NPPART      =        3
+NKNOT       =     4167
+NTRI        =     8011
+NTETRA      =        1
+NCOORD      =        1
+  
+NRAD        =     8014
+
+NSTRA       =        7
+NSRFS       =        1
+NSTEP       =        5
+NPTRGT      =        5
+
+NATM        =        1
+NMOL        =        1
+NION        =        1
+NPHOT       =        0
+NPLS        =        5
+
+NADV        =       15
+NCLV        =        7
+NSNV        =        0
+NALV        =        0
+NADS        =        0
+NALS        =        0
+NAIN        =        0
+
+NSD         =        1
+NSDW        =        1
+NCV         =        1
+
+ MAX. NO. OF ATOMIC/MOLECULAR "REACTIONS"
+NREAC       =      103
+ NREC,NREI,NRCX,NREL,NRPI: DETERMINED LATER
+ NRPH,NRBG,NROT          : DETERMINED LATER
+
+ SETTING OF STORAGE OPTIMIZATION OPTIONS
+
+NOPTIM      =     8011
+NOPTM1      =        1
+NGEOM_USR   =        0
+NCOUP_INPUT =        1
+NSMSTRA     =        1
+NSTORAM     =        9
+NGSTAL      =        1
+NREAC_ADD   =        1
+
+ SETTING OF CENSUS STORAGE FOR T-DEP. MODE
+NPRNL       =        0
+
+
+ Called FIND_PARAM
+    NDX =           98
+    NDY =           36
+  NSTRA =            7
+    NFL =            1
+   NATM =            1
+   NMOL =            1
+   NION =            1
+ NLIMPS =           71
+Default settings for jxi, jxa, jsep :    36   60   17
+User-corrected settings for jxi, jxa, jsep :    36   60   17
+ zn:   1  1
+ Using O-D time-independent plate temperature model
+open_file: SOLPSTOP = : /home/bianyu/SOLPS_3.0.8/solps-iter
+Trying ionization_potentials
+Trying ../ionization_potentials
+Trying /home/bianyu/SOLPS_3.0.8/solps-iter/ionization_potentials
+Trying /home/bianyu/SOLPS_3.0.8/solps-iter/data.local/ionization_potentials
+Trying /home/bianyu/SOLPS_3.0.8/solps-iter/modules/B2.5/Database/ionization_potentials
+  0   0.0   0.0   1.0      0.000      0.000      0.000      0.000
+  1   1.0   1.0   1.0     13.602     13.602     13.602     13.602
+  0   0   0.0   0.0   1.0      0.000      0.000      0.000      0.000
+  1   0   1.0   1.0   1.0     13.602     13.602     13.602     13.602
+           0   1.00000000000000        2.00000000000000      D
+           1   1.00000000000000        2.00000000000000      D
+VERSION defaulted to : 00.000.000
+ Reading namelist boundary from ../b2.boundary.parameters
+ Read namelist boundary from ../b2.boundary.parameters
+ Testing skipped!
+ Sput_dst :           -1
+ b2espcr :    1   1
+ b2eatcr :    1   1
+VERSION defaulted to : 00.000.000
+ Reading namelist neutrals from ../b2.neutrals.parameters
+ Read namelist neutrals from ../b2.neutrals.parameters
+ msns recalculated:
+       1    2    3    4    5
+       1    1    1    1    1
+ track_species : Bulk            
+ natm, nsd, nstages   1   2   1
+ b2espcr :   1  1
+ b2eatcr :   1  1
+ is_codes :  D  D
+ species_list :  D
+ atoms_list (B2) :  D
+ ions_list :    1
+ nfluids :    1
+ fluids_list :    0   1
+ Reading namelist user from ../../baserun/b2.user.parameters
+ Read namelist user from ../../baserun/b2.user.parameters
+ Calling alloc_b2mod_sputter
+ No b2.wall_save.parameters
+ No tracked wall material species
+ No sputtering enabled : Target models turned off!
+ Dimensions in fort.44 =     96   36    1    1    1
+ Array inner dimensions =    98   36
+ atoms_list (fort.44) :  D
+ nlimi,nstsi,nstrai_in,nlimps,nlmpgs:    64     7     7    71  1023
+ natmi,nmoli,nioni,nplsi =            1           1           1           1
+b2mod_connectivity.geometryId(): identified GEOMETRY_SN
+NRKNOT      =     4167
+NTRII       =     8010
+ Dimensions in fort.46 =   8010     1     1     1
+ contourplot on
+ Filled Contour Levels
+ contour level lines on
+ Labeling on
+ grid off
+ triangular grid off
+ vessel off
+ separatrix off
+ graphs plotted with nice axes
+ graphs plotted with normal labels
+ Not plotting versus full psi
+ Not plotting versus normalised psi
+ Not plotting versus root psi
+ Not mapping to midplane
+ same_page set to            0
+ Line Width set to   1.00000000000000     
+ Axis Line Width set to   1.00000000000000     
+ safetyfactor,q:    16.8230522640598        4.77237397802507     
+ safetyfactor,q:    16.8706068019089        4.80040509959023     
+ safetyfactor,q:    16.9994820012634        4.88848369550039     
+ safetyfactor,q:    17.1443357096364        5.00747452321994     
+ safetyfactor,q:    17.3027643058992        5.10815462270937     
+ safetyfactor,q:    17.4707291735166        5.21139720979612     
+ safetyfactor,q:    17.6606558795707        5.32965070713561     
+ safetyfactor,q:    17.8686789793511        5.47695077433691     
+ safetyfactor,q:    18.0950622678811        5.60219877773625     
+ safetyfactor,q:    18.3482514814051        5.74823853659404     
+ safetyfactor,q:    18.6302543802249        5.92611366412743     
+ safetyfactor,q:    18.9510935642866        6.09868822579053     
+ safetyfactor,q:    19.3167554206624        6.31226685725240     
+ safetyfactor,q:    19.7326701762011        6.53785399096240     
+ safetyfactor,q:    20.2296048539493        6.81183383171522     
+ safetyfactor,q:    20.8400148204985        7.11547811518656     
+ safetyfactor,q:    21.6261101974318        7.53412142495652     
+ safetyfactor,q:    22.7592449687527        8.07108859124416     
+ safetyfactor,q:    25.7708728707674        9.45549866112530     
+STACK i,r,s,m,e,w,t =    0   0   0   1   0   0   1
+ maximum use of stackw%w:         0
+ maximum use of stackw%wi:        0
+b2pl
+
+real	0m0.450s
+user	0m0.307s
+sys	0m0.113s
+rm b2pl.exe.dir/fort.44 b2pl.exe.dir/fort.46 b2pl.exe.dir/input.dat b2pl.exe.dir/fort.85
+cd b2pl.exe.dir ; rm -f HYDHEL METHANE SPUTER H2VIBR AMMONX fort.21 fort.22
+rmdir b2pl.exe.dir
+rmdir: failed to remove ‘b2pl.exe.dir’: Directory not empty
+gmake: [b2pl.prt] Error 1 (ignored)

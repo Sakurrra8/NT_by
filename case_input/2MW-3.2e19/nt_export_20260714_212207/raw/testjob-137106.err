@@ -1,0 +1,10 @@
+cp: cannot stat ‘../baserun/b2fpardf’: No such file or directory
+cp: cannot stat ‘../baserun/b2frates’: No such file or directory
+cp: cannot stat ‘b2.log’: No such file or directory
+cp: cannot stat ‘b2.log.gz’: No such file or directory
+cp: omitting directory ‘b2pl.exe.dir’
+cp: omitting directory ‘batch_av’
+cp: omitting directory ‘nt_export’
+cp: omitting directory ‘output’
+cp: omitting directory ‘run_av’
+cp: omitting directory ‘save_b2fstate’
