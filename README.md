@@ -406,6 +406,19 @@ make -f Makefile.local export-eirene-reactions
 ./bin/export_eirene_reactions Inputfile/settingfile/setting_Trimesh_D_5.log 1.0
 ```
 
+An optional third argument overrides `Outputpath`. Use it for density scans so
+each case keeps its own coefficient maps:
+
+```bash
+./bin/export_eirene_reactions \
+  Inputfile/settingfile/setting_Trimesh_D_1.log 1.0 \
+  Outputfile/10292310/data/reaction_coefficients
+python3 triangle/EAST/check_collision_closure.py \
+  --case case_input/2MW-3.2e19 \
+  --output Outputfile/10292310 \
+  --rates Outputfile/10292310/data/reaction_coefficients/eirene_reaction_b2
+```
+
 The exporter reads `ne`, `Te`, `Ti`, atom temperature, and molecule temperature
 from the setting's `Casepath`. Electron reactions use `ne,Te`; H.2 3.2.3 uses
 local `Ti`; AMMONX reactions use the matching neutral temperature; hydrogen H.3

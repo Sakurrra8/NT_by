@@ -305,6 +305,8 @@ int main(int argc, char **argv)
 {
     const std::string setting_file = argc > 1 ? argv[1] : "Inputfile/settingfile/setting_Trimesh_D_5.log";
     const double projectile_energy = argc > 2 ? std::stod(argv[2]) : 1.0;
+    const std::filesystem::path output_dir =
+        argc > 3 ? std::filesystem::path(argv[3]) : std::filesystem::path();
     if (!(projectile_energy > 0.0) || !std::isfinite(projectile_energy))
         throw std::runtime_error("Projectile energy must be a finite positive value in eV");
     const SettingPaths paths = readSettingPaths(setting_file);
@@ -348,12 +350,13 @@ int main(int argc, char **argv)
     const auto atom_temperature = readB2Field(atom_temperature_path, paths.n_poloidal, paths.n_radial);
     const auto molecule_temperature = readB2Field(molecule_temperature_path, paths.n_poloidal, paths.n_radial);
 
-    std::filesystem::create_directories(paths.output_path);
-    const std::filesystem::path output_dir(paths.output_path);
-    const std::filesystem::path b2_output_dir = output_dir / "eirene_reaction_b2";
+    const std::filesystem::path resolved_output_dir =
+        output_dir.empty() ? std::filesystem::path(paths.output_path) : output_dir;
+    std::filesystem::create_directories(resolved_output_dir);
+    const std::filesystem::path b2_output_dir = resolved_output_dir / "eirene_reaction_b2";
     std::filesystem::create_directories(b2_output_dir);
-    const std::filesystem::path summary_path = output_dir / "eirene_reaction_b2_summary.csv";
-    const std::filesystem::path readme_path = output_dir / "eirene_reaction_coefficients_readme.txt";
+    const std::filesystem::path summary_path = resolved_output_dir / "eirene_reaction_b2_summary.csv";
+    const std::filesystem::path readme_path = resolved_output_dir / "eirene_reaction_coefficients_readme.txt";
 
     std::ofstream summary(summary_path);
     if (!summary.is_open())

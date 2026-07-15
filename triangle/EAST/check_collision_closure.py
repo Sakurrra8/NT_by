@@ -59,10 +59,16 @@ def main():
         description="Check sampled D/D2 electron collisions against track length."
     )
     parser.add_argument("--root", default=".")
-    parser.add_argument("--case", default="case_input/2MW-5e19")
+    parser.add_argument(
+        "--case",
+        required=True,
+        help="Case directory used by the corresponding NT run.",
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument(
-        "--rates", default="Outputfile/test/data/eirene_reaction_b2"
+        "--rates",
+        required=True,
+        help="Case-specific eirene_reaction_b2 directory.",
     )
     parser.add_argument(
         "--csv",
