@@ -2707,6 +2707,8 @@ namespace eirene
         for (int i = 0; i < Wall_num(); i++)
         {
             deltaL = sqrt(Length_sq(i));
+            // wall.txt is clockwise. Reversing its tangent makes
+            // (-sin, cos) point into the vessel for reflection sampling.
             Cos_wall_.push_back(-dx(i) / deltaL);
             Sin_wall_.push_back(-dy(i) / deltaL);
         }

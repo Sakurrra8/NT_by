@@ -443,6 +443,21 @@ private:
 		unsigned long long b2_mismatch_events{0};
 	};
 	std::vector<TargetLaunchAudit> targetLaunchAudit_;
+	struct SurfaceReemissionAudit
+	{
+		unsigned long long events{0};
+		double represented_weight{0.};
+		double position_fraction_weighted{0.};
+		double energy_weighted{0.};
+		double speed_weighted{0.};
+		double inward_cosine_weighted{0.};
+		double maximum_surface_distance{0.};
+		unsigned long long invalid_surface_position_events{0};
+		unsigned long long outside_current_triangle_events{0};
+		unsigned long long outward_velocity_events{0};
+	};
+	std::vector<SurfaceReemissionAudit> wallReemissionAudit_;
+	std::vector<SurfaceReemissionAudit> targetReemissionAudit_;
 	unsigned long long neutral_stall_loss_events_{0};
 	double neutral_stall_loss_weight_{0.};
 	unsigned long long core_loss_events_{0};
@@ -482,6 +497,8 @@ private:
 	double diagnosticEventWeight() const;
 	void recordSourceLaunch();
 	void recordTargetLaunch(int target, double position_fraction);
+	void recordSurfaceReemission(int surface_type, int surface_index,
+							 double tangent_cos, double tangent_sin);
 	void beginDeferredCollisionStats(double scale);
 	void endDeferredCollisionStats();
 	void SampleIonVelocity(int isotope);
@@ -842,6 +859,7 @@ public:
 	void OutTargetEro(int fate);
 	void WriteTargetImpactSummary(const string &path);
 	void WriteTargetLaunchAudit(const string &path) const;
+	void WriteSurfaceReemissionAudit(const string &path) const;
 	void AddPlasmaBoundaryEro(int num_Ero_wall);
 	void OutPlasmaBoundaryEro(int fate);
 

@@ -255,6 +255,9 @@ axisymmetric target element with probability proportional to local major
 radius, then nudged into the element's mapped plasma triangle. The actual D and
 D2 launch position, speed, energy, inward cosine, and mesh-index checks are
 written to `target_launch_D.csv` and `target_launch_D2.csv`.
+Subsequent real-wall and target re-emissions are audited separately in
+`surface_reemission_D.csv` and `surface_reemission_D2.csv`, including the
+surface-coordinate residual and the emitted velocity's inward-normal cosine.
 
 The optional `K_DBoundarySource=1` path reconstructs EIRENE interface strata
 3--5 from the species-resolved SOLPS `fnay_Dplus.dat` field. Negative flux on

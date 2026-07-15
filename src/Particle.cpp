@@ -1434,6 +1434,10 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	bool prescribed_reflection_speed = false;
 	int target_launch_index = -1;
 	double target_launch_position_fraction = 0.5;
+	int surface_reemission_type = -1;
+	int surface_reemission_index = -1;
+	double surface_reemission_tangent_cos = 0.;
+	double surface_reemission_tangent_sin = 0.;
 	if (k != 3 || InterscePoint[0][4] != 11)
 	{
 		in_additional_cell_ = false;
@@ -1698,6 +1702,22 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	}
 	else if (k == 3) // neutral particle from Wall, z = 1 for
 	{
+		surface_reemission_type = static_cast<int>(InterscePoint[0][4]);
+		surface_reemission_index = static_cast<int>(InterscePoint[0][3]);
+		if (surface_reemission_type == 11)
+		{
+			surface_reemission_tangent_cos =
+				Grid4.Wall_.Cos_Wall(surface_reemission_index);
+			surface_reemission_tangent_sin =
+				Grid4.Wall_.Sin_Wall(surface_reemission_index);
+		}
+		else if (surface_reemission_type == 1)
+		{
+			const auto tangent =
+				Grid4.InwardTargetTangent(surface_reemission_index);
+			surface_reemission_tangent_cos = tangent.first;
+			surface_reemission_tangent_sin = tangent.second;
+		}
 		const bool use_dw_trim =
 			K_DWTrimReflection == 1 && this == &D && K_Wallelement == 1 && z == 0;
 		auto apply_dw_trim_velocity = [this, &speedFromEnergy](double wall_cos, double wall_sin,
@@ -2431,6 +2451,10 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		importance_region_ = PhysicalImportanceRegion();
 	if (target_launch_index >= 0)
 		recordTargetLaunch(target_launch_index, target_launch_position_fraction);
+	if (surface_reemission_type == 11 || surface_reemission_type == 1)
+		recordSurfaceReemission(
+			surface_reemission_type, surface_reemission_index,
+			surface_reemission_tangent_cos, surface_reemission_tangent_sin);
 	if (record_source_launch)
 		recordSourceLaunch();
 	// std::cout << V_[0] << V_[1] << V_[2] << endl;
@@ -5469,6 +5493,137 @@ void Particle::WriteTargetLaunchAudit(const string &path) const
 			<< audit.outward_velocity_events << ','
 			<< audit.b2_mismatch_events << '\n';
 	}
+}
+
+void Particle::recordSurfaceReemission(int surface_type, int surface_index,
+									  double tangent_cos, double tangent_sin)
+{
+	std::vector<SurfaceReemissionAudit> *audits = nullptr;
+	std::array<double, 4> segment{};
+	if (surface_type == 11 && surface_index >= 0 &&
+		surface_index < Grid4.Wall_.Wall_num())
+	{
+		audits = &wallReemissionAudit_;
+		segment = Grid4.Wall_.Segment(surface_index);
+	}
+	else if (surface_type == 1 && surface_index >= 0 &&
+			 surface_index < 2 * N_radial)
+	{
+		audits = &targetReemissionAudit_;
+		segment = {
+			Grid4.Target(surface_index, 0), Grid4.Target(surface_index, 1),
+			Grid4.Target(surface_index, 2), Grid4.Target(surface_index, 3)};
+	}
+	else
+	{
+		return;
+	}
+	if (surface_index >= static_cast<int>(audits->size()))
+		audits->resize(static_cast<std::size_t>(surface_index + 1));
+	SurfaceReemissionAudit &audit = (*audits)[surface_index];
+	const double represented_weight = diagnosticEventWeight();
+	const double speed = std::sqrt(
+		Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
+	const double energy_eV =
+		mass_ > 0. ? 0.5 * mass_ * speed * speed / qe : 0.;
+	const double inward_cosine = speed > 0.
+		? (V_[0] * -tangent_sin + V_[1] * tangent_cos) / speed
+		: 0.;
+	const double dx = segment[2] - segment[0];
+	const double dy = segment[3] - segment[1];
+	const double length2 = dx * dx + dy * dy;
+	double position_fraction = 0.;
+	double surface_distance = std::numeric_limits<double>::infinity();
+	if (length2 > 0.)
+	{
+		position_fraction =
+			((X_[0] - segment[0]) * dx + (X_[1] - segment[1]) * dy) /
+			length2;
+		const double projection_x = segment[0] + position_fraction * dx;
+		const double projection_y = segment[1] + position_fraction * dy;
+		surface_distance = std::hypot(X_[0] - projection_x, X_[1] - projection_y);
+	}
+
+	++audit.events;
+	audit.represented_weight += represented_weight;
+	audit.position_fraction_weighted += represented_weight * position_fraction;
+	audit.energy_weighted += represented_weight * energy_eV;
+	audit.speed_weighted += represented_weight * speed;
+	audit.inward_cosine_weighted += represented_weight * inward_cosine;
+	audit.maximum_surface_distance =
+		std::max(audit.maximum_surface_distance, surface_distance);
+	const double position_tolerance = 1.e-8;
+	const double distance_tolerance =
+		1.e-8 * (1. + std::sqrt(std::max(0., length2)));
+	if (!std::isfinite(surface_distance) ||
+		position_fraction < -position_tolerance ||
+		position_fraction > 1. + position_tolerance ||
+		surface_distance > distance_tolerance)
+		++audit.invalid_surface_position_events;
+	if (Tri_Index_ < 0 ||
+		static_cast<std::size_t>(Tri_Index_) >= Grid4.tris_.size() ||
+		!Grid4.Ifingrid(Tri_Index_, X_[0], X_[1]))
+		++audit.outside_current_triangle_events;
+	if (!(inward_cosine > 0.))
+		++audit.outward_velocity_events;
+}
+
+void Particle::WriteSurfaceReemissionAudit(const string &path) const
+{
+	std::ofstream out(path);
+	out << "surface_type,surface_index,side,radial_index,r0,z0,r1,z1,"
+		   "inward_normal_r,inward_normal_z,events,represented_weight_s-1,"
+		   "mean_position_fraction,max_surface_distance_m,mean_energy_eV,"
+		   "mean_speed_m_s,mean_inward_cosine,invalid_surface_position_events,"
+		   "outside_current_triangle_events,outward_velocity_events\n";
+	auto write_rows = [&out](const char *surface_type,
+							 const std::vector<SurfaceReemissionAudit> &audits,
+							 int count, bool target)
+	{
+		for (int index = 0; index < count; ++index)
+		{
+			const SurfaceReemissionAudit empty{};
+			const SurfaceReemissionAudit &audit =
+				index < static_cast<int>(audits.size()) ? audits[index] : empty;
+			std::array<double, 4> segment{};
+			double tangent_cos = 0.;
+			double tangent_sin = 0.;
+			if (target)
+			{
+				segment = {
+					Grid4.Target(index, 0), Grid4.Target(index, 1),
+					Grid4.Target(index, 2), Grid4.Target(index, 3)};
+				const auto tangent = Grid4.InwardTargetTangent(index);
+				tangent_cos = tangent.first;
+				tangent_sin = tangent.second;
+			}
+			else
+			{
+				segment = Grid4.Wall_.Segment(index);
+				tangent_cos = Grid4.Wall_.Cos_Wall(index);
+				tangent_sin = Grid4.Wall_.Sin_Wall(index);
+			}
+			const double inverse_weight =
+				audit.represented_weight > 0. ? 1. / audit.represented_weight : 0.;
+			out << surface_type << ',' << index << ','
+				<< (target ? (index < N_radial ? "IT" : "OT") : "Wall") << ','
+				<< (target ? index % N_radial : -1) << ','
+				<< segment[0] << ',' << segment[1] << ','
+				<< segment[2] << ',' << segment[3] << ','
+				<< -tangent_sin << ',' << tangent_cos << ','
+				<< audit.events << ',' << audit.represented_weight << ','
+				<< audit.position_fraction_weighted * inverse_weight << ','
+				<< audit.maximum_surface_distance << ','
+				<< audit.energy_weighted * inverse_weight << ','
+				<< audit.speed_weighted * inverse_weight << ','
+				<< audit.inward_cosine_weighted * inverse_weight << ','
+				<< audit.invalid_surface_position_events << ','
+				<< audit.outside_current_triangle_events << ','
+				<< audit.outward_velocity_events << '\n';
+		}
+	};
+	write_rows("Wall", wallReemissionAudit_, Grid4.Wall_.Wall_num(), false);
+	write_rows("Target", targetReemissionAudit_, 2 * N_radial, true);
 }
 
 void Particle::ApplyRussianRoulette()
@@ -9694,6 +9849,10 @@ void Particle::Clear(int n)
 			track_length.fill(0.0);
 		std::fill(targetLaunchAudit_.begin(), targetLaunchAudit_.end(),
 				  TargetLaunchAudit{});
+		std::fill(wallReemissionAudit_.begin(), wallReemissionAudit_.end(),
+				  SurfaceReemissionAudit{});
+		std::fill(targetReemissionAudit_.begin(), targetReemissionAudit_.end(),
+				  SurfaceReemissionAudit{});
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
 		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),
 				  std::array<double, 3>{0.0, 0.0, 0.0});
