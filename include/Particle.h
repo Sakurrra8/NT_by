@@ -458,6 +458,8 @@ private:
 	};
 	std::vector<SurfaceReemissionAudit> wallReemissionAudit_;
 	std::vector<SurfaceReemissionAudit> targetReemissionAudit_;
+	std::vector<SurfaceReemissionAudit> wallReemissionByPrimarySourceAudit_;
+	std::vector<SurfaceReemissionAudit> targetReemissionByPrimarySourceAudit_;
 	unsigned long long neutral_stall_loss_events_{0};
 	double neutral_stall_loss_weight_{0.};
 	unsigned long long core_loss_events_{0};
@@ -499,6 +501,8 @@ private:
 	void recordTargetLaunch(int target, double position_fraction);
 	void recordSurfaceReemission(int surface_type, int surface_index,
 							 double tangent_cos, double tangent_sin);
+	void WriteSurfaceReemissionAuditImpl(const string &path,
+									   bool by_primary_source) const;
 	void beginDeferredCollisionStats(double scale);
 	void endDeferredCollisionStats();
 	void SampleIonVelocity(int isotope);
@@ -860,6 +864,7 @@ public:
 	void WriteTargetImpactSummary(const string &path);
 	void WriteTargetLaunchAudit(const string &path) const;
 	void WriteSurfaceReemissionAudit(const string &path) const;
+	void WriteSurfaceReemissionByPrimarySourceAudit(const string &path) const;
 	void AddPlasmaBoundaryEro(int num_Ero_wall);
 	void OutPlasmaBoundaryEro(int fate);
 

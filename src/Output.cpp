@@ -85,6 +85,10 @@ void Output()
         D2.WriteTargetLaunchAudit(Outputpath + "target_launch_D2.csv");
         D.WriteSurfaceReemissionAudit(Outputpath + "surface_reemission_D.csv");
         D2.WriteSurfaceReemissionAudit(Outputpath + "surface_reemission_D2.csv");
+        D.WriteSurfaceReemissionByPrimarySourceAudit(
+            Outputpath + "surface_reemission_by_source_D.csv");
+        D2.WriteSurfaceReemissionByPrimarySourceAudit(
+            Outputpath + "surface_reemission_by_source_D2.csv");
         if (K_DBoundarySource)
             D_BoundarySource.WriteSummary(Outputpath + "D_boundary_source.csv");
     }

@@ -901,6 +901,10 @@ void Particle::allocateStorage()
 	triTrackLengthByStratum_.assign(chargeStates, {});
 	pendingTriTrackLengthByStratum_.assign(chargeStates, {});
 	targetLaunchAudit_.assign(static_cast<std::size_t>(2 * N_radial), {});
+	targetReemissionByPrimarySourceAudit_.assign(
+		static_cast<std::size_t>(2 * N_radial) *
+			static_cast<std::size_t>(SourceStratum::Count),
+		{});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -5499,17 +5503,20 @@ void Particle::recordSurfaceReemission(int surface_type, int surface_index,
 									  double tangent_cos, double tangent_sin)
 {
 	std::vector<SurfaceReemissionAudit> *audits = nullptr;
+	std::vector<SurfaceReemissionAudit> *source_audits = nullptr;
 	std::array<double, 4> segment{};
 	if (surface_type == 11 && surface_index >= 0 &&
 		surface_index < Grid4.Wall_.Wall_num())
 	{
 		audits = &wallReemissionAudit_;
+		source_audits = &wallReemissionByPrimarySourceAudit_;
 		segment = Grid4.Wall_.Segment(surface_index);
 	}
 	else if (surface_type == 1 && surface_index >= 0 &&
 			 surface_index < 2 * N_radial)
 	{
 		audits = &targetReemissionAudit_;
+		source_audits = &targetReemissionByPrimarySourceAudit_;
 		segment = {
 			Grid4.Target(surface_index, 0), Grid4.Target(surface_index, 1),
 			Grid4.Target(surface_index, 2), Grid4.Target(surface_index, 3)};
@@ -5521,6 +5528,14 @@ void Particle::recordSurfaceReemission(int surface_type, int surface_index,
 	if (surface_index >= static_cast<int>(audits->size()))
 		audits->resize(static_cast<std::size_t>(surface_index + 1));
 	SurfaceReemissionAudit &audit = (*audits)[surface_index];
+	const std::size_t source_count =
+		static_cast<std::size_t>(SourceStratum::Count);
+	const std::size_t primary_source =
+		static_cast<std::size_t>(primary_source_stratum_);
+	const std::size_t required_source_size =
+		(static_cast<std::size_t>(surface_index) + 1) * source_count;
+	if (source_audits->size() < required_source_size)
+		source_audits->resize(required_source_size);
 	const double represented_weight = diagnosticEventWeight();
 	const double speed = std::sqrt(
 		Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
@@ -5544,47 +5559,75 @@ void Particle::recordSurfaceReemission(int surface_type, int surface_index,
 		surface_distance = std::hypot(X_[0] - projection_x, X_[1] - projection_y);
 	}
 
-	++audit.events;
-	audit.represented_weight += represented_weight;
-	audit.position_fraction_weighted += represented_weight * position_fraction;
-	audit.energy_weighted += represented_weight * energy_eV;
-	audit.speed_weighted += represented_weight * speed;
-	audit.inward_cosine_weighted += represented_weight * inward_cosine;
-	audit.maximum_surface_distance =
-		std::max(audit.maximum_surface_distance, surface_distance);
 	const double position_tolerance = 1.e-8;
 	const double distance_tolerance =
 		1.e-8 * (1. + std::sqrt(std::max(0., length2)));
-	if (!std::isfinite(surface_distance) ||
+	const bool invalid_surface_position =
+		!std::isfinite(surface_distance) ||
 		position_fraction < -position_tolerance ||
 		position_fraction > 1. + position_tolerance ||
-		surface_distance > distance_tolerance)
-		++audit.invalid_surface_position_events;
-	if (Tri_Index_ < 0 ||
+		surface_distance > distance_tolerance;
+	const bool outside_current_triangle =
+		Tri_Index_ < 0 ||
 		static_cast<std::size_t>(Tri_Index_) >= Grid4.tris_.size() ||
-		!Grid4.Ifingrid(Tri_Index_, X_[0], X_[1]))
-		++audit.outside_current_triangle_events;
-	if (!(inward_cosine > 0.))
-		++audit.outward_velocity_events;
+		!Grid4.Ifingrid(Tri_Index_, X_[0], X_[1]);
+	const bool outward_velocity = !(inward_cosine > 0.);
+	auto update_audit = [&](SurfaceReemissionAudit &entry)
+	{
+		++entry.events;
+		entry.represented_weight += represented_weight;
+		entry.position_fraction_weighted +=
+			represented_weight * position_fraction;
+		entry.energy_weighted += represented_weight * energy_eV;
+		entry.speed_weighted += represented_weight * speed;
+		entry.inward_cosine_weighted += represented_weight * inward_cosine;
+		entry.maximum_surface_distance =
+			std::max(entry.maximum_surface_distance, surface_distance);
+		if (invalid_surface_position)
+			++entry.invalid_surface_position_events;
+		if (outside_current_triangle)
+			++entry.outside_current_triangle_events;
+		if (outward_velocity)
+			++entry.outward_velocity_events;
+	};
+	update_audit(audit);
+	if (primary_source < source_count)
+		update_audit((*source_audits)[
+			static_cast<std::size_t>(surface_index) * source_count + primary_source]);
 }
 
 void Particle::WriteSurfaceReemissionAudit(const string &path) const
 {
+	WriteSurfaceReemissionAuditImpl(path, false);
+}
+
+void Particle::WriteSurfaceReemissionByPrimarySourceAudit(
+	const string &path) const
+{
+	WriteSurfaceReemissionAuditImpl(path, true);
+}
+
+void Particle::WriteSurfaceReemissionAuditImpl(
+	const string &path, bool by_primary_source) const
+{
 	std::ofstream out(path);
-	out << "surface_type,surface_index,side,radial_index,r0,z0,r1,z1,"
+	out << "surface_type,surface_index,";
+	if (by_primary_source)
+		out << "primary_source_stratum,";
+	out << "side,radial_index,r0,z0,r1,z1,"
 		   "inward_normal_r,inward_normal_z,events,represented_weight_s-1,"
 		   "mean_position_fraction,max_surface_distance_m,mean_energy_eV,"
 		   "mean_speed_m_s,mean_inward_cosine,invalid_surface_position_events,"
 		   "outside_current_triangle_events,outward_velocity_events\n";
 	auto write_rows = [&out](const char *surface_type,
 							 const std::vector<SurfaceReemissionAudit> &audits,
-							 int count, bool target)
+							 const std::vector<SurfaceReemissionAudit> &source_audits,
+							 int count, bool target, bool by_primary_source)
 	{
+		const std::size_t source_count =
+			static_cast<std::size_t>(SourceStratum::Count);
 		for (int index = 0; index < count; ++index)
 		{
-			const SurfaceReemissionAudit empty{};
-			const SurfaceReemissionAudit &audit =
-				index < static_cast<int>(audits.size()) ? audits[index] : empty;
 			std::array<double, 4> segment{};
 			double tangent_cos = 0.;
 			double tangent_sin = 0.;
@@ -5603,27 +5646,49 @@ void Particle::WriteSurfaceReemissionAudit(const string &path) const
 				tangent_cos = Grid4.Wall_.Cos_Wall(index);
 				tangent_sin = Grid4.Wall_.Sin_Wall(index);
 			}
-			const double inverse_weight =
-				audit.represented_weight > 0. ? 1. / audit.represented_weight : 0.;
-			out << surface_type << ',' << index << ','
-				<< (target ? (index < N_radial ? "IT" : "OT") : "Wall") << ','
-				<< (target ? index % N_radial : -1) << ','
-				<< segment[0] << ',' << segment[1] << ','
-				<< segment[2] << ',' << segment[3] << ','
-				<< -tangent_sin << ',' << tangent_cos << ','
-				<< audit.events << ',' << audit.represented_weight << ','
-				<< audit.position_fraction_weighted * inverse_weight << ','
-				<< audit.maximum_surface_distance << ','
-				<< audit.energy_weighted * inverse_weight << ','
-				<< audit.speed_weighted * inverse_weight << ','
-				<< audit.inward_cosine_weighted * inverse_weight << ','
-				<< audit.invalid_surface_position_events << ','
-				<< audit.outside_current_triangle_events << ','
-				<< audit.outward_velocity_events << '\n';
+			const std::size_t rows = by_primary_source ? source_count : 1;
+			for (std::size_t source = 0; source < rows; ++source)
+			{
+				const SurfaceReemissionAudit empty{};
+				const std::size_t source_index =
+					static_cast<std::size_t>(index) * source_count + source;
+				const SurfaceReemissionAudit &audit = by_primary_source
+					? (source_index < source_audits.size()
+						   ? source_audits[source_index]
+						   : empty)
+					: (index < static_cast<int>(audits.size())
+						   ? audits[index]
+						   : empty);
+				const double inverse_weight = audit.represented_weight > 0.
+					? 1. / audit.represented_weight
+					: 0.;
+				out << surface_type << ',' << index << ',';
+				if (by_primary_source)
+					out << sourceStratumName(
+						static_cast<SourceStratum>(source)) << ',';
+				out << (target ? (index < N_radial ? "IT" : "OT") : "Wall") << ','
+					<< (target ? index % N_radial : -1) << ','
+					<< segment[0] << ',' << segment[1] << ','
+					<< segment[2] << ',' << segment[3] << ','
+					<< -tangent_sin << ',' << tangent_cos << ','
+					<< audit.events << ',' << audit.represented_weight << ','
+					<< audit.position_fraction_weighted * inverse_weight << ','
+					<< audit.maximum_surface_distance << ','
+					<< audit.energy_weighted * inverse_weight << ','
+					<< audit.speed_weighted * inverse_weight << ','
+					<< audit.inward_cosine_weighted * inverse_weight << ','
+					<< audit.invalid_surface_position_events << ','
+					<< audit.outside_current_triangle_events << ','
+					<< audit.outward_velocity_events << '\n';
+			}
 		}
 	};
-	write_rows("Wall", wallReemissionAudit_, Grid4.Wall_.Wall_num(), false);
-	write_rows("Target", targetReemissionAudit_, 2 * N_radial, true);
+	write_rows("Wall", wallReemissionAudit_,
+			   wallReemissionByPrimarySourceAudit_, Grid4.Wall_.Wall_num(),
+			   false, by_primary_source);
+	write_rows("Target", targetReemissionAudit_,
+			   targetReemissionByPrimarySourceAudit_, 2 * N_radial,
+			   true, by_primary_source);
 }
 
 void Particle::ApplyRussianRoulette()
@@ -9852,6 +9917,12 @@ void Particle::Clear(int n)
 		std::fill(wallReemissionAudit_.begin(), wallReemissionAudit_.end(),
 				  SurfaceReemissionAudit{});
 		std::fill(targetReemissionAudit_.begin(), targetReemissionAudit_.end(),
+				  SurfaceReemissionAudit{});
+		std::fill(wallReemissionByPrimarySourceAudit_.begin(),
+				  wallReemissionByPrimarySourceAudit_.end(),
+				  SurfaceReemissionAudit{});
+		std::fill(targetReemissionByPrimarySourceAudit_.begin(),
+				  targetReemissionByPrimarySourceAudit_.end(),
 				  SurfaceReemissionAudit{});
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
 		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),

@@ -147,6 +147,11 @@ def source_stratum_rows(summary_path, fort44_path):
         'Recombination': 6,
     }
     rows = []
+    code_totals = {
+        (species, mesh): 0.0
+        for species in ('D', 'D2')
+        for mesh in ('tri', 'b2')
+    }
     with Path(summary_path).open(newline='') as stream:
         reader = csv.DictReader(stream)
         inventory_columns = {
@@ -167,6 +172,7 @@ def source_stratum_rows(summary_path, fort44_path):
                 ('b2', 'b2_track_length_inventory'),
             ):
                 code = float(record[code_column])
+                code_totals[(species, mesh)] += code
                 ref = eirene_fields[(species, mesh)][stratum_index[stratum]]
                 row = metric_row(
                     f'SourceStratum_{mesh}_n_{species}_0_{stratum}',
@@ -178,6 +184,23 @@ def source_stratum_rows(summary_path, fort44_path):
                 row['source_stratum'] = stratum
                 row['note'] = 'track-length inventory compared with fort.44 source-stratum integral'
                 rows.append(row)
+    for species in ('D', 'D2'):
+        for mesh in ('tri', 'b2'):
+            code = code_totals[(species, mesh)]
+            ref = eirene_fields[(species, mesh)][0]
+            row = metric_row(
+                f'SourceStratum_{mesh}_n_{species}_0_total',
+                np.asarray([code]),
+                np.asarray([ref]),
+                np.ones(1),
+            )
+            row['mesh'] = mesh
+            row['source_stratum'] = 'Total'
+            row['note'] = (
+                'sum of the six matched primary-source track-length inventories '
+                'compared with fort.44 pden*_int index 0'
+            )
+            rows.append(row)
     return rows
 
 
@@ -562,6 +585,28 @@ def main():
                 row['mesh'] = 'b2'
                 row['note'] = 'direct comparison with the exported EIRENE B2 field'
                 rows.append(row)
+                integral_name = {
+                    'dab2': 'pdena_int_b2',
+                    'dmb2': 'pdenm_int_b2',
+                }.get(ref_name)
+                if integral_name is not None:
+                    density_integral = float(np.sum(ref * b2_vol))
+                    reported_integral = read_eirene_field(
+                        fort44, integral_name
+                    )[0]
+                    consistency = metric_row(
+                        f'EIRENE_{ref_name}_volume_integral_consistency',
+                        np.asarray([density_integral]),
+                        np.asarray([reported_integral]),
+                        np.ones(1),
+                    )
+                    consistency['mesh'] = 'b2'
+                    consistency['note'] = (
+                        f'{ref_name} times local vol_2D.dat compared with '
+                        f'fort.44 {integral_name} index 0; this is a reference '
+                        'self-consistency check, not a code comparison'
+                    )
+                    rows.append(consistency)
                 plot_b2_field(outdir, name, code, ref)
 
                 for side, poloidal in (('inner', 1), ('outer', 96)):

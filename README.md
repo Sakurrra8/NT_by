@@ -258,6 +258,10 @@ written to `target_launch_D.csv` and `target_launch_D2.csv`.
 Subsequent real-wall and target re-emissions are audited separately in
 `surface_reemission_D.csv` and `surface_reemission_D2.csv`, including the
 surface-coordinate residual and the emitted velocity's inward-normal cosine.
+The matching `surface_reemission_by_source_D*.csv` files retain the primary
+IT, OT, PFR-side, outer-side, or recombination source label through every
+later wall cycle. They can therefore be compared directly with EIRENE's
+per-stratum `wldra(N)` and `wldrm(N)` surface fluxes.
 
 The optional `K_DBoundarySource=1` path reconstructs EIRENE interface strata
 3--5 from the species-resolved SOLPS `fnay_Dplus.dat` field. Negative flux on
@@ -393,9 +397,16 @@ The comparison workflow is:
 4. Also compare D2 density, because D2+ depends strongly on the parent D2
    inventory and spatial distribution.
 
-For the 5e19 no-pump/no-puff test, the key diagnostic lesson was that D2 itself
-was already low relative to EIRENE, and D2+/D2 was also lower.  Therefore D2+
-disagreement should be debugged as a chain:
+`benchmark_tri.py` reports both the direct `dab2/dmb2` B2-field comparison and
+the sum of the six primary-source track-length inventories against EIRENE's
+`pdena_int_b2(0)`/`pdenm_int_b2(0)`. It also reports a reference
+self-consistency row for `d?b2 * vol_2D.dat` versus those EIRENE integrals;
+do not attribute that residual to NT. Use `check_b2_alignment.py` when a narrow
+target region disagrees strongly, to rule out an axis flip or integer-cell
+offset before changing transport physics.
+
+For the 5e19 no-pump/no-puff test, D2+ disagreement should be debugged as a
+chain:
 
 ```text
 recycling source -> D2 density -> D2 ionization/CX -> D2+ loss and residence
