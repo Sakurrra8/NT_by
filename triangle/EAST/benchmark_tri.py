@@ -528,6 +528,88 @@ def source_stratum_rows(summary_path, fort44_path):
     return rows
 
 
+def b2_source_spatial_rows(spatial_path, summary_path, density, volume):
+    shape = density.shape
+    by_source = {}
+    with Path(spatial_path).open(newline='') as stream:
+        reader = csv.DictReader(stream)
+        required = {
+            'i', 'j', 'source_stratum', 'track_length_inventory',
+        }
+        if not required.issubset(reader.fieldnames or []):
+            return []
+        for record in reader:
+            i = int(record['i'])
+            j = int(record['j'])
+            if not (0 <= i < shape[0] and 0 <= j < shape[1]):
+                continue
+            source = record['source_stratum']
+            field = by_source.setdefault(source, np.zeros(shape))
+            field[i, j] += float(record['track_length_inventory'])
+
+    summary = {}
+    with Path(summary_path).open(newline='') as stream:
+        for record in csv.DictReader(stream):
+            if record['species'] == 'D2' and record['charge'] == '0':
+                summary[record['source_stratum']] = float(
+                    record['b2_track_length_inventory']
+                )
+
+    masks = {
+        'all': np.ones(shape, dtype=bool),
+        'inner_target': np.zeros(shape, dtype=bool),
+        'inner_target_r30_36': np.zeros(shape, dtype=bool),
+        'outer_target': np.zeros(shape, dtype=bool),
+        'outer_target_r30_36': np.zeros(shape, dtype=bool),
+    }
+    masks['inner_target'][1, 1:37] = True
+    masks['inner_target_r30_36'][1, 30:37] = True
+    masks['outer_target'][96, 1:37] = True
+    masks['outer_target_r30_36'][96, 30:37] = True
+
+    rows = []
+    for region, mask in masks.items():
+        source_inventory = {
+            source: float(np.sum(field[mask]))
+            for source, field in by_source.items()
+        }
+        spatial_total = sum(source_inventory.values())
+        density_total = float(np.sum(density[mask] * volume[mask]))
+        rows.append({
+            'field': f'B2_D2_source_spatial_closure_{region}',
+            'mesh': 'b2',
+            'region': region,
+            'source_spatial_inventory': spatial_total,
+            'density_volume_integral': density_total,
+            'spatial_to_density_ratio': (
+                spatial_total / density_total if density_total > 0.0 else np.nan
+            ),
+            'note': 'sum of source-resolved track length divided by n_D2_0 times B2 volume',
+        })
+        for source, inventory in source_inventory.items():
+            if inventory == 0.0:
+                continue
+            row = {
+                'field': f'B2_D2_inventory_by_source_{region}_{source}',
+                'mesh': 'b2',
+                'region': region,
+                'source_stratum': source,
+                'code_volume_integral': inventory,
+                'fraction_of_region': (
+                    inventory / spatial_total if spatial_total > 0.0 else np.nan
+                ),
+                'note': 'D2 track-length inventory attributed to the primary source stratum',
+            }
+            if region == 'all' and source in summary:
+                row['summary_inventory'] = summary[source]
+                row['spatial_to_summary_ratio'] = (
+                    inventory / summary[source]
+                    if summary[source] > 0.0 else np.nan
+                )
+            rows.append(row)
+    return rows
+
+
 def inner_target_d2_source_shape_row(
     output_data, case, fort44_path, target_profiles
 ):
@@ -1102,6 +1184,20 @@ def main():
                         f'{first_radial}-{last_radial}'
                     )
                     rows.append(region_row)
+            d2_spatial_path = out / 'D2_b2_density_by_source.csv'
+            d2_summary_path = out / 'source_stratum_summary.csv'
+            d2_density_path = out / 'n_D2_0'
+            if (
+                d2_spatial_path.exists()
+                and d2_summary_path.exists()
+                and d2_density_path.exists()
+            ):
+                rows.extend(b2_source_spatial_rows(
+                    d2_spatial_path,
+                    d2_summary_path,
+                    read_b2_matrix(d2_density_path),
+                    b2_vol,
+                ))
             code_d2ion_path = out / 'n_D2_1'
             if code_d2ion_path.exists():
                 row = metric_row(
