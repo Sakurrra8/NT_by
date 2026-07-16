@@ -97,6 +97,7 @@ namespace
 						RadicalInverse(sample_index, 2),
 						RadicalInverse(sample_index, 3),
 						RadicalInverse(sample_index, 5));
+					incident.angle_deg = DTargetIncidentAngle[target];
 					const double fast_probability =
 						DTargetFastReflectionProbability(incident);
 					energy_sum += incident.energy_eV;
