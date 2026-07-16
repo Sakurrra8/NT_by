@@ -75,7 +75,7 @@ K_NNCs              1       # match EIRENE AMMONX neutral-neutral reactions
 D2ElasticModel      2       # 0 off; 1 H.3 moment; 2 EIRENE default; 3 sigma*v rejection sensitivity
 MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
-K_EireneWallSide    1       # EIRENE additional walls: ILSIDE=1, absorb backside incidence
+K_EireneWallSide    2       # One-sided wall: reflect plasma-facing hits, pass through backside hits
 K_DWTargetActualAngle 1     # mode 0 only: use local B-to-target-normal angle; mode 1 uses sampled velocity
 DTargetIncidentModel 1      # 0 legacy mean; 1 target NEMODS=7 (boundary strata use NEMODS=6); 2 normal-mono sensitivity
 DTargetSheathFactor -1.0    # <=0 EIRENE SHEATH from local D+ flow; >0 fixed Te multiplier

@@ -508,13 +508,22 @@ namespace
 		return std::clamp(std::cos(deflection), -1., 1.);
 	}
 
+	struct BacksideWallCrossing
+	{
+		int wall{-1};
+		double fraction{0.};
+	};
+
 	bool earliestWallHitInTri(int tri_index,
 							  double x0, double y0,
 							  double x1, double y1,
+							  double velocity_x,
+							  double velocity_y,
 							  int &wall_index,
 							  double &hit_x,
 							  double &hit_y,
-							  double &fraction)
+							  double &fraction,
+							  std::vector<BacksideWallCrossing> &backside_crossings)
 	{
 		const auto &candidates = Grid4.WallCandidatesForTri(tri_index);
 		if (candidates.empty())
@@ -540,6 +549,14 @@ namespace
 			const double candidate_fraction = segmentFraction(x0, y0, x1, y1, secx, secy);
 			if (candidate_fraction <= 1.e-10 || candidate_fraction > 1.0)
 				continue;
+			const double outward_velocity =
+				velocity_x * Grid4.Wall_.Sin_Wall(candidate) -
+				velocity_y * Grid4.Wall_.Cos_Wall(candidate);
+			if (K_EireneWallSide == 2 && outward_velocity < 0.)
+			{
+				backside_crossings.push_back({candidate, candidate_fraction});
+				continue;
+			}
 			if (candidate_fraction < best_fraction)
 			{
 				found = true;
@@ -550,6 +567,12 @@ namespace
 				fraction = candidate_fraction;
 			}
 		}
+		if (found)
+			backside_crossings.erase(
+				std::remove_if(backside_crossings.begin(), backside_crossings.end(),
+					[best_fraction](const BacksideWallCrossing &crossing)
+					{ return crossing.fraction >= best_fraction; }),
+				backside_crossings.end());
 		return found;
 	}
 
@@ -1138,16 +1161,26 @@ bool Particle::AdvanceAdditionalCell()
 	double wall_hit_x = 0.;
 	double wall_hit_y = 0.;
 	int wall_index = -1;
+	std::vector<std::pair<double, int>> backside_crossings;
 	for (int candidate = 0; candidate < Grid4.Wall_.Wall_num(); ++candidate)
 	{
 		const auto &wall = Grid4.Wall_.Segment(candidate);
 		double candidate_distance = 0.;
 		double candidate_x = 0.;
 		double candidate_y = 0.;
-		if (raySegmentIntersection(X_[0], X_[1], direction_x, direction_y,
-								   wall[0], wall[1], wall[2], wall[3],
-								   candidate_distance, candidate_x, candidate_y) &&
-			candidate_distance < wall_distance)
+		if (!raySegmentIntersection(X_[0], X_[1], direction_x, direction_y,
+									wall[0], wall[1], wall[2], wall[3],
+									candidate_distance, candidate_x, candidate_y))
+			continue;
+		const double outward_velocity =
+			V_[0] * Grid4.Wall_.Sin_Wall(candidate) -
+			V_[1] * Grid4.Wall_.Cos_Wall(candidate);
+		if (K_EireneWallSide == 2 && outward_velocity < 0.)
+		{
+			backside_crossings.emplace_back(candidate_distance, candidate);
+			continue;
+		}
+		if (candidate_distance < wall_distance)
 		{
 			wall_distance = candidate_distance;
 			wall_hit_x = candidate_x;
@@ -1181,6 +1214,9 @@ bool Particle::AdvanceAdditionalCell()
 	const double distance = hit_wall ? wall_distance : entry_distance;
 	if (!std::isfinite(distance) || (!hit_wall && entry_tri < 0))
 		return lose_particle();
+	for (const auto &[crossing_distance, crossing_wall] : backside_crossings)
+		if (crossing_distance <= distance + 1.e-10)
+			RecordWallSideImpact(crossing_wall, 1);
 
 	const double travel_time = distance / speed_rz;
 	for (int component = 0; component < 3; ++component)
@@ -4878,9 +4914,13 @@ void Particle::Caltrace_Tri()
 	double true_wall_x = 0.;
 	double true_wall_y = 0.;
 	double true_wall_fraction = 0.;
+	std::vector<BacksideWallCrossing> backside_crossings;
 	if (earliestWallHitInTri(Tri_Index_, X_[0], X_[1], X_new_[0], X_new_[1],
-							 true_wall_index, true_wall_x, true_wall_y, true_wall_fraction))
+							 V_[0], V_[1], true_wall_index, true_wall_x,
+							 true_wall_y, true_wall_fraction, backside_crossings))
 	{
+		for (const BacksideWallCrossing &crossing : backside_crossings)
+			RecordWallSideImpact(crossing.wall, 0);
 		X_new_[0] = true_wall_x;
 		X_new_[1] = true_wall_y;
 		dt_trace_ = dt_ * true_wall_fraction;
@@ -4916,6 +4956,8 @@ void Particle::Caltrace_Tri()
 		Zone_ = 7;
 		return;
 	}
+	for (const BacksideWallCrossing &crossing : backside_crossings)
+		RecordWallSideImpact(crossing.wall, 0);
 	int FindIt = 0;
 	boundary_start_ = 0;
 	IfColl_ = 1;
@@ -5736,7 +5778,7 @@ void Particle::WriteSurfaceReemissionByPrimarySourceAudit(
 	WriteSurfaceReemissionAuditImpl(path, true);
 }
 
-bool Particle::RecordWallSideImpact(int wall)
+bool Particle::RecordWallSideImpact(int wall, int hit_path)
 {
 	if (wall < 0 || wall >= Grid4.Wall_.Wall_num())
 		return true;
@@ -5762,7 +5804,43 @@ bool Particle::RecordWallSideImpact(int wall)
 	audit.energy_weighted[side] += represented_weight * 1.5 * Tn_;
 	audit.outward_cosine_weighted[side] +=
 		represented_weight * outward_cosine;
+	if (hit_path >= 0 && hit_path < 2)
+	{
+		++audit.events_by_path[side][hit_path];
+		audit.represented_weight_by_path[side][hit_path] += represented_weight;
+	}
 	return reflecting_side;
+}
+
+void Particle::ContinueThroughBacksideWall()
+{
+	IfColl_ = 0;
+	IfFlightOut_ = 0;
+	boundary_start_ = 0;
+	if (in_additional_cell_ || InterscePoint[0][5] < 0.)
+	{
+		in_additional_cell_ = true;
+		Tri_Index_ = -1;
+		XY_[0] = -1;
+		XY_[1] = -1;
+		Zone_ = 6;
+		return;
+	}
+	if (Tri_Index_ >= 0 &&
+		static_cast<std::size_t>(Tri_Index_) < Grid4.tris_.size())
+	{
+		synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
+		return;
+	}
+	const int tri = findTriangleAlongRay(X_[0], X_[1], V_);
+	if (tri >= 0)
+	{
+		Tri_Index_ = tri;
+		synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
+		return;
+	}
+	Weight_ = 0.;
+	Zone_ = 7;
 }
 
 void Particle::WriteWallSideImpactAudit(const string &path) const
@@ -5771,7 +5849,9 @@ void Particle::WriteWallSideImpactAudit(const string &path) const
 	if (!out)
 		throw std::runtime_error("Cannot write wall-side impact audit: " + path);
 	out << "species,wall,r0,z0,r1,z1,side,events,incident_flux_s-1,"
-		   "mean_kinetic_energy_eV,mean_outward_cosine,action\n";
+		   "mean_kinetic_energy_eV,mean_outward_cosine,tri_interior_events,"
+		   "tri_interior_flux_s-1,additional_cell_events,"
+		   "additional_cell_flux_s-1,action\n";
 	out << std::scientific << std::setprecision(12);
 	for (int wall = 0; wall < Grid4.Wall_.Wall_num(); ++wall)
 	{
@@ -5794,7 +5874,13 @@ void Particle::WriteWallSideImpactAudit(const string &path) const
 				<< audit.represented_weight[side] << ','
 				<< audit.energy_weighted[side] * inverse_weight << ','
 				<< audit.outward_cosine_weighted[side] * inverse_weight << ','
-				<< (side == 0 || !K_EireneWallSide ? "surface_model" : "absorbed")
+				<< audit.events_by_path[side][0] << ','
+				<< audit.represented_weight_by_path[side][0] << ','
+				<< audit.events_by_path[side][1] << ','
+				<< audit.represented_weight_by_path[side][1] << ','
+				<< (side == 0 || K_EireneWallSide == 0
+						? "surface_model"
+						: K_EireneWallSide == 1 ? "absorbed" : "transparent")
 				<< '\n';
 		}
 	}

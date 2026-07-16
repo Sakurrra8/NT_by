@@ -291,7 +291,7 @@ void Initialize(int Input, char *settingfile[])
     }
   }
   D2ElasticModel = std::clamp(D2ElasticModel, 0, 3);
-  K_EireneWallSide = std::clamp(K_EireneWallSide, 0, 1);
+  K_EireneWallSide = std::clamp(K_EireneWallSide, 0, 2);
   DTargetIncidentModel = std::clamp(DTargetIncidentModel, 0, 2);
   DTargetIncidentSamples = std::max(256, DTargetIncidentSamples);
   K_DBoundarySource = std::clamp(K_DBoundarySource, 0, 1);
@@ -300,8 +300,12 @@ void Initialize(int Input, char *settingfile[])
   if (!K_H2_elastic)
     D2ElasticModel = 0;
   std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
-  std::cout << "EIRENE one-sided additional walls: "
-            << (K_EireneWallSide ? "on (ILSIDE=1)" : "off (legacy two-sided)")
+  std::cout << "Additional-wall side model: "
+            << (K_EireneWallSide == 0
+                    ? "legacy two-sided surface model"
+                    : K_EireneWallSide == 1
+                          ? "EIRENE ILSIDE=1 strict back-side absorption"
+                          : "one-sided wall with transparent back-side crossing")
             << std::endl;
   std::cout << "DTargetIncidentModel: " << DTargetIncidentModel
             << (DTargetIncidentModel == 1

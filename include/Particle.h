@@ -474,6 +474,8 @@ private:
 		double represented_weight[2]{0., 0.};
 		double energy_weighted[2]{0., 0.};
 		double outward_cosine_weighted[2]{0., 0.};
+		unsigned long long events_by_path[2][2]{{0, 0}, {0, 0}};
+		double represented_weight_by_path[2][2]{{0., 0.}, {0., 0.}};
 	};
 	std::vector<WallSideImpactAudit> wallSideImpactAudit_;
 	static constexpr int TargetReturnGenerationBins = 6;
@@ -916,7 +918,8 @@ public:
 	void WriteTargetLaunchAudit(const string &path) const;
 	void WriteSurfaceReemissionAudit(const string &path) const;
 	void WriteSurfaceReemissionByPrimarySourceAudit(const string &path) const;
-	bool RecordWallSideImpact(int wall);
+	bool RecordWallSideImpact(int wall, int hit_path = -1);
+	void ContinueThroughBacksideWall();
 	void WriteWallSideImpactAudit(const string &path) const;
 	void AddPlasmaBoundaryEro(int num_Ero_wall);
 	void OutPlasmaBoundaryEro(int fate);

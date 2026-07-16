@@ -54,13 +54,19 @@ void WallReflect()
     if (MeshMode == 3 && InterscePoint[0][4] == 11)
     {
         const int wall = static_cast<int>(InterscePoint[0][3]);
-        const bool reflecting_side = P->RecordWallSideImpact(wall);
-        if (K_EireneWallSide && !reflecting_side)
+        const int hit_path = InterscePoint[0][5] < 0. ? 1 : 0;
+        const bool reflecting_side = P->RecordWallSideImpact(wall, hit_path);
+        if (K_EireneWallSide == 1 && !reflecting_side)
         {
             P->AddWallEro(wall);
             if (P == &D)
                 accumulateDWallOrTargetImpact();
             P->SetWeight(0.);
+            return;
+        }
+        if (K_EireneWallSide == 2 && !reflecting_side)
+        {
+            P->ContinueThroughBacksideWall();
             return;
         }
     }
