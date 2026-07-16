@@ -162,6 +162,7 @@ directory below `Inputpath/database/`.
 | `coeff_ercyc_wall` | `1` | Equivalent recycling coefficient for vessel-wall impacts. The misspelling is part of the positional input format. |
 | `coeff_puff` | `0.99` | Local recycling/pumping coefficient at any enabled `K_Puff` location; inactive when all puff switches are zero. |
 | `K_DWTrimReflection` | `1` | `1`: use the selected differential D-on-W TRIM distribution for reflection probability, energy, and angle; `0`: use the legacy `K_Rflect` D-W coefficient model. |
+| `K_EireneWallSide` | `1` | Match EIRENE additional-surface `ILSIDE=1`: particles hitting a wall along its outward normal use the surface model, while incidence from the geometric back side is tallied and absorbed. `0` retains the legacy two-sided wall model for sensitivity tests. |
 | `DWTrimDatabase` | `D_on_W` | D-on-W database directory below `Inputpath/database/`. |
 | `DWTrimERMIN_eV` | `1 eV` | Minimum incident energy for fast D-on-W reflection. Below it, fast reflection is disabled and recycled nuclei enter the thermal branch. |
 | `SurfaceTemperature_eV` | `0.1 eV` | Wall temperature used for thermal Maxwellian-flux re-emission. |

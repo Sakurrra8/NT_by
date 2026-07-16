@@ -468,6 +468,14 @@ private:
 	std::vector<SurfaceReemissionAudit> targetReemissionAudit_;
 	std::vector<SurfaceReemissionAudit> wallReemissionByPrimarySourceAudit_;
 	std::vector<SurfaceReemissionAudit> targetReemissionByPrimarySourceAudit_;
+	struct WallSideImpactAudit
+	{
+		unsigned long long events[2]{0, 0};
+		double represented_weight[2]{0., 0.};
+		double energy_weighted[2]{0., 0.};
+		double outward_cosine_weighted[2]{0., 0.};
+	};
+	std::vector<WallSideImpactAudit> wallSideImpactAudit_;
 	static constexpr int TargetReturnGenerationBins = 6;
 	struct TargetReturnAudit
 	{
@@ -908,6 +916,8 @@ public:
 	void WriteTargetLaunchAudit(const string &path) const;
 	void WriteSurfaceReemissionAudit(const string &path) const;
 	void WriteSurfaceReemissionByPrimarySourceAudit(const string &path) const;
+	bool RecordWallSideImpact(int wall);
+	void WriteWallSideImpactAudit(const string &path) const;
 	void AddPlasmaBoundaryEro(int num_Ero_wall);
 	void OutPlasmaBoundaryEro(int fate);
 

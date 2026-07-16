@@ -89,6 +89,8 @@ void Output()
             Outputpath + "surface_reemission_by_source_D.csv");
         D2.WriteSurfaceReemissionByPrimarySourceAudit(
             Outputpath + "surface_reemission_by_source_D2.csv");
+        D.WriteWallSideImpactAudit(Outputpath + "wall_side_impact_D.csv");
+        D2.WriteWallSideImpactAudit(Outputpath + "wall_side_impact_D2.csv");
         D2.WriteB2SourceStratumDensity(
             Outputpath + "D2_b2_density_by_source.csv");
         if (K_DBoundarySource)

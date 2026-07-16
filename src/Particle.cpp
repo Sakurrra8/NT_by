@@ -5736,6 +5736,70 @@ void Particle::WriteSurfaceReemissionByPrimarySourceAudit(
 	WriteSurfaceReemissionAuditImpl(path, true);
 }
 
+bool Particle::RecordWallSideImpact(int wall)
+{
+	if (wall < 0 || wall >= Grid4.Wall_.Wall_num())
+		return true;
+	if (wallSideImpactAudit_.size() <
+		static_cast<std::size_t>(Grid4.Wall_.Wall_num()))
+		wallSideImpactAudit_.resize(
+			static_cast<std::size_t>(Grid4.Wall_.Wall_num()));
+
+	const double speed = std::sqrt(
+		Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
+	// EIRENE's two-point additional surface has outward normal
+	// (A1,A2)=(sin,-cos) for the wall ordering used by Grid4.
+	const double outward_velocity =
+		V_[0] * Grid4.Wall_.Sin_Wall(wall) -
+		V_[1] * Grid4.Wall_.Cos_Wall(wall);
+	const double outward_cosine = speed > 0. ? outward_velocity / speed : 0.;
+	const bool reflecting_side = outward_velocity >= 0.;
+	const int side = reflecting_side ? 0 : 1;
+	WallSideImpactAudit &audit = wallSideImpactAudit_[wall];
+	const double represented_weight = diagnosticEventWeight();
+	++audit.events[side];
+	audit.represented_weight[side] += represented_weight;
+	audit.energy_weighted[side] += represented_weight * 1.5 * Tn_;
+	audit.outward_cosine_weighted[side] +=
+		represented_weight * outward_cosine;
+	return reflecting_side;
+}
+
+void Particle::WriteWallSideImpactAudit(const string &path) const
+{
+	std::ofstream out(path);
+	if (!out)
+		throw std::runtime_error("Cannot write wall-side impact audit: " + path);
+	out << "species,wall,r0,z0,r1,z1,side,events,incident_flux_s-1,"
+		   "mean_kinetic_energy_eV,mean_outward_cosine,action\n";
+	out << std::scientific << std::setprecision(12);
+	for (int wall = 0; wall < Grid4.Wall_.Wall_num(); ++wall)
+	{
+		const WallSideImpactAudit empty{};
+		const WallSideImpactAudit &audit =
+			wall < static_cast<int>(wallSideImpactAudit_.size())
+				? wallSideImpactAudit_[wall]
+				: empty;
+		const auto &segment = Grid4.Wall_.Segment(wall);
+		for (int side = 0; side < 2; ++side)
+		{
+			const double inverse_weight = audit.represented_weight[side] > 0.
+				? 1. / audit.represented_weight[side]
+				: 0.;
+			out << name_ << ',' << wall << ','
+				<< segment[0] << ',' << segment[1] << ','
+				<< segment[2] << ',' << segment[3] << ','
+				<< (side == 0 ? "reflecting" : "back") << ','
+				<< audit.events[side] << ','
+				<< audit.represented_weight[side] << ','
+				<< audit.energy_weighted[side] * inverse_weight << ','
+				<< audit.outward_cosine_weighted[side] * inverse_weight << ','
+				<< (side == 0 || !K_EireneWallSide ? "surface_model" : "absorbed")
+				<< '\n';
+		}
+	}
+}
+
 void Particle::WriteSurfaceReemissionAuditImpl(
 	const string &path, bool by_primary_source) const
 {
@@ -10112,6 +10176,8 @@ void Particle::Clear(int n)
 		std::fill(targetReemissionByPrimarySourceAudit_.begin(),
 				  targetReemissionByPrimarySourceAudit_.end(),
 				  SurfaceReemissionAudit{});
+		std::fill(wallSideImpactAudit_.begin(), wallSideImpactAudit_.end(),
+				  WallSideImpactAudit{});
 		std::fill(targetReturnAudit_.begin(), targetReturnAudit_.end(),
 				  TargetReturnAudit{});
 		std::fill(targetImpactBySourceAudit_.begin(),

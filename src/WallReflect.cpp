@@ -51,6 +51,20 @@ void WallReflect()
         D2.AuditD2pSecondaryDBoundaryHit(P->D2pOriginChannel(), (int)InterscePoint[0][4],
                                          P->Weight() * NumPar_now);
 
+    if (MeshMode == 3 && InterscePoint[0][4] == 11)
+    {
+        const int wall = static_cast<int>(InterscePoint[0][3]);
+        const bool reflecting_side = P->RecordWallSideImpact(wall);
+        if (K_EireneWallSide && !reflecting_side)
+        {
+            P->AddWallEro(wall);
+            if (P == &D)
+                accumulateDWallOrTargetImpact();
+            P->SetWeight(0.);
+            return;
+        }
+    }
+
     if (MeshMode == 3)
     {
         if (K_Wallelement == 1)

@@ -226,6 +226,8 @@ void Initialize(int Input, char *settingfile[])
         option_input >> DWTrimDatabase;
       else if (option_name == "K_DWTargetActualAngle")
         option_input >> K_DWTargetActualAngle;
+      else if (option_name == "K_EireneWallSide")
+        option_input >> K_EireneWallSide;
       else if (option_name == "K_DTargetSourceMode")
         option_input >> K_DTargetSourceMode;
       else if (option_name == "DTargetIncidentModel")
@@ -289,6 +291,7 @@ void Initialize(int Input, char *settingfile[])
     }
   }
   D2ElasticModel = std::clamp(D2ElasticModel, 0, 3);
+  K_EireneWallSide = std::clamp(K_EireneWallSide, 0, 1);
   DTargetIncidentModel = std::clamp(DTargetIncidentModel, 0, 2);
   DTargetIncidentSamples = std::max(256, DTargetIncidentSamples);
   K_DBoundarySource = std::clamp(K_DBoundarySource, 0, 1);
@@ -297,6 +300,9 @@ void Initialize(int Input, char *settingfile[])
   if (!K_H2_elastic)
     D2ElasticModel = 0;
   std::cout << "D2ElasticModel: " << D2ElasticModel << std::endl;
+  std::cout << "EIRENE one-sided additional walls: "
+            << (K_EireneWallSide ? "on (ILSIDE=1)" : "off (legacy two-sided)")
+            << std::endl;
   std::cout << "DTargetIncidentModel: " << DTargetIncidentModel
             << (DTargetIncidentModel == 1
                     ? " (EIRENE NEMODS=7 drifting flux plus sheath"
@@ -402,6 +408,8 @@ void Initialize(int Input, char *settingfile[])
       iss >> D2ElasticModel;
     else if (Inputstring == "DTargetIncidentModel")
       iss >> DTargetIncidentModel;
+    else if (Inputstring == "K_EireneWallSide")
+      iss >> K_EireneWallSide;
     else if (Inputstring == "DTargetSheathFactor")
       iss >> DTargetSheathFactor;
     else if (Inputstring == "DTargetIncidentSamples")
