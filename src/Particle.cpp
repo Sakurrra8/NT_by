@@ -117,6 +117,30 @@ namespace
 		return -1;
 	}
 
+	bool placePointInsideTriangleAlongVelocity(int tri_index, double &x, double &y,
+										   const std::vector<double> &velocity)
+	{
+		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size())
+			return false;
+		const double speed_rz = std::hypot(velocity[0], velocity[1]);
+		if (speed_rz <= 1.e-20)
+			return false;
+		const double ux = velocity[0] / speed_rz;
+		const double uy = velocity[1] / speed_rz;
+		for (double offset : {1.e-9, 1.e-8, 1.e-7, 1.e-6, 1.e-5})
+		{
+			const double x_try = x + ux * offset;
+			const double y_try = y + uy * offset;
+			if (Grid4.Ifingrid(tri_index, x_try, y_try))
+			{
+				x = x_try;
+				y = y_try;
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool nudgePointInsideTriangle(int tri_index, double &x, double &y)
 	{
 		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size())
@@ -2451,6 +2475,53 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	}
 	for (int i = 0; i < 3; i++)
 		V_[i] *= vel;
+	if (MeshMode == 3 && !in_additional_cell_ &&
+		(surface_reemission_type == 11 || surface_reemission_type == 1))
+	{
+		int reemission_triangle = -1;
+		double x_inside = X_[0];
+		double y_inside = X_[1];
+		if (surface_reemission_type == 1)
+		{
+			reemission_triangle = Grid4.targetIndex(surface_reemission_index, 0);
+			if (!placePointInsideTriangleAlongVelocity(
+					reemission_triangle, x_inside, y_inside, V_))
+				throw std::runtime_error(
+					"Cannot place target re-emission inside its plasma triangle");
+		}
+		else
+		{
+			if (placePointInsideTriangleAlongVelocity(
+					Tri_Index_, x_inside, y_inside, V_))
+				reemission_triangle = Tri_Index_;
+			else
+			{
+				for (double offset : {1.e-9, 1.e-8, 1.e-7, 1.e-6, 1.e-5})
+				{
+					const double speed_rz = std::hypot(V_[0], V_[1]);
+					if (speed_rz <= 1.e-20)
+						break;
+					x_inside = X_[0] + V_[0] / speed_rz * offset;
+					y_inside = X_[1] + V_[1] / speed_rz * offset;
+					reemission_triangle = findTriangleContainingPoint(x_inside, y_inside);
+					if (reemission_triangle >= 0)
+						break;
+				}
+			}
+		}
+		if (reemission_triangle >= 0)
+		{
+			Tri_Index_ = reemission_triangle;
+			X_[0] = x_inside;
+			X_[1] = y_inside;
+			X_new_[0] = X_[0];
+			X_new_[1] = X_[1];
+			synchronizeMesh3LocationFromTriangle(Tri_Index_, XY_, Zone_);
+			GridIndex_ = XY_[0] >= 0 && XY_[1] >= 0
+				? gridIndex2D(XY_[0], XY_[1])
+				: -1;
+		}
+	}
 	if (importance_region_ < 0)
 		importance_region_ = PhysicalImportanceRegion();
 	if (target_launch_index >= 0)
