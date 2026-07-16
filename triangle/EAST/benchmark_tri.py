@@ -896,6 +896,17 @@ def main():
         if code_path.exists():
             fields.append((name, np.loadtxt(code_path), eirene_triangles[name]))
 
+    velocity_fields = []
+    for species in ('D', 'D2'):
+        code_path = out / f'{species}_0_V_Tri'
+        if not code_path.exists():
+            continue
+        code = np.loadtxt(code_path)
+        ref = eirene_triangles[f'V_{species}_0']
+        if code.shape != ref.shape or code.shape != (len(vol), 3):
+            raise ValueError(f'V_{species}_0 shape mismatch')
+        velocity_fields.append((species, code, ref))
+
     d2ion_path = out / 'n_D2_1_Tri'
     solps_d2ion_path = case / '2D_data/nDmoleculeion_2D.data'
     if d2ion_path.exists() and solps_d2ion_path.exists():
@@ -935,6 +946,56 @@ def main():
         row['mesh'] = 'tri'
         row['region'] = 'inner_target_b2_i1_radial_30_36'
         rows.append(row)
+
+    component_names = ('R', 'Z', 'toroidal')
+    for species, code, ref in velocity_fields:
+        for component, component_name in enumerate(component_names):
+            row = metric_row(
+                f'V_{species}_0_{component_name}',
+                code[:, component], ref[:, component], vol,
+            )
+            row['mesh'] = 'tri'
+            row['note'] = 'track-length-weighted neutral mean velocity in m/s'
+            rows.append(row)
+
+            if np.any(inner_tail_triangles):
+                row = metric_row(
+                    f'Tri_inner_target_r30_36_V_{species}_0_{component_name}',
+                    code[inner_tail_triangles, component],
+                    ref[inner_tail_triangles, component],
+                    vol[inner_tail_triangles],
+                )
+                row['mesh'] = 'tri'
+                row['region'] = 'inner_target_b2_i1_radial_30_36'
+                row['note'] = 'track-length-weighted neutral mean velocity in m/s'
+                rows.append(row)
+
+        density_name = f'n_{species}_0'
+        if density_name not in field_values:
+            continue
+        code_density, ref_density = field_values[density_name]
+        for component, component_name in enumerate(component_names):
+            code_flux = code_density * code[:, component]
+            ref_flux = ref_density * ref[:, component]
+            row = metric_row(
+                f'Particle_flux_{species}_0_{component_name}',
+                code_flux, ref_flux, vol,
+            )
+            row['mesh'] = 'tri'
+            row['note'] = 'density times mean velocity in m^-2 s^-1'
+            rows.append(row)
+
+            if np.any(inner_tail_triangles):
+                row = metric_row(
+                    f'Tri_inner_target_r30_36_Particle_flux_{species}_0_{component_name}',
+                    code_flux[inner_tail_triangles],
+                    ref_flux[inner_tail_triangles],
+                    vol[inner_tail_triangles],
+                )
+                row['mesh'] = 'tri'
+                row['region'] = 'inner_target_b2_i1_radial_30_36'
+                row['note'] = 'density times mean velocity in m^-2 s^-1'
+                rows.append(row)
 
     if not args.skip_b2_sources:
         vol_path = case / 'vol_2D.data'
