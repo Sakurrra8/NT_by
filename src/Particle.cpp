@@ -1458,13 +1458,9 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		ChargeTag_ = 0;
 		boundary_start_ = 0;
 		target_launch_index = z;
-		target_launch_position_fraction =
-			Tools::SampleAxisymmetricSurfaceFraction(
-				Grid4.Target(z, 0), Grid4.Target(z, 2), Tools::Random());
-		X_[0] = Grid4.Target(z, 0) + target_launch_position_fraction *
-			(Grid4.Target(z, 2) - Grid4.Target(z, 0));
-		X_[1] = Grid4.Target(z, 1) + target_launch_position_fraction *
-			(Grid4.Target(z, 3) - Grid4.Target(z, 1));
+		target_launch_position_fraction = 0.5;
+		X_[0] = Grid4.Mid_Target(z, 0);
+		X_[1] = Grid4.Mid_Target(z, 1);
 		X_[2] = 0;
 
 		if (z < N_radial)
