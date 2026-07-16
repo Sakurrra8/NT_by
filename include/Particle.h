@@ -373,6 +373,9 @@ private:
 	SourceStratum source_stratum_{SourceStratum::Unknown};
 	SourceStratum primary_source_stratum_{SourceStratum::Unknown};
 	int D2p_origin_channel_{0};
+	int target_reemission_generation_{-1};
+	double distance_since_target_emission_{0.};
+	double time_since_target_emission_{0.};
 	int XY_[3];				// Particle position Grid Index in Tokamak
 	int GridIndex_;			// the mesh Index
 
@@ -462,6 +465,15 @@ private:
 	std::vector<SurfaceReemissionAudit> targetReemissionAudit_;
 	std::vector<SurfaceReemissionAudit> wallReemissionByPrimarySourceAudit_;
 	std::vector<SurfaceReemissionAudit> targetReemissionByPrimarySourceAudit_;
+	static constexpr int TargetReturnGenerationBins = 6;
+	struct TargetReturnAudit
+	{
+		unsigned long long events{0};
+		double represented_weight{0.};
+		double flight_distance_weighted{0.};
+		double flight_time_weighted{0.};
+	};
+	std::vector<TargetReturnAudit> targetReturnAudit_;
 	unsigned long long neutral_stall_loss_events_{0};
 	double neutral_stall_loss_weight_{0.};
 	unsigned long long core_loss_events_{0};
@@ -864,7 +876,9 @@ public:
 	void OutWallEro(int fate);
 	void AddTargetEro(int num_Ero_wall);
 	void OutTargetEro(int fate);
+	void recordTargetReturn(int target);
 	void WriteTargetImpactSummary(const string &path);
+	void WriteTargetReturnAudit(const string &path) const;
 	void WriteTargetLaunchAudit(const string &path) const;
 	void WriteSurfaceReemissionAudit(const string &path) const;
 	void WriteSurfaceReemissionByPrimarySourceAudit(const string &path) const;

@@ -963,6 +963,10 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
         Outputpath + "target_impact_" + OutPar1->name() + ".csv");
     OutPar2->WriteTargetImpactSummary(
         Outputpath + "target_impact_" + OutPar2->name() + ".csv");
+    OutPar1->WriteTargetReturnAudit(
+        Outputpath + "target_return_" + OutPar1->name() + ".csv");
+    OutPar2->WriteTargetReturnAudit(
+        Outputpath + "target_return_" + OutPar2->name() + ".csv");
 
     /*pathout = Outputpath + "Vx_D_0_CX_Be";
     out.open(pathout);

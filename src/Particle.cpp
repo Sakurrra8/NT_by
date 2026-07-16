@@ -932,6 +932,11 @@ void Particle::allocateStorage()
 		static_cast<std::size_t>(2 * N_radial) *
 			static_cast<std::size_t>(SourceStratum::Count),
 		{});
+	targetReturnAudit_.assign(
+		static_cast<std::size_t>(2 * N_radial) *
+			static_cast<std::size_t>(SourceStratum::Count) *
+			static_cast<std::size_t>(TargetReturnGenerationBins),
+		{});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -1469,6 +1474,18 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	int surface_reemission_index = -1;
 	double surface_reemission_tangent_cos = 0.;
 	double surface_reemission_tangent_sin = 0.;
+	if (k == 1)
+	{
+		target_reemission_generation_ = 0;
+		distance_since_target_emission_ = 0.;
+		time_since_target_emission_ = 0.;
+	}
+	else if (k == 4 || k == 5 || k == 8)
+	{
+		target_reemission_generation_ = -1;
+		distance_since_target_emission_ = 0.;
+		time_since_target_emission_ = 0.;
+	}
 	if (k != 3 || InterscePoint[0][4] != 11)
 	{
 		in_additional_cell_ = false;
@@ -1735,6 +1752,16 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	{
 		surface_reemission_type = static_cast<int>(InterscePoint[0][4]);
 		surface_reemission_index = static_cast<int>(InterscePoint[0][3]);
+		if (surface_reemission_type == 1 &&
+			(this == &H2 || this == &D2 || this == &T2))
+		{
+			if (target_reemission_generation_ < 0 || fate_[0] != 15)
+				target_reemission_generation_ = 0;
+			else
+				++target_reemission_generation_;
+			distance_since_target_emission_ = 0.;
+			time_since_target_emission_ = 0.;
+		}
 		if (surface_reemission_type == 11)
 		{
 			surface_reemission_tangent_cos =
@@ -6214,10 +6241,14 @@ void Particle::NumParStat()
 	X_[0] = X_new_[0];
 	X_[1] = X_new_[1];
 	X_[2] = X_new_[2];
-	const double kinetic_energy_eV =
-		0.5 * mass_ * (Tools::sqr(V_[0]) + Tools::sqr(V_[1]) +
-					   Tools::sqr(V_[2])) /
-		qe;
+	const double speed = std::sqrt(
+		Tools::sqr(V_[0]) + Tools::sqr(V_[1]) + Tools::sqr(V_[2]));
+	const double kinetic_energy_eV = 0.5 * mass_ * speed * speed / qe;
+	if (target_reemission_generation_ >= 0 && dt_trace_ > 0.)
+	{
+		distance_since_target_emission_ += speed * dt_trace_;
+		time_since_target_emission_ += dt_trace_;
+	}
 	// std::cout << "dt_trace: " << dt_trace_ << endl;
 	bool valid_b2_stat_cell =
 		Zone_ < 6 && Zone_ > 1 &&
@@ -10041,6 +10072,11 @@ void Particle::Clear(int n)
 		std::fill(targetReemissionByPrimarySourceAudit_.begin(),
 				  targetReemissionByPrimarySourceAudit_.end(),
 				  SurfaceReemissionAudit{});
+		std::fill(targetReturnAudit_.begin(), targetReturnAudit_.end(),
+				  TargetReturnAudit{});
+		target_reemission_generation_ = -1;
+		distance_since_target_emission_ = 0.;
+		time_since_target_emission_ = 0.;
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
 		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),
 				  std::array<double, 3>{0.0, 0.0, 0.0});
@@ -10572,6 +10608,67 @@ void Particle::WriteTargetImpactSummary(const string &path)
 			<< target_stats.All_PartoWall[target] << ','
 			<< mean_tn << ',' << 1.5 * mean_tn << '\n';
 	}
+}
+
+void Particle::recordTargetReturn(int target)
+{
+	if (target_reemission_generation_ < 0 || target < 0 || target >= 2 * N_radial)
+		return;
+	const std::size_t source = static_cast<std::size_t>(primary_source_stratum_);
+	if (source >= static_cast<std::size_t>(SourceStratum::Count))
+		return;
+	const int generation = std::min(
+		target_reemission_generation_, TargetReturnGenerationBins - 1);
+	const std::size_t index =
+		(static_cast<std::size_t>(target) *
+			 static_cast<std::size_t>(SourceStratum::Count) + source) *
+			static_cast<std::size_t>(TargetReturnGenerationBins) +
+		static_cast<std::size_t>(generation);
+	if (index >= targetReturnAudit_.size())
+		return;
+	TargetReturnAudit &audit = targetReturnAudit_[index];
+	const double represented_weight = diagnosticEventWeight();
+	++audit.events;
+	audit.represented_weight += represented_weight;
+	audit.flight_distance_weighted +=
+		represented_weight * distance_since_target_emission_;
+	audit.flight_time_weighted +=
+		represented_weight * time_since_target_emission_;
+}
+
+void Particle::WriteTargetReturnAudit(const string &path) const
+{
+	std::ofstream out(path);
+	if (!out)
+		throw std::runtime_error("Cannot write target return audit: " + path);
+	out << "target,side,radial_index,primary_source_stratum,generation_bin,"
+		   "events,incident_flux_s-1,mean_flight_distance_m,mean_flight_time_s\n";
+	out << std::scientific << std::setprecision(12);
+	for (int target = 0; target < 2 * N_radial; ++target)
+		for (std::size_t source = 0;
+			 source < static_cast<std::size_t>(SourceStratum::Count); ++source)
+			for (int generation = 0;
+				 generation < TargetReturnGenerationBins; ++generation)
+			{
+				const std::size_t index =
+					(static_cast<std::size_t>(target) *
+						 static_cast<std::size_t>(SourceStratum::Count) + source) *
+						static_cast<std::size_t>(TargetReturnGenerationBins) +
+					static_cast<std::size_t>(generation);
+				const TargetReturnAudit &audit = targetReturnAudit_[index];
+				const double inverse_weight = audit.represented_weight > 0.
+					? 1. / audit.represented_weight : 0.;
+				out << target << ','
+					<< (target < N_radial ? "IT" : "OT") << ','
+					<< target % N_radial << ','
+					<< sourceStratumName(static_cast<SourceStratum>(source)) << ','
+					<< (generation == TargetReturnGenerationBins - 1
+							? std::to_string(generation) + "+"
+							: std::to_string(generation))
+					<< ',' << audit.events << ',' << audit.represented_weight << ','
+					<< audit.flight_distance_weighted * inverse_weight << ','
+					<< audit.flight_time_weighted * inverse_weight << '\n';
+			}
 }
 
 void Particle::OutTargetEro(int fate)
