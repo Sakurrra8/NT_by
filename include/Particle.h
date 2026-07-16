@@ -428,6 +428,8 @@ private:
 	std::vector<std::array<unsigned long long, static_cast<std::size_t>(SourceStratum::Count)>> launchedEventsByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> b2TrackLengthByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingB2TrackLengthByStratum_;
+	std::vector<double> b2TrackLengthByCellAndStratum_;
+	std::vector<double> pendingB2TrackLengthByCellAndStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> triTrackLengthByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingTriTrackLengthByStratum_;
 	struct TargetLaunchAudit
@@ -784,6 +786,7 @@ public:
 	void AuditD2pSecondaryDBoundaryHit(int origin_channel, int boundary_type,
 									   double represented_weight);
 	void AppendSourceStratumSummary(std::ostream &out) const;
+	void WriteB2SourceStratumDensity(const string &path, int charge = 0) const;
 	// void FluxCal_Grid();
 	void FluxCal_Target();
 	void FluxOutput();
