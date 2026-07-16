@@ -474,6 +474,14 @@ private:
 		double flight_time_weighted{0.};
 	};
 	std::vector<TargetReturnAudit> targetReturnAudit_;
+	static constexpr int TargetImpactFateBins = 17;
+	struct TargetImpactSourceAudit
+	{
+		unsigned long long events{0};
+		double represented_weight{0.};
+		double energy_weighted{0.};
+	};
+	std::vector<TargetImpactSourceAudit> targetImpactBySourceAudit_;
 	unsigned long long neutral_stall_loss_events_{0};
 	double neutral_stall_loss_weight_{0.};
 	unsigned long long core_loss_events_{0};
@@ -878,6 +886,7 @@ public:
 	void OutTargetEro(int fate);
 	void recordTargetReturn(int target);
 	void WriteTargetImpactSummary(const string &path);
+	void WriteTargetImpactBySourceAudit(const string &path) const;
 	void WriteTargetReturnAudit(const string &path) const;
 	void WriteTargetLaunchAudit(const string &path) const;
 	void WriteSurfaceReemissionAudit(const string &path) const;

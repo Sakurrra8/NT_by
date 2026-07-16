@@ -963,6 +963,10 @@ void HydrogenOutput_Tri(Particle *OutPar1, Particle *OutPar2)
         Outputpath + "target_impact_" + OutPar1->name() + ".csv");
     OutPar2->WriteTargetImpactSummary(
         Outputpath + "target_impact_" + OutPar2->name() + ".csv");
+    OutPar1->WriteTargetImpactBySourceAudit(
+        Outputpath + "target_impact_by_source_" + OutPar1->name() + ".csv");
+    OutPar2->WriteTargetImpactBySourceAudit(
+        Outputpath + "target_impact_by_source_" + OutPar2->name() + ".csv");
     OutPar1->WriteTargetReturnAudit(
         Outputpath + "target_return_" + OutPar1->name() + ".csv");
     OutPar2->WriteTargetReturnAudit(

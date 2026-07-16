@@ -937,6 +937,11 @@ void Particle::allocateStorage()
 			static_cast<std::size_t>(SourceStratum::Count) *
 			static_cast<std::size_t>(TargetReturnGenerationBins),
 		{});
+	targetImpactBySourceAudit_.assign(
+		static_cast<std::size_t>(2 * N_radial) *
+			static_cast<std::size_t>(SourceStratum::Count) *
+			static_cast<std::size_t>(TargetImpactFateBins),
+		{});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -10074,6 +10079,8 @@ void Particle::Clear(int n)
 				  SurfaceReemissionAudit{});
 		std::fill(targetReturnAudit_.begin(), targetReturnAudit_.end(),
 				  TargetReturnAudit{});
+		std::fill(targetImpactBySourceAudit_.begin(),
+				  targetImpactBySourceAudit_.end(), TargetImpactSourceAudit{});
 		target_reemission_generation_ = -1;
 		distance_since_target_emission_ = 0.;
 		time_since_target_emission_ = 0.;
@@ -10534,6 +10541,23 @@ void Particle::OutWallEro(int fate)
 
 void Particle::AddTargetEro(int num_Ero_wall)
 {
+	const std::size_t source = static_cast<std::size_t>(primary_source_stratum_);
+	const int fate = fate_[0];
+	if (num_Ero_wall >= 0 && num_Ero_wall < 2 * N_radial &&
+		source < static_cast<std::size_t>(SourceStratum::Count) &&
+		fate >= 0 && fate < TargetImpactFateBins)
+	{
+		const std::size_t index =
+			(static_cast<std::size_t>(num_Ero_wall) *
+				 static_cast<std::size_t>(SourceStratum::Count) + source) *
+				static_cast<std::size_t>(TargetImpactFateBins) +
+			static_cast<std::size_t>(fate);
+		TargetImpactSourceAudit &audit = targetImpactBySourceAudit_[index];
+		const double represented_weight = Weight_ * NumPar_now;
+		++audit.events;
+		audit.represented_weight += represented_weight;
+		audit.energy_weighted += represented_weight * 1.5 * Tn_;
+	}
 	// std::cout << "AlltoTarget1" << ", " << sourcePar_[0] << endl;
 	AlltoTarget_.begin()->AddPar(num_Ero_wall, Weight_ * NumPar_now, Tn_, fate_[0], sourceGrid_);
 	if (fate_[0] == 1) //"CX"
@@ -10608,6 +10632,39 @@ void Particle::WriteTargetImpactSummary(const string &path)
 			<< target_stats.All_PartoWall[target] << ','
 			<< mean_tn << ',' << 1.5 * mean_tn << '\n';
 	}
+}
+
+void Particle::WriteTargetImpactBySourceAudit(const string &path) const
+{
+	std::ofstream out(path);
+	if (!out)
+		throw std::runtime_error(
+			"Cannot write target impact by source audit: " + path);
+	out << "species,target,side,radial_index,primary_source_stratum,"
+		   "last_fate,last_fate_name,events,incident_flux_s-1,"
+		   "mean_kinetic_energy_eV\n";
+	out << std::scientific << std::setprecision(12);
+	for (int target = 0; target < 2 * N_radial; ++target)
+		for (std::size_t source = 0;
+			 source < static_cast<std::size_t>(SourceStratum::Count); ++source)
+			for (int fate = 0; fate < TargetImpactFateBins; ++fate)
+			{
+				const std::size_t index =
+					(static_cast<std::size_t>(target) *
+						 static_cast<std::size_t>(SourceStratum::Count) + source) *
+						static_cast<std::size_t>(TargetImpactFateBins) +
+					static_cast<std::size_t>(fate);
+				const TargetImpactSourceAudit &audit =
+					targetImpactBySourceAudit_[index];
+				const double mean_energy = audit.represented_weight > 0.
+					? audit.energy_weighted / audit.represented_weight : 0.;
+				out << name_ << ',' << target << ','
+					<< (target < N_radial ? "IT" : "OT") << ','
+					<< target % N_radial << ','
+					<< sourceStratumName(static_cast<SourceStratum>(source)) << ','
+					<< fate << ',' << fatename(fate) << ',' << audit.events << ','
+					<< audit.represented_weight << ',' << mean_energy << '\n';
+			}
 }
 
 void Particle::recordTargetReturn(int target)
