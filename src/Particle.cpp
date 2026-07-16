@@ -942,6 +942,11 @@ void Particle::allocateStorage()
 			static_cast<std::size_t>(SourceStratum::Count) *
 			static_cast<std::size_t>(TargetImpactFateBins),
 		{});
+	const std::size_t target_count = static_cast<std::size_t>(2 * N_radial);
+	targetImpactTransitionAudit_.assign(
+		target_count * (target_count + 2) *
+			static_cast<std::size_t>(TargetTransitionGenerationBins),
+		{});
 	const std::size_t gridCells = static_cast<std::size_t>(gridCellCount());
 	const std::size_t scalarCells = gridCells * chargeStates;
 	const std::size_t vectorCells = gridCells * 3 * chargeStates;
@@ -1075,6 +1080,12 @@ void Particle::Particlefrom(Particle *A, double K, int Charge)
 	importance_region_ = A->importance_region_;
 	in_additional_cell_ = A->in_additional_cell_;
 	additional_cell_exit_tag_ = A->additional_cell_exit_tag_;
+	target_reemission_generation_ = A->target_reemission_generation_;
+	distance_since_target_emission_ = A->distance_since_target_emission_;
+	time_since_target_emission_ = A->time_since_target_emission_;
+	last_reflection_surface_type_ = A->last_reflection_surface_type_;
+	last_reflection_surface_index_ = A->last_reflection_surface_index_;
+	reflection_generation_ = A->reflection_generation_;
 
 	// XY_new_[0] = A->XY_new(0);
 	// XY_new_[1] = A->XY_new(1);
@@ -1484,12 +1495,18 @@ void Particle::Init(int k, int z, double scattering_cosine)
 		target_reemission_generation_ = 0;
 		distance_since_target_emission_ = 0.;
 		time_since_target_emission_ = 0.;
+		last_reflection_surface_type_ = 1;
+		last_reflection_surface_index_ = z;
+		reflection_generation_ = 0;
 	}
 	else if (k == 4 || k == 5 || k == 8)
 	{
 		target_reemission_generation_ = -1;
 		distance_since_target_emission_ = 0.;
 		time_since_target_emission_ = 0.;
+		last_reflection_surface_type_ = -1;
+		last_reflection_surface_index_ = -1;
+		reflection_generation_ = -1;
 	}
 	if (k != 3 || InterscePoint[0][4] != 11)
 	{
@@ -1757,6 +1774,12 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	{
 		surface_reemission_type = static_cast<int>(InterscePoint[0][4]);
 		surface_reemission_index = static_cast<int>(InterscePoint[0][3]);
+		if (z == 0 && (this == &H || this == &D || this == &T))
+		{
+			last_reflection_surface_type_ = surface_reemission_type;
+			last_reflection_surface_index_ = surface_reemission_index;
+			reflection_generation_ = std::max(0, reflection_generation_ + 1);
+		}
 		if (surface_reemission_type == 1 &&
 			(this == &H2 || this == &D2 || this == &T2))
 		{
@@ -5848,9 +5871,15 @@ Particle::State Particle::SaveState() const
 	state.sourceStratum = source_stratum_;
 	state.primarySourceStratum = primary_source_stratum_;
 	state.D2pOriginChannel = D2p_origin_channel_;
+	state.targetReemissionGeneration = target_reemission_generation_;
+	state.lastReflectionSurfaceType = last_reflection_surface_type_;
+	state.lastReflectionSurfaceIndex = last_reflection_surface_index_;
+	state.reflectionGeneration = reflection_generation_;
 	state.lambda_now = lambda_now_;
 	state.d_flight = d_flight_;
 	state.Rand_flight = Rand_flight_;
+	state.distanceSinceTargetEmission = distance_since_target_emission_;
+	state.timeSinceTargetEmission = time_since_target_emission_;
 	state.D2p_current_flight_steps = D2p_current_flight_steps_;
 	state.D2p_current_created_by_cx = D2p_current_created_by_cx_;
 	state.inAdditionalCell = in_additional_cell_;
@@ -5901,9 +5930,15 @@ void Particle::RestoreState(const State &state)
 	source_stratum_ = state.sourceStratum;
 	primary_source_stratum_ = state.primarySourceStratum;
 	D2p_origin_channel_ = state.D2pOriginChannel;
+	target_reemission_generation_ = state.targetReemissionGeneration;
+	last_reflection_surface_type_ = state.lastReflectionSurfaceType;
+	last_reflection_surface_index_ = state.lastReflectionSurfaceIndex;
+	reflection_generation_ = state.reflectionGeneration;
 	lambda_now_ = state.lambda_now;
 	d_flight_ = state.d_flight;
 	Rand_flight_ = state.Rand_flight;
+	distance_since_target_emission_ = state.distanceSinceTargetEmission;
+	time_since_target_emission_ = state.timeSinceTargetEmission;
 	D2p_current_flight_steps_ = state.D2p_current_flight_steps;
 	D2p_current_created_by_cx_ = state.D2p_current_created_by_cx;
 	in_additional_cell_ = state.inAdditionalCell;
@@ -10081,9 +10116,14 @@ void Particle::Clear(int n)
 				  TargetReturnAudit{});
 		std::fill(targetImpactBySourceAudit_.begin(),
 				  targetImpactBySourceAudit_.end(), TargetImpactSourceAudit{});
+		std::fill(targetImpactTransitionAudit_.begin(),
+				  targetImpactTransitionAudit_.end(), TargetImpactTransitionAudit{});
 		target_reemission_generation_ = -1;
 		distance_since_target_emission_ = 0.;
 		time_since_target_emission_ = 0.;
+		last_reflection_surface_type_ = -1;
+		last_reflection_surface_index_ = -1;
+		reflection_generation_ = -1;
 		std::fill(Tri_D2p_track_time_.begin(), Tri_D2p_track_time_.end(), 0.0);
 		std::fill(Tri_D2p_DS_weight_.begin(), Tri_D2p_DS_weight_.end(),
 				  std::array<double, 3>{0.0, 0.0, 0.0});
@@ -10558,6 +10598,29 @@ void Particle::AddTargetEro(int num_Ero_wall)
 		audit.represented_weight += represented_weight;
 		audit.energy_weighted += represented_weight * 1.5 * Tn_;
 	}
+	if (num_Ero_wall >= 0 && num_Ero_wall < 2 * N_radial)
+	{
+		const int target_count = 2 * N_radial;
+		int previous_bucket = target_count + 1;
+		if (last_reflection_surface_type_ == 1 &&
+			last_reflection_surface_index_ >= 0 &&
+			last_reflection_surface_index_ < target_count)
+			previous_bucket = last_reflection_surface_index_;
+		else if (last_reflection_surface_type_ == 11)
+			previous_bucket = target_count;
+		const int generation = std::min(
+			std::max(0, reflection_generation_),
+			TargetTransitionGenerationBins - 1);
+		const std::size_t index =
+			(static_cast<std::size_t>(num_Ero_wall) *
+				 static_cast<std::size_t>(target_count + 2) +
+			 static_cast<std::size_t>(previous_bucket)) *
+				static_cast<std::size_t>(TargetTransitionGenerationBins) +
+			static_cast<std::size_t>(generation);
+		TargetImpactTransitionAudit &audit = targetImpactTransitionAudit_[index];
+		++audit.events;
+		audit.represented_weight += Weight_ * NumPar_now;
+	}
 	// std::cout << "AlltoTarget1" << ", " << sourcePar_[0] << endl;
 	AlltoTarget_.begin()->AddPar(num_Ero_wall, Weight_ * NumPar_now, Tn_, fate_[0], sourceGrid_);
 	if (fate_[0] == 1) //"CX"
@@ -10664,6 +10727,46 @@ void Particle::WriteTargetImpactBySourceAudit(const string &path) const
 					<< sourceStratumName(static_cast<SourceStratum>(source)) << ','
 					<< fate << ',' << fatename(fate) << ',' << audit.events << ','
 					<< audit.represented_weight << ',' << mean_energy << '\n';
+			}
+}
+
+void Particle::WriteTargetImpactTransitionAudit(const string &path) const
+{
+	std::ofstream out(path);
+	if (!out)
+		throw std::runtime_error(
+			"Cannot write target impact transition audit: " + path);
+	out << "species,target,side,radial_index,previous_surface_type,"
+		   "previous_surface_index,reflection_generation_bin,events,"
+		   "incident_flux_s-1\n";
+	out << std::scientific << std::setprecision(12);
+	const int target_count = 2 * N_radial;
+	for (int target = 0; target < target_count; ++target)
+		for (int previous = 0; previous < target_count + 2; ++previous)
+			for (int generation = 0;
+				 generation < TargetTransitionGenerationBins; ++generation)
+			{
+				const std::size_t index =
+					(static_cast<std::size_t>(target) *
+						 static_cast<std::size_t>(target_count + 2) +
+					 static_cast<std::size_t>(previous)) *
+						static_cast<std::size_t>(TargetTransitionGenerationBins) +
+					static_cast<std::size_t>(generation);
+				const TargetImpactTransitionAudit &audit =
+					targetImpactTransitionAudit_[index];
+				if (audit.events == 0 && audit.represented_weight == 0.)
+					continue;
+				const char *previous_type = previous < target_count
+					? "Target" : (previous == target_count ? "Wall" : "Unknown");
+				const int previous_index = previous < target_count ? previous : -1;
+				out << name_ << ',' << target << ','
+					<< (target < N_radial ? "IT" : "OT") << ','
+					<< target % N_radial << ',' << previous_type << ','
+					<< previous_index << ','
+					<< (generation == TargetTransitionGenerationBins - 1
+							? std::to_string(generation) + "+"
+							: std::to_string(generation))
+					<< ',' << audit.events << ',' << audit.represented_weight << '\n';
 			}
 }
 

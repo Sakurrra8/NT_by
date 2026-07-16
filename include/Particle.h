@@ -376,6 +376,9 @@ private:
 	int target_reemission_generation_{-1};
 	double distance_since_target_emission_{0.};
 	double time_since_target_emission_{0.};
+	int last_reflection_surface_type_{-1};
+	int last_reflection_surface_index_{-1};
+	int reflection_generation_{-1};
 	int XY_[3];				// Particle position Grid Index in Tokamak
 	int GridIndex_;			// the mesh Index
 
@@ -482,6 +485,13 @@ private:
 		double energy_weighted{0.};
 	};
 	std::vector<TargetImpactSourceAudit> targetImpactBySourceAudit_;
+	static constexpr int TargetTransitionGenerationBins = 6;
+	struct TargetImpactTransitionAudit
+	{
+		unsigned long long events{0};
+		double represented_weight{0.};
+	};
+	std::vector<TargetImpactTransitionAudit> targetImpactTransitionAudit_;
 	unsigned long long neutral_stall_loss_events_{0};
 	double neutral_stall_loss_weight_{0.};
 	unsigned long long core_loss_events_{0};
@@ -665,6 +675,10 @@ public:
 		int sourcePar[2];
 		int sourceGrid[2];
 		int D2pOriginChannel;
+		int targetReemissionGeneration;
+		int lastReflectionSurfaceType;
+		int lastReflectionSurfaceIndex;
+		int reflectionGeneration;
 		int Zone_old;
 		int GridIndex_old;
 		double X[3];
@@ -684,6 +698,8 @@ public:
 		double lambda_now;
 		double d_flight;
 		double Rand_flight;
+		double distanceSinceTargetEmission;
+		double timeSinceTargetEmission;
 		unsigned long long D2p_current_flight_steps;
 		bool D2p_current_created_by_cx;
 		bool inAdditionalCell;
@@ -887,6 +903,7 @@ public:
 	void recordTargetReturn(int target);
 	void WriteTargetImpactSummary(const string &path);
 	void WriteTargetImpactBySourceAudit(const string &path) const;
+	void WriteTargetImpactTransitionAudit(const string &path) const;
 	void WriteTargetReturnAudit(const string &path) const;
 	void WriteTargetLaunchAudit(const string &path) const;
 	void WriteSurfaceReemissionAudit(const string &path) const;
