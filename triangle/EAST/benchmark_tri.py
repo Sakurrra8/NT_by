@@ -24,6 +24,7 @@ try:
     import matplotlib.colors as colors
     import matplotlib.pyplot as plt
     import matplotlib.tri as mtri
+    from matplotlib.backends.backend_pdf import PdfPages
 
     matplotlib.rcParams.update({
         'font.family': 'serif',
@@ -38,6 +39,7 @@ except ImportError:
     colors = None
     plt = None
     mtri = None
+    PdfPages = None
 
 
 def read_fort33(path):
@@ -878,6 +880,51 @@ def plot_field(outdir, triangulation, wall, name, code, ref, xlim, ylim):
     plt.close(fig)
 
 
+def plot_signed_field(outdir, triangulation, wall, name, code, ref, xlim, ylim):
+    if not HAS_MATPLOTLIB:
+        return
+    difference = code - ref
+    combined = np.concatenate((np.abs(code[np.isfinite(code)]), np.abs(ref[np.isfinite(ref)])))
+    vmax = np.nanpercentile(combined, 99) if combined.size else 1.0
+    vmax = max(float(vmax), 1.0e-30)
+    field_norm = colors.SymLogNorm(
+        linthresh=max(vmax * 1.0e-3, 1.0e-30), vmin=-vmax, vmax=vmax
+    )
+    finite_difference = np.abs(difference[np.isfinite(difference)])
+    difference_max = np.nanpercentile(finite_difference, 99) if finite_difference.size else 1.0
+    difference_max = max(float(difference_max), 1.0e-30)
+    difference_norm = colors.SymLogNorm(
+        linthresh=max(difference_max * 1.0e-3, 1.0e-30),
+        vmin=-difference_max,
+        vmax=difference_max,
+    )
+    fig, ax = plt.subplots(1, 3, figsize=(15, 6), dpi=180)
+    panels = [
+        ('code', code, field_norm),
+        ('reference', ref, field_norm),
+        ('code-reference', difference, difference_norm),
+    ]
+    for axis, (title, data, norm) in zip(ax, panels):
+        tc = axis.tripcolor(
+            triangulation,
+            facecolors=data,
+            cmap='coolwarm',
+            norm=norm,
+            edgecolors='none',
+        )
+        axis.set_aspect('equal', adjustable='box')
+        axis.set_xlim(xlim)
+        axis.set_ylim(ylim)
+        axis.set_title(name + ' ' + title)
+        axis.set_xlabel('R m')
+        axis.set_ylabel('Z m')
+        if wall is not None:
+            axis.plot(wall[:, 0], wall[:, 1], color='k', lw=0.3)
+        fig.colorbar(tc, ax=axis, fraction=0.046, pad=0.04)
+    fig.savefig(outdir / (name + '_tri_compare.pdf'))
+    plt.close(fig)
+
+
 def plot_b2_field(outdir, name, code, ref):
     if not HAS_MATPLOTLIB:
         return
@@ -899,6 +946,59 @@ def plot_b2_field(outdir, name, code, ref):
         fig.colorbar(im, ax=axis, fraction=0.046, pad=0.04)
     fig.savefig(outdir / (name + '_b2_compare.pdf'))
     plt.close(fig)
+
+
+def plot_target_profiles(outdir, target_profiles):
+    if not HAS_MATPLOTLIB or not target_profiles:
+        return
+    by_field = {}
+    for record in target_profiles:
+        by_field.setdefault(record['field'], []).append(record)
+    output = outdir / 'target_profiles_compare.pdf'
+    with PdfPages(output) as pdf:
+        for field in sorted(by_field):
+            records = by_field[field]
+            sides = [
+                side for side in ('inner', 'outer')
+                if any(record['side'] == side for record in records)
+            ]
+            if not sides:
+                continue
+            fig, axes = plt.subplots(
+                2, len(sides), figsize=(7.2 * len(sides), 7.5),
+                dpi=180, squeeze=False,
+            )
+            for column, side in enumerate(sides):
+                side_records = sorted(
+                    (record for record in records if record['side'] == side),
+                    key=lambda record: record['radial_index'],
+                )
+                radial = np.asarray([record['radial_index'] for record in side_records])
+                code = np.asarray([record['code'] for record in side_records])
+                ref = np.asarray([record['reference'] for record in side_records])
+                ratio = np.asarray([record['ratio'] for record in side_records])
+                upper = axes[0, column]
+                if np.all(code >= 0.0) and np.all(ref >= 0.0) and np.any(code > 0.0) and np.any(ref > 0.0):
+                    upper.semilogy(radial, code, marker='o', ms=3, label='NT')
+                    upper.semilogy(radial, ref, marker='s', ms=3, label='EIRENE')
+                else:
+                    upper.plot(radial, code, marker='o', ms=3, label='NT')
+                    upper.plot(radial, ref, marker='s', ms=3, label='EIRENE')
+                upper.set_title(f'{field} - {side} target')
+                upper.set_ylabel('value')
+                upper.grid(alpha=0.25)
+                upper.legend(frameon=False)
+                lower = axes[1, column]
+                lower.plot(radial, ratio, color='#d1495b', marker='o', ms=3)
+                lower.axhline(1.0, color='k', lw=0.8)
+                lower.set_xlabel('radial index')
+                lower.set_ylabel('NT / EIRENE')
+                lower.set_ylim(bottom=0.0)
+                lower.grid(alpha=0.25)
+            fig.tight_layout()
+            pdf.savefig(fig)
+            plt.close(fig)
+    print('wrote', output)
 
 
 def main():
@@ -1039,6 +1139,11 @@ def main():
             row['mesh'] = 'tri'
             row['note'] = 'track-length-weighted neutral mean velocity in m/s'
             rows.append(row)
+            plot_signed_field(
+                outdir, triangulation, wall,
+                f'V_{species}_0_{component_name}',
+                code[:, component], ref[:, component], args.xlim, args.ylim,
+            )
 
             if np.any(inner_tail_triangles):
                 row = metric_row(
@@ -1066,6 +1171,11 @@ def main():
             row['mesh'] = 'tri'
             row['note'] = 'density times mean velocity in m^-2 s^-1'
             rows.append(row)
+            plot_signed_field(
+                outdir, triangulation, wall,
+                f'Particle_flux_{species}_0_{component_name}',
+                code_flux, ref_flux, args.xlim, args.ylim,
+            )
 
             if np.any(inner_tail_triangles):
                 row = metric_row(
@@ -1200,15 +1310,18 @@ def main():
                 ))
             code_d2ion_path = out / 'n_D2_1'
             if code_d2ion_path.exists():
+                code_d2ion = read_b2_matrix(code_d2ion_path)
+                ref_d2ion = read_eirene_b2_field(fort44, 'dib2')
                 row = metric_row(
                     'B2_n_D2_1',
-                    read_b2_matrix(code_d2ion_path).ravel(),
-                    read_eirene_b2_field(fort44, 'dib2').ravel(),
+                    code_d2ion.ravel(),
+                    ref_d2ion.ravel(),
                     b2_vol.ravel(),
                 )
                 row['mesh'] = 'b2'
                 row['note'] = 'molecular-ion density compared directly on the B2 plasma grid'
                 rows.append(row)
+                plot_b2_field(outdir, 'B2_n_D2_1', code_d2ion, ref_d2ion)
             source_fields = [
                 (
                     'B2_Dplus_EI_sources_vs_sum_strata_EI',
@@ -1361,6 +1474,7 @@ def main():
             writer = csv.DictWriter(f, fieldnames=target_profiles[0].keys())
             writer.writeheader()
             writer.writerows(target_profiles)
+        plot_target_profiles(outdir, target_profiles)
 
     keys = []
     for row in rows:

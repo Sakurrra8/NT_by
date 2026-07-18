@@ -17,6 +17,8 @@ numcheck_work/
 triangle/*
 !triangle/EAST/
 !triangle/EAST/benchmark_tri.py
+!triangle/EAST/assemble_eirene_case_report.py
+!triangle/EAST/build_density_scan_report.py
 triangle/EAST/__pycache__/
 callgrind.out*
 *.h5

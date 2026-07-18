@@ -162,7 +162,7 @@ directory below `Inputpath/database/`.
 | `coeff_ercyc_wall` | `1` | Equivalent recycling coefficient for vessel-wall impacts. The misspelling is part of the positional input format. |
 | `coeff_puff` | `0.99` | Local recycling/pumping coefficient at any enabled `K_Puff` location; inactive when all puff switches are zero. |
 | `K_DWTrimReflection` | `1` | `1`: use the selected differential D-on-W TRIM distribution for reflection probability, energy, and angle; `0`: use the legacy `K_Rflect` D-W coefficient model. |
-| `K_EireneWallSide` | `2` | Additional-wall side handling. `0`: legacy two-sided reflection; `1`: strict EIRENE `ILSIDE=1` sensitivity with back-side absorption; `2`: use the surface model only on the plasma-facing side and pass back-side crossings through without restarting the sampled free flight. The wall-side audit separates crossings found inside a triangle from those found in an additional cell. |
+| `K_EireneWallSide` | `1` | Additional-wall side handling. `0`: legacy two-sided reflection; `1`: match this EIRENE case's `ILSIDE=1` surfaces by absorbing back-side incidence; `2`: geometry sensitivity mode that uses the surface model only on the plasma-facing side and passes back-side crossings through without restarting the sampled free flight. The wall-side audit separates crossings found inside a triangle from those found in an additional cell. |
 | `DWTrimDatabase` | `D_on_W` | D-on-W database directory below `Inputpath/database/`. |
 | `DWTrimERMIN_eV` | `1 eV` | Minimum incident energy for fast D-on-W reflection. Below it, fast reflection is disabled and recycled nuclei enter the thermal branch. |
 | `SurfaceTemperature_eV` | `0.1 eV` | Wall temperature used for thermal Maxwellian-flux re-emission. |
@@ -421,6 +421,24 @@ self-consistency row for `d?b2 * vol_2D.dat` versus those EIRENE integrals;
 do not attribute that residual to NT. Use `check_b2_alignment.py` when a narrow
 target region disagrees strongly, to rule out an axis flip or integer-cell
 offset before changing transport physics.
+
+For a full illustrated comparison, run the benchmark without
+`--skip-b2-sources`, then assemble every generated triangle, B2, velocity,
+particle-flux, source/sink, and target-profile figure into one indexed PDF:
+
+```bash
+python3 triangle/EAST/benchmark_tri.py \
+  --case case_input/2MW-5e19 --output Outputfile/JOB_ID
+python3 triangle/EAST/assemble_eirene_case_report.py \
+  --benchmark-dir Outputfile/JOB_ID/fig/tri_benchmark \
+  --output Outputfile/JOB_ID/fig/tri_benchmark/eirene_comparison_full.pdf \
+  --case-label 5e19 --job-id JOB_ID
+```
+
+After all nine settings finish, pass each `density=benchmark_directory` pair
+to `build_density_scan_report.py`. It writes both the cross-density trend
+summary and, with `--full-output`, a master PDF containing all nine case
+reports.
 
 For the 5e19 no-pump/no-puff test, D2+ disagreement should be debugged as a
 chain:
