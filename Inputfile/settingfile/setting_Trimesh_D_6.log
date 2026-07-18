@@ -48,7 +48,7 @@ numPar_flight       50000   # number of test flight from Grid
 numPar_flight_D2    0       # number of pumping D2
 numPar_flight_T2    0       # number of pumping T2
 numPar_flight_CD4   0       # number of test flight of Methane
-numPar_flight_Target 50000  # sum of test flight from Wall recycling
+numPar_flight_Target 500000 # combined target-recycling history budget
 Num_D2_pump         0       # number of test flight of pumping D2 particle
 Num_T2_pump         0       # number of test flight of pumping T2 particle
 Num_CD4_pump        0       # sum of test flight for CD4 seeding
@@ -83,7 +83,7 @@ DTargetIncidentSamples 4096 # low-discrepancy samples per target for source-weig
 K_DTargetSourceMode 1       # 1 use recycled_neutral_flux_D; 2 use ni*abs(ua)*abs(b.normal)*target_area and TRIM split
 K_DBoundarySource   1       # add EIRENE strata 3-5 from outward D+ FNIY
 DBoundaryLaunchModel 0      # 0 EIRENE surface recycling; 1 direct outward D sensitivity
-numPar_flight_DBoundary 6000 # 2000 histories for each PFR/PFR/outer stratum
+numPar_flight_DBoundary 200000 # combined PFR/PFR/outer boundary history budget
 DBoundaryFluxFile   2D_data/fnay_Dplus.dat
 DWTrimDatabase      D_on_W  # match EIRENE input TRIM D_on_W database
 SurfaceTemperature_eV 0.1   # EIRENE EWALL=-0.1: Maxwellian-flux wall temperature

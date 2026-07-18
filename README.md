@@ -164,7 +164,7 @@ directory below `Inputpath/database/`.
 | `K_Puff[0..4]` | all `0` | Five hard-coded gas-puff/pumping-location toggles. All zero means that the validation case has no puff source. |
 | `K_Methane`, `K_C`, `K_Ar` | all `0` | Enable CD4, carbon, or argon source/transport branches. They are excluded from the D/D2 comparison. |
 | `numPar_flight` | `50000` | Monte Carlo history budget used for volume/grid sources such as recombination. |
-| `numPar_flight_Target` | `50000` | Total history budget shared by target-recycled atomic and molecular sources. Histories are allocated by equivalent atomic flux (`D + 2 D2`), matching EIRENE's `NPRT(D2)=2`; each species is still normalized by its own particle source, so the physical D and D2 source strengths are unchanged. |
+| `numPar_flight_Target` | `500000` | Total history budget shared by target-recycled atomic and molecular sources across both targets. Histories are allocated by equivalent atomic flux (`D + 2 D2`), matching EIRENE's `NPRT(D2)=2`; each species is still normalized by its own particle source, so the physical D and D2 source strengths are unchanged. |
 | `numPar_flight_D2`, `Num_D2_pump` | `0`, `0` | D2 pump history budget and represented source rate. Both must be positive, together with `K_D=1`, to create an artificial D2 pump source. They do not control D2 made by recycling or reactions. |
 | `numPar_flight_T2`, `Num_T2_pump` | `0`, `0` | Equivalent T2 pump controls. |
 | `numPar_flight_CD4`, `Num_CD4_pump` | `0`, `0` | Equivalent methane-source controls; `K_Methane` must also be enabled. |
@@ -217,7 +217,7 @@ directory below `Inputpath/database/`.
 | `K_DBoundarySource` | `1` | Add EIRENE interface strata 3-5 from outward D+ `FNIY`. Requires `K_D=1`. |
 | `DBoundaryFluxFile` | `2D_data/fnay_Dplus.dat` | Species-resolved face-integrated D+ flux file, relative to `Casepath`. |
 | `DBoundaryLaunchModel` | `0` | `0`: EIRENE-style surface recycling into fast D plus thermal D2; `1`: direct outward-D sensitivity source. |
-| `numPar_flight_DBoundary` | `6000` | Combined history budget for the two PFR-side and one outer-side interface strata. |
+| `numPar_flight_DBoundary` | `200000` | Combined history budget for the two PFR-side and one outer-side interface strata. |
 
 In the coupled EIRENE geometry, `GEOUSR` turns off or trims additional-wall
 segments where a SOLPS target edge supplies the material boundary. The
