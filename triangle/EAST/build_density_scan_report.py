@@ -105,7 +105,11 @@ class DensityTrendChart(Flowable):
             tick_x = map_x(density)
             canvas.setFillColor(colors.HexColor("#4f5965"))
             canvas.setFont("Helvetica", 6.5)
-            canvas.drawCentredString(tick_x, plot_y - 3 * mm, f"{density:g}")
+            canvas.saveState()
+            canvas.translate(tick_x, plot_y - 2.5 * mm)
+            canvas.rotate(45)
+            canvas.drawRightString(0, 0, f"{density:g}")
+            canvas.restoreState()
 
         palette = [colors.HexColor("#087f8c"), colors.HexColor("#d1495b")]
         for index, (label, key) in enumerate(series):
