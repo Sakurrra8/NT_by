@@ -72,7 +72,7 @@ ImportanceMainPoloidalBegin 25
 ImportanceMainPoloidalEnd   72
 K_H5Output          0       # option: write HDF5 output files
 K_NNCs              1       # match EIRENE AMMONX neutral-neutral reactions
-D2ElasticModel      2       # 0 off; 1 H.3 moment; 2 EIRENE default; 3 sigma*v rejection sensitivity
+D2ElasticModel      3       # H.0/H.1/H.3 with sigma*v-conditioned ion sampling
 MeshMode            3       # option: externmesh mode
 K_DWTrimReflection  1       # option: 0 legacy D-W model; 1 selected D_on_W distribution model
 K_EireneWallSide    1       # Match EIRENE ILSIDE=1: absorb backside incidence

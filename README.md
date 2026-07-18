@@ -106,7 +106,7 @@ The EAST triangular settings are intentionally kept simple for manual testing:
 
 - `MeshMode=3`
 - `K_D2Flight=0`
-- `D2ElasticModel=2`
+- `D2ElasticModel=3`
 - `K_NNCs=1`
 - `K_database_Pra=2`
 - `K_Maxwell=1`
@@ -177,7 +177,7 @@ directory below `Inputpath/database/`.
 | `K_database_Pra` | `2` | Product-energy/momentum treatment: `1=legacy ADAS-style`, `2=EIRENE H.10/H.8 energy-weighted rates`. |
 | `K_Maxwell` | `1` | Background/product velocity sampler: `1=full Maxwellian`, `2=legacy fixed RMS-speed shortcut`. |
 | `K_H2_elastic` | `1` | Master switch for D2-D+ molecular elastic collisions. Setting it to zero forces `D2ElasticModel=0`. |
-| `D2ElasticModel` | `2` | `0`: off; `1`: H.3 first-moment approximation; `2`: H.0/H.1/H.3 two-body kinematics with a drifting Maxwellian ion; `3`: mode 2 plus H.1 `sigma*v` rejection sampling of the ion partner. Mode 3 is the closest current kinetic-parity option, while mode 2 is the validation baseline. |
+| `D2ElasticModel` | `3` | `0`: off; `1`: H.3 first-moment approximation; `2`: H.0/H.1/H.3 two-body kinematics with an unconditioned drifting-Maxwellian ion sample; `3`: mode 2 plus H.1 `sigma*v` rejection sampling of the ion partner. Mode 3 is the validation setting because it is the closest current kinetic-parity option. |
 | `K_NNCs` | `1` | Enable AMMONX neutral-neutral D-D, D-D2, D2-D, and D2-D2 collisions against the fixed neutral background. |
 | `K_MarColl` | `1` | Molecular-ion loss representation: `1=separate DS1/DS2/DS3 branches`; `2=legacy summed MAR channel`. Separate branches are required for product-aware D tracking and local D2+ balance. |
 | `K_CX_impurity` | `1` | Enable charge exchange for enabled impurity species such as C and Ar. It has no effect while those species switches are zero. |
@@ -276,6 +276,12 @@ rescaled.
 - `3`: model 2 plus H.1-weighted `sigma*g*f` rejection sampling of the ion
   partner; this is the closest current option to EIRENE conditional partner
   sampling
+
+The canonical EAST inputs use model 3. In the 5e19 high-statistics scan it
+preserved the density-weighted D2 temperature and B2 source inventory while
+slightly improving the triangle D2 mismatch over model 2. Disabling elastic
+collisions produced an apparently better triangle D2 total only by making the
+D2 temperature 42-68% too low, so that setting is not a physical calibration.
 
 Run `make -f Makefile.local check-eirene-elastic` to verify the H.0/H.1
 database offsets, units, potential minimum, and cross-section extrapolation.
