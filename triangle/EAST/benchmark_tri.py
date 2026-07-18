@@ -464,6 +464,12 @@ def source_stratum_rows(summary_path, fort44_path):
         ('D', 'b2'): read_eirene_field(fort44_path, 'pdena_int_b2'),
         ('D2', 'b2'): read_eirene_field(fort44_path, 'pdenm_int_b2'),
     }
+    eirene_energy_fields = {
+        ('D', 'tri'): read_eirene_field(fort44_path, 'edena_int') / ELECTRON_CHARGE,
+        ('D2', 'tri'): read_eirene_field(fort44_path, 'edenm_int') / ELECTRON_CHARGE,
+        ('D', 'b2'): read_eirene_field(fort44_path, 'edena_int_b2') / ELECTRON_CHARGE,
+        ('D2', 'b2'): read_eirene_field(fort44_path, 'edenm_int_b2') / ELECTRON_CHARGE,
+    }
     stratum_index = {
         'IT': 1,
         'OT': 2,
@@ -478,6 +484,11 @@ def source_stratum_rows(summary_path, fort44_path):
         for species in ('D', 'D2')
         for mesh in ('tri', 'b2')
     }
+    code_energy_totals = {
+        (species, mesh): 0.0
+        for species in ('D', 'D2')
+        for mesh in ('tri', 'b2')
+    }
     with Path(summary_path).open(newline='') as stream:
         reader = csv.DictReader(stream)
         inventory_columns = {
@@ -486,6 +497,10 @@ def source_stratum_rows(summary_path, fort44_path):
         }
         if not inventory_columns.issubset(reader.fieldnames or []):
             return rows
+        energy_available = {
+            'b2_energy_inventory_eV',
+            'tri_energy_inventory_eV',
+        }.issubset(reader.fieldnames or [])
         for record in reader:
             species = record['species']
             stratum = record['source_stratum']
@@ -510,6 +525,44 @@ def source_stratum_rows(summary_path, fort44_path):
                 row['source_stratum'] = stratum
                 row['note'] = 'track-length inventory compared with fort.44 source-stratum integral'
                 rows.append(row)
+                if energy_available:
+                    energy_column = f'{mesh}_energy_inventory_eV'
+                    code_energy = float(record[energy_column])
+                    code_energy_totals[(species, mesh)] += code_energy
+                    ref_energy = eirene_energy_fields[(species, mesh)][
+                        stratum_index[stratum]
+                    ]
+                    row = metric_row(
+                        f'SourceStratum_{mesh}_energy_{species}_0_{stratum}',
+                        np.asarray([code_energy]),
+                        np.asarray([ref_energy]),
+                        np.ones(1),
+                    )
+                    row['mesh'] = mesh
+                    row['source_stratum'] = stratum
+                    row['note'] = (
+                        'kinetic-energy inventory in eV compared with fort.44 '
+                        'eden*_int converted from joules'
+                    )
+                    rows.append(row)
+                    code_temperature = (
+                        (2.0 / 3.0) * code_energy / code
+                        if code > 0.0 else 0.0
+                    )
+                    ref_temperature = (
+                        (2.0 / 3.0) * ref_energy / ref
+                        if ref > 0.0 else 0.0
+                    )
+                    row = metric_row(
+                        f'SourceStratum_{mesh}_total_T_{species}_0_{stratum}',
+                        np.asarray([code_temperature]),
+                        np.asarray([ref_temperature]),
+                        np.ones(1),
+                    )
+                    row['mesh'] = mesh
+                    row['source_stratum'] = stratum
+                    row['note'] = 'source-resolved total kinetic temperature'
+                    rows.append(row)
     for species in ('D', 'D2'):
         for mesh in ('tri', 'b2'):
             code = code_totals[(species, mesh)]
@@ -527,6 +580,35 @@ def source_stratum_rows(summary_path, fort44_path):
                 'compared with fort.44 pden*_int index 0'
             )
             rows.append(row)
+            if energy_available:
+                code_energy = code_energy_totals[(species, mesh)]
+                ref_energy = eirene_energy_fields[(species, mesh)][0]
+                row = metric_row(
+                    f'SourceStratum_{mesh}_energy_{species}_0_total',
+                    np.asarray([code_energy]),
+                    np.asarray([ref_energy]),
+                    np.ones(1),
+                )
+                row['mesh'] = mesh
+                row['source_stratum'] = 'Total'
+                row['note'] = 'sum of matched source-resolved kinetic-energy inventories'
+                rows.append(row)
+                code_temperature = (
+                    (2.0 / 3.0) * code_energy / code if code > 0.0 else 0.0
+                )
+                ref_temperature = (
+                    (2.0 / 3.0) * ref_energy / ref if ref > 0.0 else 0.0
+                )
+                row = metric_row(
+                    f'SourceStratum_{mesh}_total_T_{species}_0_total',
+                    np.asarray([code_temperature]),
+                    np.asarray([ref_temperature]),
+                    np.ones(1),
+                )
+                row['mesh'] = mesh
+                row['source_stratum'] = 'Total'
+                row['note'] = 'total kinetic temperature from matched source sums'
+                rows.append(row)
     return rows
 
 

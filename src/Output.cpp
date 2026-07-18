@@ -492,7 +492,7 @@ void SourceStratumSummaryOutput()
 {
     ofstream out(Outputpath + "source_stratum_summary.csv");
     out << std::setprecision(17);
-    out << "species,charge,source_stratum,launched_weight_s-1,launched_events,b2_track_length_inventory,tri_track_length_inventory\n";
+    out << "species,charge,source_stratum,launched_weight_s-1,launched_events,b2_track_length_inventory,tri_track_length_inventory,b2_energy_inventory_eV,tri_energy_inventory_eV,b2_total_temperature_eV,tri_total_temperature_eV\n";
     if (K_H)
     {
         H.AppendSourceStratumSummary(out);
@@ -525,6 +525,8 @@ void SourceStratumSummaryOutput()
            << "b2_track_length_inventory is the volume integral of density attributed to each primary source stratum.\n"
            << "It can be compared with EIRENE pdena_int_b2 and pdenm_int_b2 after matching source strata.\n"
            << "tri_track_length_inventory includes all triangles and can be compared with EIRENE pdena_int and pdenm_int.\n"
+           << "b2_energy_inventory_eV and tri_energy_inventory_eV are track-length kinetic-energy inventories in eV and can be compared with EIRENE eden*_int after converting its joules to eV.\n"
+           << "The corresponding total-temperature columns include directed kinetic energy and equal two thirds of energy inventory divided by particle inventory.\n"
            << "The launch columns are not collisional source-term decompositions; those require Sn_by_stratum diagnostics.\n";
 }
 

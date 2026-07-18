@@ -434,10 +434,14 @@ private:
 	std::vector<std::array<unsigned long long, static_cast<std::size_t>(SourceStratum::Count)>> launchedEventsByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> b2TrackLengthByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingB2TrackLengthByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> b2EnergyByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingB2EnergyByStratum_;
 	std::vector<double> b2TrackLengthByCellAndStratum_;
 	std::vector<double> pendingB2TrackLengthByCellAndStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> triTrackLengthByStratum_;
 	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingTriTrackLengthByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> triEnergyByStratum_;
+	std::vector<std::array<double, static_cast<std::size_t>(SourceStratum::Count)>> pendingTriEnergyByStratum_;
 	struct TargetLaunchAudit
 	{
 		unsigned long long events{0};

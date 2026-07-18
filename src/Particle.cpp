@@ -1004,11 +1004,15 @@ void Particle::allocateStorage()
 	launchedEventsByStratum_.assign(chargeStates, {});
 	b2TrackLengthByStratum_.assign(chargeStates, {});
 	pendingB2TrackLengthByStratum_.assign(chargeStates, {});
+	b2EnergyByStratum_.assign(chargeStates, {});
+	pendingB2EnergyByStratum_.assign(chargeStates, {});
 	const std::size_t sourceCount = static_cast<std::size_t>(SourceStratum::Count);
 	b2TrackLengthByCellAndStratum_.assign(
 		static_cast<std::size_t>(gridCellCount()) * chargeStates * sourceCount, 0.0);
 	triTrackLengthByStratum_.assign(chargeStates, {});
 	pendingTriTrackLengthByStratum_.assign(chargeStates, {});
+	triEnergyByStratum_.assign(chargeStates, {});
+	pendingTriEnergyByStratum_.assign(chargeStates, {});
 	targetLaunchAudit_.assign(static_cast<std::size_t>(2 * N_radial), {});
 	targetReemissionByPrimarySourceAudit_.assign(
 		static_cast<std::size_t>(2 * N_radial) *
@@ -6322,9 +6326,11 @@ void Particle::BeginDeferredFlightStats(double scale)
 	pendingCxNeutralBefore_.assign(pendingCxIonBefore_.size(), 0.0);
 	pendingCxNeutralAfter_.assign(pendingCxIonBefore_.size(), 0.0);
 	pendingB2TrackLengthByStratum_.assign(chargeStates, {});
+	pendingB2EnergyByStratum_.assign(chargeStates, {});
 	pendingB2TrackLengthByCellAndStratum_.assign(
 		b2TrackLengthByCellAndStratum_.size(), 0.0);
 	pendingTriTrackLengthByStratum_.assign(chargeStates, {});
+	pendingTriEnergyByStratum_.assign(chargeStates, {});
 }
 
 void Particle::EndDeferredFlightStats()
@@ -6361,16 +6367,24 @@ void Particle::EndDeferredFlightStats()
 	for (int c = 0; c <= MaxCharge_; ++c)
 		for (std::size_t source = 0;
 			 source < static_cast<std::size_t>(SourceStratum::Count); ++source)
+		{
 			b2TrackLengthByStratum_[c][source] +=
 				pendingB2TrackLengthByStratum_[c][source] * deferred_flight_stat_scale_;
+			b2EnergyByStratum_[c][source] +=
+				pendingB2EnergyByStratum_[c][source] * deferred_flight_stat_scale_;
+		}
 	for (std::size_t index = 0; index < b2TrackLengthByCellAndStratum_.size(); ++index)
 		b2TrackLengthByCellAndStratum_[index] +=
 			pendingB2TrackLengthByCellAndStratum_[index] * deferred_flight_stat_scale_;
 	for (int c = 0; c <= MaxCharge_; ++c)
 		for (std::size_t source = 0;
 			 source < static_cast<std::size_t>(SourceStratum::Count); ++source)
+		{
 			triTrackLengthByStratum_[c][source] +=
 				pendingTriTrackLengthByStratum_[c][source] * deferred_flight_stat_scale_;
+			triEnergyByStratum_[c][source] +=
+				pendingTriEnergyByStratum_[c][source] * deferred_flight_stat_scale_;
+		}
 	defer_flight_stats_ = false;
 	deferred_flight_stat_scale_ = 1.0;
 	pendingGridN_.clear();
@@ -6383,7 +6397,9 @@ void Particle::EndDeferredFlightStats()
 	pendingCxIonAfter_.clear();
 	pendingCxNeutralBefore_.clear();
 	pendingCxNeutralAfter_.clear();
+	pendingB2EnergyByStratum_.clear();
 	pendingB2TrackLengthByCellAndStratum_.clear();
+	pendingTriEnergyByStratum_.clear();
 }
 
 void Particle::addDensityStatGrid(int i, int j, int charge, double n)
@@ -6405,7 +6421,11 @@ void Particle::addFlightStatGrid(int i, int j, int charge, double n, double ener
 		auto &track_length = defer_flight_stats_
 			? pendingB2TrackLengthByStratum_
 			: b2TrackLengthByStratum_;
+		auto &source_energy = defer_flight_stats_
+			? pendingB2EnergyByStratum_
+			: b2EnergyByStratum_;
 		track_length[charge][source] += n;
+		source_energy[charge][source] += energy;
 		const std::size_t source_count =
 			static_cast<std::size_t>(SourceStratum::Count);
 		const std::size_t index =
@@ -6439,7 +6459,11 @@ void Particle::addFlightStatTri(int tri, int charge, double n, double energy, co
 		auto &track_length = defer_flight_stats_
 			? pendingTriTrackLengthByStratum_
 			: triTrackLengthByStratum_;
+		auto &source_energy = defer_flight_stats_
+			? pendingTriEnergyByStratum_
+			: triEnergyByStratum_;
 		track_length[charge][source] += n;
+		source_energy[charge][source] += energy;
 	}
 	if (defer_flight_stats_)
 	{
@@ -10242,7 +10266,17 @@ void Particle::AppendSourceStratumSummary(std::ostream &out) const
 				<< launchedWeightByStratum_[charge][source] << ','
 				<< launchedEventsByStratum_[charge][source] << ','
 				<< b2TrackLengthByStratum_[charge][source] << ','
-				<< triTrackLengthByStratum_[charge][source] << '\n';
+				<< triTrackLengthByStratum_[charge][source] << ','
+				<< b2EnergyByStratum_[charge][source] << ','
+				<< triEnergyByStratum_[charge][source] << ','
+				<< (b2TrackLengthByStratum_[charge][source] > 0.0
+						? (2.0 / 3.0) * b2EnergyByStratum_[charge][source] /
+							b2TrackLengthByStratum_[charge][source]
+						: 0.0) << ','
+				<< (triTrackLengthByStratum_[charge][source] > 0.0
+						? (2.0 / 3.0) * triEnergyByStratum_[charge][source] /
+							triTrackLengthByStratum_[charge][source]
+						: 0.0) << '\n';
 		}
 	}
 }
@@ -10301,6 +10335,10 @@ void Particle::Clear(int n)
 			track_length.fill(0.0);
 		for (auto &track_length : pendingB2TrackLengthByStratum_)
 			track_length.fill(0.0);
+		for (auto &energy : b2EnergyByStratum_)
+			energy.fill(0.0);
+		for (auto &energy : pendingB2EnergyByStratum_)
+			energy.fill(0.0);
 		std::fill(b2TrackLengthByCellAndStratum_.begin(),
 				  b2TrackLengthByCellAndStratum_.end(), 0.0);
 		std::fill(pendingB2TrackLengthByCellAndStratum_.begin(),
@@ -10309,6 +10347,10 @@ void Particle::Clear(int n)
 			track_length.fill(0.0);
 		for (auto &track_length : pendingTriTrackLengthByStratum_)
 			track_length.fill(0.0);
+		for (auto &energy : triEnergyByStratum_)
+			energy.fill(0.0);
+		for (auto &energy : pendingTriEnergyByStratum_)
+			energy.fill(0.0);
 		std::fill(targetLaunchAudit_.begin(), targetLaunchAudit_.end(),
 				  TargetLaunchAudit{});
 		std::fill(wallReemissionAudit_.begin(), wallReemissionAudit_.end(),
