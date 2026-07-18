@@ -514,6 +514,63 @@ namespace
 		double fraction{0.};
 	};
 
+	bool wallHitOverlapsTargetEdge(int tri_index, int wall_index,
+								   double hit_x, double hit_y)
+	{
+		if (tri_index < 0 || static_cast<std::size_t>(tri_index) >= Grid4.tris_.size() ||
+			wall_index < 0 || wall_index >= Grid4.Wall_.Wall_num())
+			return false;
+
+		const auto &wall = Grid4.Wall_.Segment(wall_index);
+		const double wall_dx = wall[2] - wall[0];
+		const double wall_dy = wall[3] - wall[1];
+		const double wall_length = std::hypot(wall_dx, wall_dy);
+		if (wall_length <= 1.e-20)
+			return false;
+
+		// GEOUSR replaces additional-wall pieces that overlap a SOLPS target.
+		// The exported wall polyline retains those pieces, so defer crossings in
+		// the narrow overlap band to the triangle target edge.
+		constexpr double target_overlap_tolerance = 2.5e-4;
+		constexpr double parallel_sine_tolerance = 2.e-2;
+		const auto &tri = Grid4.tris_[tri_index];
+		for (int edge = 0; edge < 3; ++edge)
+		{
+			const int line_info = Grid4.lines_info(tri_index, edge);
+			if (line_info != 3 && line_info != 4)
+				continue;
+
+			const auto &a = Grid4.nodes_[tri.v[edge]];
+			const auto &b = Grid4.nodes_[tri.v[(edge + 1) % 3]];
+			const double edge_dx = b.r - a.r;
+			const double edge_dy = b.z - a.z;
+			const double edge_length2 = edge_dx * edge_dx + edge_dy * edge_dy;
+			const double edge_length = std::sqrt(edge_length2);
+			if (edge_length <= 1.e-20)
+				continue;
+
+			const double parallel_sine = std::abs(
+				wall_dx * edge_dy - wall_dy * edge_dx) /
+				(wall_length * edge_length);
+			if (parallel_sine > parallel_sine_tolerance)
+				continue;
+
+			const double projection =
+				((hit_x - a.r) * edge_dx + (hit_y - a.z) * edge_dy) /
+				edge_length2;
+			const double projection_margin = target_overlap_tolerance / edge_length;
+			if (projection < -projection_margin || projection > 1. + projection_margin)
+				continue;
+
+			const double nearest_x = a.r + std::clamp(projection, 0., 1.) * edge_dx;
+			const double nearest_y = a.z + std::clamp(projection, 0., 1.) * edge_dy;
+			if (std::hypot(hit_x - nearest_x, hit_y - nearest_y) <=
+				target_overlap_tolerance)
+				return true;
+		}
+		return false;
+	}
+
 	bool earliestWallHitInTri(int tri_index,
 							  double x0, double y0,
 							  double x1, double y1,
@@ -545,6 +602,8 @@ namespace
 			if (!Tools::getLineSegmentIntersection(x0, y0, x1, y1, wall[0], wall[1], wall[2], wall[3], secx, secy))
 				continue;
 			if (!Grid4.Ifingrid(tri_index, secx, secy))
+				continue;
+			if (wallHitOverlapsTargetEdge(tri_index, candidate, secx, secy))
 				continue;
 			const double candidate_fraction = segmentFraction(x0, y0, x1, y1, secx, secy);
 			if (candidate_fraction <= 1.e-10 || candidate_fraction > 1.0)

@@ -219,6 +219,14 @@ directory below `Inputpath/database/`.
 | `DBoundaryLaunchModel` | `0` | `0`: EIRENE-style surface recycling into fast D plus thermal D2; `1`: direct outward-D sensitivity source. |
 | `numPar_flight_DBoundary` | `6000` | Combined history budget for the two PFR-side and one outer-side interface strata. |
 
+In the coupled EIRENE geometry, `GEOUSR` turns off or trims additional-wall
+segments where a SOLPS target edge supplies the material boundary. The
+exported `wall_segment.txt` still contains the untrimmed polyline. Mesh mode 3
+therefore defers a wall crossing that is parallel to and within 0.25 mm of the
+current triangle's target edge to the normal target-boundary handler. This
+prevents target-launched particles from being absorbed as back-side wall
+incidence and keeps returning target flux in the target tallies.
+
 ### Variance Reduction, Logs, And Output
 
 | Setting | Current value | Effect |
