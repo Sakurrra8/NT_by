@@ -1507,8 +1507,43 @@ def main():
                     vol, b2, b2_vol,
                     MASS_NUMBERS[species] * ATOMIC_MASS_UNIT,
                 )
-                code_mapped_density, _, code_thermal, _ = mapped_code
-                ref_mapped_density, _, ref_thermal, _ = mapped_ref
+                (
+                    code_mapped_density,
+                    code_mapped_total,
+                    code_thermal,
+                    _,
+                ) = mapped_code
+                (
+                    ref_mapped_density,
+                    ref_mapped_total,
+                    ref_thermal,
+                    _,
+                ) = mapped_ref
+                row = metric_row(
+                    f'B2_mapped_T_{species}_0_total',
+                    code_mapped_total.ravel(), ref_mapped_total.ravel(),
+                    b2_vol.ravel(),
+                )
+                row['mesh'] = 'b2'
+                row['note'] = (
+                    'triangle neutral number and total energy conservatively '
+                    'aggregated to B2; paired baseline for the mapped thermal '
+                    'temperature comparison'
+                )
+                rows.append(row)
+                total_rows = density_weighted_temperature_rows(
+                    'B2_mapped_total', species,
+                    code_mapped_density.ravel(), ref_mapped_density.ravel(),
+                    code_mapped_total.ravel(), ref_mapped_total.ravel(),
+                    b2_vol.ravel(),
+                )
+                for total_row in total_rows:
+                    total_row['mesh'] = 'b2'
+                    total_row['note'] = (
+                        total_row.get('note', '')
+                        + '; total kinetic temperature from mapped triangle moments'
+                    )
+                rows.extend(total_rows)
                 row = metric_row(
                     f'B2_mapped_T_{species}_0_thermal',
                     code_thermal.ravel(), ref_thermal.ravel(),
