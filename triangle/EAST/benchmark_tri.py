@@ -742,12 +742,9 @@ def target_d2_source_shape_rows(
         )
         if segment_offset is None:
             continue
-        reference = (
-            resolved_molecule_recycling[
-                segment_offset:segment_offset + len(segment_area)
-            ]
-            * segment_area
-        )
+        reference = resolved_molecule_recycling[
+            segment_offset:segment_offset + len(segment_area)
+        ]
         if np.sum(code) <= 0.0 or np.sum(reference) <= 0.0:
             continue
         code_share = code / np.sum(code)
@@ -770,7 +767,7 @@ def target_d2_source_shape_rows(
         row['region'] = f'{side}_target_radial_1_36'
         row['note'] = (
             'normalized radial shape only: code D2_source_s-1 versus '
-            'EIRENE ewldmr_res times resolved segment area; absolute units differ'
+            'EIRENE ewldmr_res emitted molecular flux; both are segment-integrated'
         )
         rows.append(row)
     return rows

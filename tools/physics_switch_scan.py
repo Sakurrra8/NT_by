@@ -14,6 +14,11 @@ VARIANTS = [
     ("baseline_b", {}, "independent baseline replicate"),
     ("elastic_off", {"D2ElasticModel": "0"}, "disable D2-D+ elastic collisions"),
     ("elastic_h3", {"D2ElasticModel": "1"}, "H.3 first-moment elastic model"),
+    (
+        "elastic_default",
+        {"D2ElasticModel": "2"},
+        "H.0/H.1/H.3 with an unconditioned ion sample",
+    ),
     ("elastic_rejection", {"D2ElasticModel": "3"}, "H.0/H.1/H.3 with sigma*v rejection"),
     ("nncs_off", {"K_NNCs": "0"}, "disable fixed-background neutral-neutral collisions"),
     ("boundary_off", {"K_DBoundarySource": "0"}, "remove FNIY interface strata 3-5"),
@@ -78,11 +83,15 @@ METRICS = {
     "tri_mean_TD2": "Tri_density_weighted_mean_T_D2_0",
     "b2_mean_TD": "B2_density_weighted_mean_T_D_0",
     "b2_mean_TD2": "B2_density_weighted_mean_T_D2_0",
+    "tri_thermal_TD2": "Tri_thermal_density_weighted_mean_T_D2_0",
+    "b2_thermal_TD2": "B2_mapped_thermal_density_weighted_mean_T_D2_0",
     "source_tri_D": "SourceStratum_tri_n_D_0_total",
     "source_tri_D2": "SourceStratum_tri_n_D2_0_total",
     "source_b2_D": "SourceStratum_b2_n_D_0_total",
     "source_b2_D2": "SourceStratum_b2_n_D2_0_total",
+    "source_b2_TD2": "SourceStratum_b2_total_T_D2_0_total",
     "target_D2_shape": "Target_D2_source_shape_inner",
+    "target_D2_shape_outer": "Target_D2_source_shape_outer",
 }
 
 
@@ -110,7 +119,13 @@ def prepare(args):
     outdir.mkdir(parents=True, exist_ok=True)
     base_text = base.read_text()
     rows = []
-    for label, changes, note in VARIANTS:
+    requested = set(args.variants or [])
+    known = {label for label, _, _ in VARIANTS}
+    unknown = sorted(requested - known)
+    if unknown:
+        raise ValueError(f"unknown variants: {', '.join(unknown)}")
+    variants = [variant for variant in VARIANTS if not requested or variant[0] in requested]
+    for label, changes, note in variants:
         setting = outdir / f"setting_{label}_tmp.log"
         setting.write_text(replace_settings(base_text, changes))
         rows.append(
@@ -286,6 +301,11 @@ def parser():
         sub.add_argument("--root", default=".")
         sub.add_argument("--base", default="Inputfile/settingfile/setting_Trimesh_D_5.log")
         sub.add_argument("--outdir", default="tmp/physics_switch_scan")
+        sub.add_argument(
+            "--variants",
+            nargs="*",
+            help="submit only these named variants (default: all)",
+        )
         if command == "submit":
             sub.add_argument("--case", default="case_input/2MW-5e19")
             sub.add_argument("--dry-run", action="store_true")
