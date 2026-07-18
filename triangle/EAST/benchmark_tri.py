@@ -903,6 +903,131 @@ def density_weighted_temperature_rows(
     return [mean_row, energy_row]
 
 
+def b2_temperature_density_regions(volume):
+    active = volume > 0.0
+    regions = {'all': active.copy()}
+    for name, first_poloidal, last_poloidal in (
+        ('inner_divertor', 1, 24),
+        ('main_chamber', 25, 72),
+        ('outer_divertor', 73, 96),
+    ):
+        mask = np.zeros_like(active)
+        mask[first_poloidal:last_poloidal + 1, 1:37] = True
+        regions[name] = mask & active
+    for name, poloidal, first_radial, last_radial in (
+        ('inner_target', 1, 1, 36),
+        ('inner_target_r30_36', 1, 30, 36),
+        ('outer_target', 96, 1, 36),
+        ('outer_target_r30_36', 96, 30, 36),
+    ):
+        mask = np.zeros_like(active)
+        mask[poloidal, first_radial:last_radial + 1] = True
+        regions[name] = mask & active
+    return regions
+
+
+def append_temperature_density_region_rows(
+    rows, species, regions, code_density, ref_density,
+    code_total, ref_total, code_thermal, ref_thermal, volume,
+):
+    code_flow = np.maximum(code_total - code_thermal, 0.0)
+    ref_flow = np.maximum(ref_total - ref_thermal, 0.0)
+    for region, mask in regions.items():
+        if not np.any(mask):
+            continue
+        density_row = metric_row(
+            f'B2_coupled_{region}_n_{species}_0',
+            code_density[mask], ref_density[mask], volume[mask],
+        )
+        density_row['mesh'] = 'b2'
+        density_row['region'] = region
+        density_row['note'] = 'mapped triangle density inventory in the coupled n/T audit'
+        rows.append(density_row)
+        for label, code_temperature, ref_temperature in (
+            ('total', code_total, ref_total),
+            ('thermal', code_thermal, ref_thermal),
+            ('flow', code_flow, ref_flow),
+        ):
+            temperature_rows = density_weighted_temperature_rows(
+                f'B2_coupled_{region}_{label}', species,
+                code_density[mask], ref_density[mask],
+                code_temperature[mask], ref_temperature[mask], volume[mask],
+            )
+            for row in temperature_rows:
+                row['mesh'] = 'b2'
+                row['region'] = region
+                row['note'] = (
+                    row.get('note', '')
+                    + f'; coupled density/{label}-temperature regional audit'
+                )
+            rows.extend(temperature_rows)
+
+
+def write_temperature_density_hotspots(
+    path, species, code_density, ref_density, code_total, ref_total,
+    code_thermal, ref_thermal, volume, electron_temperature,
+    ion_temperature,
+):
+    code_flow = np.maximum(code_total - code_thermal, 0.0)
+    ref_flow = np.maximum(ref_total - ref_thermal, 0.0)
+    code_nt = code_density * code_thermal * volume
+    ref_nt = ref_density * ref_thermal * volume
+    delta_nt = code_nt - ref_nt
+    active = volume > 0.0
+    absolute_total = np.sum(np.abs(delta_nt[active]))
+    records = []
+    for i, j in zip(*np.nonzero(active)):
+        if i <= 24:
+            region = 'inner_divertor'
+        elif i <= 72:
+            region = 'main_chamber'
+        else:
+            region = 'outer_divertor'
+        if i == 1:
+            region = 'inner_target'
+        elif i == 96:
+            region = 'outer_target'
+        records.append({
+            'species': species,
+            'poloidal_index': i,
+            'radial_index': j,
+            'region': region,
+            'volume_m3': volume[i, j],
+            'Te_eV': electron_temperature[i, j],
+            'Ti_eV': ion_temperature[i, j],
+            'code_n_m-3': code_density[i, j],
+            'ref_n_m-3': ref_density[i, j],
+            'n_ratio': (
+                code_density[i, j] / ref_density[i, j]
+                if ref_density[i, j] > 0.0 else np.nan
+            ),
+            'code_total_T_eV': code_total[i, j],
+            'ref_total_T_eV': ref_total[i, j],
+            'code_thermal_T_eV': code_thermal[i, j],
+            'ref_thermal_T_eV': ref_thermal[i, j],
+            'thermal_T_ratio': (
+                code_thermal[i, j] / ref_thermal[i, j]
+                if ref_thermal[i, j] > 0.0 else np.nan
+            ),
+            'code_flow_T_eV': code_flow[i, j],
+            'ref_flow_T_eV': ref_flow[i, j],
+            'code_nT_inventory_eV': code_nt[i, j],
+            'ref_nT_inventory_eV': ref_nt[i, j],
+            'delta_nT_inventory_eV': delta_nt[i, j],
+            'absolute_delta_fraction': (
+                abs(delta_nt[i, j]) / absolute_total
+                if absolute_total > 0.0 else np.nan
+            ),
+        })
+    records.sort(key=lambda record: abs(record['delta_nT_inventory_eV']), reverse=True)
+    for rank, record in enumerate(records, 1):
+        record['absolute_delta_rank'] = rank
+    with Path(path).open('w', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=records[0].keys())
+        writer.writeheader()
+        writer.writerows(records)
+
+
 def source_metric_row(name, code, ref):
     finite = np.isfinite(code) & np.isfinite(ref)
     positive = finite & (code > 0.0) & (ref > 0.0)
@@ -1373,6 +1498,9 @@ def main():
             vol_path = case / '2D_data/vol_2D.dat'
         if vol_path.exists():
             b2_vol = read_b2_matrix(vol_path)
+            b2_regions = b2_temperature_density_regions(b2_vol)
+            electron_temperature = read_2d_data(case / '2D_data/te_2D.dat')
+            ion_temperature = read_2d_data(case / '2D_data/ti_2D.dat')
             rows.append(b2_tri_volume_row(b2_vol, vol, b2))
             mapped_eirene_b2 = {
                 name: map_tri_density_to_b2(
@@ -1569,6 +1697,20 @@ def main():
                         + '; mapped triangle moments with B2-cell flow removed'
                     )
                 rows.extend(thermal_rows)
+                append_temperature_density_region_rows(
+                    rows, species, b2_regions,
+                    code_mapped_density, ref_mapped_density,
+                    code_mapped_total, ref_mapped_total,
+                    code_thermal, ref_thermal, b2_vol,
+                )
+                write_temperature_density_hotspots(
+                    outdir / f'B2_{species}_temperature_density_hotspots.csv',
+                    species,
+                    code_mapped_density, ref_mapped_density,
+                    code_mapped_total, ref_mapped_total,
+                    code_thermal, ref_thermal, b2_vol,
+                    electron_temperature, ion_temperature,
+                )
                 plot_b2_field(
                     outdir, f'B2_mapped_T_{species}_0_thermal',
                     code_thermal, ref_thermal,
