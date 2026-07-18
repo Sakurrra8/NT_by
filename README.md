@@ -503,6 +503,20 @@ sbatch -M mindwell benchmark.slurm \
 and an optional output directory as its tenth argument. It creates the compact
 trend report plus the complete multi-case PDF on a compute node.
 
+For one-factor physics sensitivities around the canonical 5e19 setting, use
+`tools/physics_switch_scan.py`. It creates ignored `_tmp.log` settings, submits
+each simulation plus its dependent benchmark, and records all job IDs in a
+manifest. The summary keeps EIRENE source-integral agreement, density spatial
+L1, target-local D2, temperature, wall-backside flux, and numerical losses as
+separate columns; its aggregate score is diagnostic and must not override a
+known EIRENE input choice.
+
+```bash
+python3 tools/physics_switch_scan.py submit
+# after the dependent benchmark jobs finish
+python3 tools/physics_switch_scan.py summarize
+```
+
 For the 5e19 no-pump/no-puff test, D2+ disagreement should be debugged as a
 chain:
 
