@@ -730,6 +730,91 @@ def map_tri_density_to_b2(field, tri_vol, b2, shape):
     return density, mapped_volume
 
 
+def thermal_temperature(total_temperature, velocity, mass_kg):
+    total_temperature = np.asarray(total_temperature, dtype=float)
+    velocity = np.asarray(velocity, dtype=float)
+    if velocity.shape != (total_temperature.size, 3):
+        raise ValueError('temperature and velocity shapes do not match')
+    flow_temperature = (
+        mass_kg * np.sum(velocity * velocity, axis=1)
+        / (3.0 * ELECTRON_CHARGE)
+    )
+    return np.maximum(total_temperature - flow_temperature, 0.0)
+
+
+def map_tri_neutral_moments_to_b2(
+    density, total_temperature, velocity, tri_vol, b2, b2_volume, mass_kg,
+):
+    density = np.asarray(density, dtype=float)
+    total_temperature = np.asarray(total_temperature, dtype=float)
+    velocity = np.asarray(velocity, dtype=float)
+    if (
+        len(density) != len(tri_vol)
+        or len(total_temperature) != len(tri_vol)
+        or velocity.shape != (len(tri_vol), 3)
+        or len(b2) != len(tri_vol)
+    ):
+        raise ValueError('triangle neutral moment lengths do not match')
+
+    shape = b2_volume.shape
+    valid = (
+        (b2[:, 0] >= 0)
+        & (b2[:, 0] < shape[0])
+        & (b2[:, 1] >= 0)
+        & (b2[:, 1] < shape[1])
+        & np.isfinite(density)
+        & np.isfinite(total_temperature)
+        & np.all(np.isfinite(velocity), axis=1)
+    )
+    inventory = np.zeros(shape)
+    n_temperature = np.zeros(shape)
+    momentum_velocity = np.zeros(shape + (3,))
+    cell = (b2[valid, 0], b2[valid, 1])
+    tri_inventory = density[valid] * tri_vol[valid]
+    np.add.at(inventory, cell, tri_inventory)
+    np.add.at(
+        n_temperature,
+        cell,
+        tri_inventory * total_temperature[valid],
+    )
+    for component in range(3):
+        np.add.at(
+            momentum_velocity[..., component],
+            cell,
+            tri_inventory * velocity[valid, component],
+        )
+
+    mapped_density = np.divide(
+        inventory,
+        b2_volume,
+        out=np.zeros_like(inventory),
+        where=b2_volume > 0.0,
+    )
+    mapped_total_temperature = np.divide(
+        n_temperature,
+        inventory,
+        out=np.zeros_like(n_temperature),
+        where=inventory > 0.0,
+    )
+    mapped_velocity = np.divide(
+        momentum_velocity,
+        inventory[..., None],
+        out=np.zeros_like(momentum_velocity),
+        where=inventory[..., None] > 0.0,
+    )
+    mapped_thermal_temperature = thermal_temperature(
+        mapped_total_temperature.ravel(),
+        mapped_velocity.reshape(-1, 3),
+        mass_kg,
+    ).reshape(shape)
+    return (
+        mapped_density,
+        mapped_total_temperature,
+        mapped_thermal_temperature,
+        mapped_velocity,
+    )
+
+
 def metric_row(name, code, ref, vol):
     finite = np.isfinite(code) & np.isfinite(ref)
     positive = finite & (code > 0.0) & (ref > 0.0)
@@ -1129,6 +1214,7 @@ def main():
             fields.append((name, np.loadtxt(code_path), eirene_triangles[name]))
 
     velocity_fields = []
+    velocity_values = {}
     for species in ('D', 'D2'):
         code_path = out / f'{species}_0_V_Tri'
         if not code_path.exists():
@@ -1138,6 +1224,18 @@ def main():
         if code.shape != ref.shape or code.shape != (len(vol), 3):
             raise ValueError(f'V_{species}_0 shape mismatch')
         velocity_fields.append((species, code, ref))
+        velocity_values[species] = (code, ref)
+
+        code_total_path = out / f'T_{species}_0_Tri'
+        if code_total_path.exists():
+            code_thermal = thermal_temperature(
+                np.loadtxt(code_total_path), code, NT_MASSES[species]
+            )
+            fields.append((
+                f'T_{species}_0_thermal',
+                code_thermal,
+                eirene_triangles[f'T_{species}_0_thermal'],
+            ))
 
     d2ion_path = out / 'n_D2_1_Tri'
     solps_d2ion_path = case / '2D_data/nDmoleculeion_2D.data'
@@ -1176,6 +1274,21 @@ def main():
         for row in temperature_rows:
             row['mesh'] = 'tri'
         rows.extend(temperature_rows)
+
+        thermal_name = f'T_{species}_0_thermal'
+        if thermal_name in field_values:
+            code_thermal, ref_thermal = field_values[thermal_name]
+            thermal_rows = density_weighted_temperature_rows(
+                'Tri_thermal', species, code_density, ref_density,
+                code_thermal, ref_thermal, vol,
+            )
+            for row in thermal_rows:
+                row['mesh'] = 'tri'
+                row['note'] = (
+                    row.get('note', '')
+                    + '; mean-flow kinetic energy subtracted in each triangle'
+                )
+            rows.extend(thermal_rows)
 
     inner_tail_triangles = (
         (b2[:, 0] == 1) & (b2[:, 1] >= 30) & (b2[:, 1] <= 36)
@@ -1379,6 +1492,52 @@ def main():
                 for row in temperature_rows:
                     row['mesh'] = 'b2'
                 rows.extend(temperature_rows)
+
+                if species not in velocity_values:
+                    continue
+                tri_density, ref_tri_density = field_values[density_name]
+                tri_total, ref_tri_total = field_values[temperature_name]
+                tri_velocity, ref_tri_velocity = velocity_values[species]
+                mapped_code = map_tri_neutral_moments_to_b2(
+                    tri_density, tri_total, tri_velocity, vol, b2, b2_vol,
+                    NT_MASSES[species],
+                )
+                mapped_ref = map_tri_neutral_moments_to_b2(
+                    ref_tri_density, ref_tri_total, ref_tri_velocity,
+                    vol, b2, b2_vol,
+                    MASS_NUMBERS[species] * ATOMIC_MASS_UNIT,
+                )
+                code_mapped_density, _, code_thermal, _ = mapped_code
+                ref_mapped_density, _, ref_thermal, _ = mapped_ref
+                row = metric_row(
+                    f'B2_mapped_T_{species}_0_thermal',
+                    code_thermal.ravel(), ref_thermal.ravel(),
+                    b2_vol.ravel(),
+                )
+                row['mesh'] = 'b2'
+                row['note'] = (
+                    'triangle neutral number, total energy, and momentum '
+                    'conservatively aggregated to B2 before subtracting '
+                    'the B2-cell mean-flow kinetic energy'
+                )
+                rows.append(row)
+                thermal_rows = density_weighted_temperature_rows(
+                    'B2_mapped_thermal', species,
+                    code_mapped_density.ravel(), ref_mapped_density.ravel(),
+                    code_thermal.ravel(), ref_thermal.ravel(),
+                    b2_vol.ravel(),
+                )
+                for thermal_row in thermal_rows:
+                    thermal_row['mesh'] = 'b2'
+                    thermal_row['note'] = (
+                        thermal_row.get('note', '')
+                        + '; mapped triangle moments with B2-cell flow removed'
+                    )
+                rows.extend(thermal_rows)
+                plot_b2_field(
+                    outdir, f'B2_mapped_T_{species}_0_thermal',
+                    code_thermal, ref_thermal,
+                )
             d2_spatial_path = out / 'D2_b2_density_by_source.csv'
             d2_summary_path = out / 'source_stratum_summary.csv'
             d2_density_path = out / 'n_D2_0'
