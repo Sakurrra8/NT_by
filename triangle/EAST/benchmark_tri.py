@@ -341,7 +341,7 @@ def neutral_background_rows(case, reference, volume):
             continue
         density = np.loadtxt(paths['density'])
         thermal_temperature = np.maximum(
-            np.loadtxt(paths['temperature']), 0.1
+            np.loadtxt(paths['temperature']), 0.0
         )
         velocity = np.loadtxt(paths['velocity'])
         if (
