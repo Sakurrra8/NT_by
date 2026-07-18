@@ -90,6 +90,11 @@ METRICS = {
     "source_b2_D": "SourceStratum_b2_n_D_0_total",
     "source_b2_D2": "SourceStratum_b2_n_D2_0_total",
     "source_b2_TD2": "SourceStratum_b2_total_T_D2_0_total",
+    "b2_norm_D2": "B2_source_normalized_coupled_all_n_D2_0",
+    "b2_norm_inner_D2": "B2_source_normalized_coupled_inner_divertor_n_D2_0",
+    "b2_norm_outer_D2": "B2_source_normalized_coupled_outer_divertor_n_D2_0",
+    "b2_norm_inner_nTD2": "B2_source_normalized_coupled_inner_divertor_thermal_nT_D2_0",
+    "b2_norm_outer_nTD2": "B2_source_normalized_coupled_outer_divertor_thermal_nT_D2_0",
     "target_D2_shape": "Target_D2_source_shape_inner",
     "target_D2_shape_outer": "Target_D2_source_shape_outer",
 }

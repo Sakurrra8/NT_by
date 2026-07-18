@@ -1014,6 +1014,7 @@ def b2_temperature_density_regions(volume):
 def append_temperature_density_region_rows(
     rows, species, regions, code_density, ref_density,
     code_total, ref_total, code_thermal, ref_thermal, volume,
+    prefix='B2_coupled', audit_note='raw spatial density estimator',
 ):
     code_flow = np.maximum(code_total - code_thermal, 0.0)
     ref_flow = np.maximum(ref_total - ref_thermal, 0.0)
@@ -1021,12 +1022,14 @@ def append_temperature_density_region_rows(
         if not np.any(mask):
             continue
         density_row = metric_row(
-            f'B2_coupled_{region}_n_{species}_0',
+            f'{prefix}_{region}_n_{species}_0',
             code_density[mask], ref_density[mask], volume[mask],
         )
         density_row['mesh'] = 'b2'
         density_row['region'] = region
-        density_row['note'] = 'mapped triangle density inventory in the coupled n/T audit'
+        density_row['note'] = (
+            f'mapped triangle density inventory in the coupled n/T audit; {audit_note}'
+        )
         rows.append(density_row)
         for label, code_temperature, ref_temperature in (
             ('total', code_total, ref_total),
@@ -1034,7 +1037,7 @@ def append_temperature_density_region_rows(
             ('flow', code_flow, ref_flow),
         ):
             temperature_rows = density_weighted_temperature_rows(
-                f'B2_coupled_{region}_{label}', species,
+                f'{prefix}_{region}_{label}', species,
                 code_density[mask], ref_density[mask],
                 code_temperature[mask], ref_temperature[mask], volume[mask],
             )
@@ -1043,7 +1046,8 @@ def append_temperature_density_region_rows(
                 row['region'] = region
                 row['note'] = (
                     row.get('note', '')
-                    + f'; coupled density/{label}-temperature regional audit'
+                    + f'; coupled density/{label}-temperature regional audit; '
+                    + audit_note
                 )
             rows.extend(temperature_rows)
 
@@ -1792,6 +1796,56 @@ def main():
                     outdir / f'B2_{species}_temperature_density_hotspots.csv',
                     species,
                     code_mapped_density, ref_mapped_density,
+                    code_mapped_total, ref_mapped_total,
+                    code_thermal, ref_thermal, b2_vol,
+                    electron_temperature, ion_temperature,
+                )
+                integral_name = {
+                    'D': 'pdena_int_b2',
+                    'D2': 'pdenm_int_b2',
+                }[species]
+                reported_ref_inventory = read_eirene_field(
+                    fort44, integral_name
+                )[0]
+                mapped_ref_inventory = float(np.sum(
+                    ref_mapped_density * b2_vol
+                ))
+                reference_density_scale = (
+                    reported_ref_inventory / mapped_ref_inventory
+                    if mapped_ref_inventory > 0.0 else 1.0
+                )
+                normalized_ref_density = (
+                    ref_mapped_density * reference_density_scale
+                )
+                rows.append({
+                    'field': f'B2_reference_density_source_scale_{species}',
+                    'mesh': 'b2',
+                    'code_volume_integral': mapped_ref_inventory,
+                    'ref_volume_integral': reported_ref_inventory,
+                    'reference_density_scale': reference_density_scale,
+                    'note': (
+                        'constant applied to the mapped EIRENE density only '
+                        'for source-normalized coupled density/nT diagnostics'
+                    ),
+                })
+                append_temperature_density_region_rows(
+                    rows, species, b2_regions,
+                    code_mapped_density, normalized_ref_density,
+                    code_mapped_total, ref_mapped_total,
+                    code_thermal, ref_thermal, b2_vol,
+                    prefix='B2_source_normalized_coupled',
+                    audit_note=(
+                        f'EIRENE density scaled by {reference_density_scale:.8g} '
+                        f'to match {integral_name} index 0'
+                    ),
+                )
+                write_temperature_density_hotspots(
+                    outdir / (
+                        f'B2_{species}_temperature_density_hotspots_'
+                        'source_normalized.csv'
+                    ),
+                    species,
+                    code_mapped_density, normalized_ref_density,
                     code_mapped_total, ref_mapped_total,
                     code_thermal, ref_thermal, b2_vol,
                     electron_temperature, ion_temperature,
