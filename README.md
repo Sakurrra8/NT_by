@@ -55,8 +55,50 @@ Inputfile/settingfile/setting_Trimesh_D_1.log
 Inputfile/settingfile/setting_Trimesh_D_9.log
 ```
 
-These are no-variance-reduction triangular-mesh settings.  `Tri_sbatch.sh`
-submits the sweep.
+These nine files are the only maintained EAST validation inputs. They use the
+same physics and numerical switches and differ only in `Casepath`:
+
+| Setting | SOLPS/EIRENE case | Upstream density |
+| --- | --- | ---: |
+| `setting_Trimesh_D_1.log` | `case_input/2MW-3.2e19/` | `3.2e19 m^-3` |
+| `setting_Trimesh_D_2.log` | `case_input/2MW-3.6e19/` | `3.6e19 m^-3` |
+| `setting_Trimesh_D_3.log` | `case_input/2MW-4e19/` | `4.0e19 m^-3` |
+| `setting_Trimesh_D_4.log` | `case_input/2MW-4.6e19/` | `4.6e19 m^-3` |
+| `setting_Trimesh_D_5.log` | `case_input/2MW-5e19/` | `5.0e19 m^-3` |
+| `setting_Trimesh_D_6.log` | `case_input/2MW-5.4e19/` | `5.4e19 m^-3` |
+| `setting_Trimesh_D_7.log` | `case_input/2MW-5.5e19/` | `5.5e19 m^-3` |
+| `setting_Trimesh_D_8.log` | `case_input/2MW-5.6e19/` | `5.6e19 m^-3` |
+| `setting_Trimesh_D_9.log` | `case_input/2MW-5.8e19/` | `5.8e19 m^-3` |
+
+They disable variance reduction and direct D2/D2+ injection. `Tri_sbatch.sh`
+submits the complete sweep. Temporary sensitivity inputs should be generated
+outside `Inputfile/settingfile/` and should not be committed.
+
+### VSC Workflow
+
+Keep `/data/leuven/379/vsc37950/nt` as the single formal HPC checkout. Update
+it with a fast-forward so local test edits cannot silently enter a validation
+run:
+
+```bash
+cd /data/leuven/379/vsc37950/nt
+git status --short
+git fetch origin
+git merge --ff-only origin/main
+sbatch build.slurm
+```
+
+After the build succeeds, submit one setting or all nine settings:
+
+```bash
+sbatch crslum.slurm Inputfile/settingfile/setting_Trimesh_D_5.log
+bash Inputfile/settingfile/Tri_sbatch.sh
+```
+
+Run simulation, benchmark, and report generation through Slurm rather than on
+the login node. Record the Git revision, setting filename, simulation job ID,
+and report job ID with every comparison. Generated files belong under
+`Outputfile/` and are intentionally ignored by Git.
 
 ## Current EAST Triangular Inputs
 

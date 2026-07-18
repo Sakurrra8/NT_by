@@ -9,6 +9,9 @@ tmp/
 Outputfile/test/
 log/
 bin/
+Inputfile/settingfile/*_tmp.log
+Inputfile/settingfile/*_test.log
+/*_tmp.log
 Outputfile_Pec/
 Outputfile/
 obj/*
