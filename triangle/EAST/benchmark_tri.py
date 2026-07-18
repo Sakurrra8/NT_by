@@ -1748,6 +1748,43 @@ def main():
                     ref_thermal,
                     _,
                 ) = mapped_ref
+                for owner, direct_density, mapped_density, direct_total, mapped_total in (
+                    (
+                        'NT', code_density, code_mapped_density,
+                        code_temperature, code_mapped_total,
+                    ),
+                    (
+                        'EIRENE', ref_density, ref_mapped_density,
+                        ref_temperature, ref_mapped_total,
+                    ),
+                ):
+                    for quantity, direct, mapped in (
+                        ('n', direct_density, mapped_density),
+                        ('total_T', direct_total, mapped_total),
+                    ):
+                        consistency = metric_row(
+                            f'{owner}_B2_direct_vs_tri_mapped_{quantity}_{species}_0',
+                            direct.ravel(), mapped.ravel(), b2_vol.ravel(),
+                        )
+                        consistency['mesh'] = 'b2_internal_consistency'
+                        consistency['note'] = (
+                            f'{owner} direct B2 tally compared with the '
+                            'conservative map of its triangle moments'
+                        )
+                        rows.append(consistency)
+                    consistency_rows = density_weighted_temperature_rows(
+                        f'{owner}_B2_direct_vs_tri_mapped_total', species,
+                        direct_density.ravel(), mapped_density.ravel(),
+                        direct_total.ravel(), mapped_total.ravel(),
+                        b2_vol.ravel(),
+                    )
+                    for consistency in consistency_rows:
+                        consistency['mesh'] = 'b2_internal_consistency'
+                        consistency['note'] = (
+                            f'{owner} direct B2 density/energy moments compared '
+                            'with conservatively mapped triangle moments'
+                        )
+                    rows.extend(consistency_rows)
                 row = metric_row(
                     f'B2_mapped_T_{species}_0_total',
                     code_mapped_total.ravel(), ref_mapped_total.ravel(),

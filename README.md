@@ -308,6 +308,19 @@ before converting the remainder to temperature. In contrast, the reported NT
 and EIRENE density-temperature tallies use total kinetic energy, including the
 drift contribution.
 
+Generate all six fixed-background files from one EIRENE result with:
+
+```bash
+python3 tools/export_neutral_tri_background.py \
+  --fort46 case_input/2MW-5e19/solps_output/fort.46 \
+  --outdir /path/to/staged_case
+```
+
+Use a staged case for sensitivity tests. Only replace the canonical case files
+after the EIRENE `IBGK=111/112` iteration has converged and `fort.46` was written
+after the final `MODBGK` update; mixing these backgrounds with another EIRENE
+run changes both neutral-neutral collision frequency and partner velocity.
+
 The target model uses the D-on-W TRIM database selected by the EIRENE input.
 `DTargetIncidentModel=1` matches the automatically generated EIRENE recycling
 source (`NEMODS=7` in input block 14). It samples the local drifting Maxwellian

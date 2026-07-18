@@ -2632,6 +2632,9 @@ void Particle::Init(int k, int z, double scattering_cosine)
 	}
 	for (int i = 0; i < 3; i++)
 		V_[i] *= vel;
+	// Keep per-particle energy consistent with the sampled velocity.  Tn_ is
+	// later used by wall/target energy tallies and reflection models.
+	CalTn();
 	if (MeshMode == 3 && !in_additional_cell_ &&
 		(surface_reemission_type == 11 || surface_reemission_type == 1))
 	{
