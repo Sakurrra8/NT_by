@@ -1,4 +1,6 @@
 Outputfile/log/
+output/
+tmp/
 .vscode/
 !.vscode/
 !.vscode/tasks.json
