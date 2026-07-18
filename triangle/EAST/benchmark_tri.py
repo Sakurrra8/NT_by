@@ -694,80 +694,86 @@ def b2_source_spatial_rows(spatial_path, summary_path, density, volume):
     return rows
 
 
-def inner_target_d2_source_shape_row(
+def target_d2_source_shape_rows(
     output_data, case, fort44_path, target_profiles
 ):
     target_path = output_data / 'target_incident_D.csv'
-    area_path = case / '2D_data/sarea_l.data'
-    if not target_path.exists() or not fort44_path.exists() or not area_path.exists():
-        return None
+    if not target_path.exists() or not fort44_path.exists():
+        return []
 
     with target_path.open(newline='') as stream:
         target_rows = {
             int(record['target']): record
             for record in csv.DictReader(stream)
         }
-    if not all(index in target_rows for index in range(1, 37)):
-        return None
-
-    code = np.asarray([
-        float(target_rows[index]['D2_source_s-1'])
-        for index in range(1, 37)
-    ])
     resolved_area = read_eirene_field(fort44_path, 'sarea_res')
     resolved_molecule_recycling = read_eirene_field(
         fort44_path, 'ewldmr_res'
     )
-    inner_segment_area = np.abs(np.loadtxt(area_path)[:, 1])[1:37]
-    segment_offset = next(
-        (
-            offset
-            for offset in range(len(resolved_area) - len(inner_segment_area) + 1)
-            if np.allclose(
-                resolved_area[offset:offset + len(inner_segment_area)],
-                inner_segment_area,
-                rtol=1.0e-10,
-                atol=1.0e-12,
-            )
-        ),
-        None,
-    )
-    if segment_offset is None:
-        return None
-
-    reference = (
-        resolved_molecule_recycling[
-            segment_offset:segment_offset + len(inner_segment_area)
-        ]
-        * inner_segment_area
-    )
-    if np.sum(code) <= 0.0 or np.sum(reference) <= 0.0:
-        return None
-
-    code_share = code / np.sum(code)
-    reference_share = reference / np.sum(reference)
-    for radial_index, (code_value, ref_value) in enumerate(
-        zip(code_share, reference_share), start=1
+    rows = []
+    for side, target_offset, area_name in (
+        ('inner', 0, 'sarea_l.data'),
+        ('outer', 38, 'sarea_r.data'),
     ):
-        target_profiles.append({
-            'field': 'Target_D2_source_shape',
-            'side': 'inner',
-            'radial_index': radial_index,
-            'code': code_value,
-            'reference': ref_value,
-            'ratio': code_value / ref_value if ref_value > 0.0 else np.nan,
-        })
-
-    row = source_metric_row(
-        'Target_D2_source_shape_inner', code_share, reference_share
-    )
-    row['mesh'] = 'target'
-    row['region'] = 'inner_target_radial_1_36'
-    row['note'] = (
-        'normalized radial shape only: code D2_source_s-1 versus '
-        'EIRENE ewldmr_res times resolved segment area; absolute units differ'
-    )
-    return row
+        area_path = case / '2D_data' / area_name
+        target_indices = [target_offset + radial for radial in range(1, 37)]
+        if (
+            not area_path.exists()
+            or not all(index in target_rows for index in target_indices)
+        ):
+            continue
+        code = np.asarray([
+            float(target_rows[index]['D2_source_s-1'])
+            for index in target_indices
+        ])
+        segment_area = np.abs(np.loadtxt(area_path)[:, 1])[1:37]
+        segment_offset = next(
+            (
+                offset
+                for offset in range(len(resolved_area) - len(segment_area) + 1)
+                if np.allclose(
+                    resolved_area[offset:offset + len(segment_area)],
+                    segment_area,
+                    rtol=1.0e-10,
+                    atol=1.0e-12,
+                )
+            ),
+            None,
+        )
+        if segment_offset is None:
+            continue
+        reference = (
+            resolved_molecule_recycling[
+                segment_offset:segment_offset + len(segment_area)
+            ]
+            * segment_area
+        )
+        if np.sum(code) <= 0.0 or np.sum(reference) <= 0.0:
+            continue
+        code_share = code / np.sum(code)
+        reference_share = reference / np.sum(reference)
+        for radial_index, (code_value, ref_value) in enumerate(
+            zip(code_share, reference_share), start=1
+        ):
+            target_profiles.append({
+                'field': 'Target_D2_source_shape',
+                'side': side,
+                'radial_index': radial_index,
+                'code': code_value,
+                'reference': ref_value,
+                'ratio': code_value / ref_value if ref_value > 0.0 else np.nan,
+            })
+        row = source_metric_row(
+            f'Target_D2_source_shape_{side}', code_share, reference_share
+        )
+        row['mesh'] = 'target'
+        row['region'] = f'{side}_target_radial_1_36'
+        row['note'] = (
+            'normalized radial shape only: code D2_source_s-1 versus '
+            'EIRENE ewldmr_res times resolved segment area; absolute units differ'
+        )
+        rows.append(row)
+    return rows
 
 
 def map_b2_to_tri(field, b2):
@@ -1966,11 +1972,9 @@ def main():
     if source_summary.exists() and fort44.exists():
         rows.extend(source_stratum_rows(source_summary, fort44))
 
-    target_source_row = inner_target_d2_source_shape_row(
+    rows.extend(target_d2_source_shape_rows(
         out, case, fort44, target_profiles
-    )
-    if target_source_row is not None:
-        rows.append(target_source_row)
+    ))
 
     if target_profiles:
         with open(outdir / 'b2_target_profiles.csv', 'w', newline='') as f:
