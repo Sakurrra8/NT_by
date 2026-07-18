@@ -472,6 +472,11 @@ do not attribute that residual to NT. Use `check_b2_alignment.py` when a narrow
 target region disagrees strongly, to rule out an axis flip or integer-cell
 offset before changing transport physics.
 
+Temperature tables include both the field-wise volume metric and a robust
+density-weighted mean, `integral(n*T*dV) / integral(n*dV)`. Prefer the latter
+for switch scans because rare high-energy histories in nearly empty cells can
+dominate a direct volume average of the temperature field.
+
 For a full illustrated comparison, run the benchmark without
 `--skip-b2-sources`, then assemble every generated triangle, B2, velocity,
 particle-flux, source/sink, and target-profile figure into one indexed PDF:

@@ -74,6 +74,10 @@ METRICS = {
     "b2_D2": "B2_n_D2_0",
     "b2_TD": "B2_T_D_0",
     "b2_TD2": "B2_T_D2_0",
+    "tri_mean_TD": "Tri_density_weighted_mean_T_D_0",
+    "tri_mean_TD2": "Tri_density_weighted_mean_T_D2_0",
+    "b2_mean_TD": "B2_density_weighted_mean_T_D_0",
+    "b2_mean_TD2": "B2_density_weighted_mean_T_D2_0",
     "source_tri_D": "SourceStratum_tri_n_D_0_total",
     "source_tri_D2": "SourceStratum_tri_n_D2_0_total",
     "source_b2_D": "SourceStratum_b2_n_D_0_total",
@@ -242,7 +246,7 @@ def summarize(args):
             for species in ("D", "D2")
         )
         row["temperature_bias_score_pct"] = mean_finite(
-            abs(row[f"{mesh}_{field}_bias_pct"])
+            abs(row[f"{mesh}_mean_{field}_bias_pct"])
             for mesh in ("tri", "b2")
             for field in ("TD", "TD2")
         )

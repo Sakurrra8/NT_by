@@ -768,6 +768,56 @@ def metric_row(name, code, ref, vol):
     return row
 
 
+def density_weighted_temperature_rows(
+    prefix, species, code_density, ref_density, code_temperature,
+    ref_temperature, volume,
+):
+    finite = (
+        np.isfinite(code_density)
+        & np.isfinite(ref_density)
+        & np.isfinite(code_temperature)
+        & np.isfinite(ref_temperature)
+        & np.isfinite(volume)
+    )
+    active = finite & ((code_density > 0.0) | (ref_density > 0.0))
+    if not np.any(active):
+        return [{'field': f'{prefix}_density_weighted_mean_T_{species}_0', 'cells': 0}]
+
+    code_inventory = np.sum(code_density[active] * volume[active])
+    ref_inventory = np.sum(ref_density[active] * volume[active])
+    code_n_t = np.sum(
+        code_density[active] * code_temperature[active] * volume[active]
+    )
+    ref_n_t = np.sum(
+        ref_density[active] * ref_temperature[active] * volume[active]
+    )
+    code_mean = code_n_t / code_inventory if code_inventory > 0.0 else np.nan
+    ref_mean = ref_n_t / ref_inventory if ref_inventory > 0.0 else np.nan
+    denominator = abs(ref_mean)
+    bias = (code_mean - ref_mean) / denominator if denominator > 0.0 else np.nan
+    mean_row = {
+        'field': f'{prefix}_density_weighted_mean_T_{species}_0',
+        'cells': int(np.sum(active)),
+        'code_volume_integral': float(code_mean),
+        'ref_volume_integral': float(ref_mean),
+        'volume_weighted_rel_l1': float(abs(bias)),
+        'volume_weighted_rel_bias': float(bias),
+        'code_density_integral': float(code_inventory),
+        'ref_density_integral': float(ref_inventory),
+        'code_nT_integral': float(code_n_t),
+        'ref_nT_integral': float(ref_n_t),
+        'note': 'density-weighted mean temperature: integral(n*T*dV) / integral(n*dV)',
+    }
+    energy_row = metric_row(
+        f'{prefix}_nT_{species}_0',
+        code_density * code_temperature,
+        ref_density * ref_temperature,
+        volume,
+    )
+    energy_row['note'] = 'neutral thermal-energy proxy n*T in eV m^-3'
+    return [mean_row, energy_row]
+
+
 def source_metric_row(name, code, ref):
     finite = np.isfinite(code) & np.isfinite(ref)
     positive = finite & (code > 0.0) & (ref > 0.0)
@@ -1112,6 +1162,21 @@ def main():
         plot_field(outdir, triangulation, wall, name, code, ref, args.xlim, args.ylim)
 
     field_values = {name: (code, ref) for name, code, ref in fields}
+    for species in ('D', 'D2'):
+        density_name = f'n_{species}_0'
+        temperature_name = f'T_{species}_0'
+        if density_name not in field_values or temperature_name not in field_values:
+            continue
+        code_density, ref_density = field_values[density_name]
+        code_temperature, ref_temperature = field_values[temperature_name]
+        temperature_rows = density_weighted_temperature_rows(
+            'Tri', species, code_density, ref_density,
+            code_temperature, ref_temperature, vol,
+        )
+        for row in temperature_rows:
+            row['mesh'] = 'tri'
+        rows.extend(temperature_rows)
+
     inner_tail_triangles = (
         (b2[:, 0] == 1) & (b2[:, 1] >= 30) & (b2[:, 1] <= 36)
     )
@@ -1208,12 +1273,14 @@ def main():
                 ('B2_T_D_0', 'T_D_0', 'tab2', 1.0 / 1.602176634e-19),
                 ('B2_T_D2_0', 'T_D2_0', 'tmb2', 1.0 / 1.602176634e-19),
             ]
+            b2_field_values = {}
             for name, code_name, ref_name, ref_scale in b2_neutral_fields:
                 code_path = out / code_name
                 if not code_path.exists():
                     continue
                 code = read_b2_matrix(code_path)
                 ref = read_eirene_b2_field(fort44, ref_name, ref_scale)
+                b2_field_values[code_name] = (code, ref)
                 row = metric_row(name, code.ravel(), ref.ravel(), b2_vol.ravel())
                 row['mesh'] = 'b2'
                 row['note'] = 'direct comparison with the exported EIRENE B2 field'
@@ -1294,6 +1361,24 @@ def main():
                         f'{first_radial}-{last_radial}'
                     )
                     rows.append(region_row)
+            for species in ('D', 'D2'):
+                density_name = f'n_{species}_0'
+                temperature_name = f'T_{species}_0'
+                if (
+                    density_name not in b2_field_values
+                    or temperature_name not in b2_field_values
+                ):
+                    continue
+                code_density, ref_density = b2_field_values[density_name]
+                code_temperature, ref_temperature = b2_field_values[temperature_name]
+                temperature_rows = density_weighted_temperature_rows(
+                    'B2', species, code_density.ravel(), ref_density.ravel(),
+                    code_temperature.ravel(), ref_temperature.ravel(),
+                    b2_vol.ravel(),
+                )
+                for row in temperature_rows:
+                    row['mesh'] = 'b2'
+                rows.extend(temperature_rows)
             d2_spatial_path = out / 'D2_b2_density_by_source.csv'
             d2_summary_path = out / 'source_stratum_summary.csv'
             d2_density_path = out / 'n_D2_0'
