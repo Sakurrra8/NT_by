@@ -95,8 +95,6 @@ METRICS = {
     "b2_norm_outer_D2": "B2_source_normalized_coupled_outer_divertor_n_D2_0",
     "b2_norm_inner_nTD2": "B2_source_normalized_coupled_inner_divertor_thermal_nT_D2_0",
     "b2_norm_outer_nTD2": "B2_source_normalized_coupled_outer_divertor_thermal_nT_D2_0",
-    "target_D2_shape": "Target_D2_source_shape_inner",
-    "target_D2_shape_outer": "Target_D2_source_shape_outer",
 }
 
 

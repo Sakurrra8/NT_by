@@ -742,34 +742,46 @@ def target_d2_source_shape_rows(
         )
         if segment_offset is None:
             continue
-        reference = resolved_molecule_recycling[
+        resolved_reference = resolved_molecule_recycling[
             segment_offset:segment_offset + len(segment_area)
         ]
-        if np.sum(code) <= 0.0 or np.sum(reference) <= 0.0:
+        if np.sum(code) <= 0.0:
             continue
         code_share = code / np.sum(code)
-        reference_share = reference / np.sum(reference)
-        for radial_index, (code_value, ref_value) in enumerate(
-            zip(code_share, reference_share), start=1
+        for reference_mode, reference in (
+            ('as_reported', resolved_reference),
+            ('area_weighted', resolved_reference * segment_area),
         ):
-            target_profiles.append({
-                'field': 'Target_D2_source_shape',
-                'side': side,
-                'radial_index': radial_index,
-                'code': code_value,
-                'reference': ref_value,
-                'ratio': code_value / ref_value if ref_value > 0.0 else np.nan,
-            })
-        row = source_metric_row(
-            f'Target_D2_source_shape_{side}', code_share, reference_share
-        )
-        row['mesh'] = 'target'
-        row['region'] = f'{side}_target_radial_1_36'
-        row['note'] = (
-            'normalized radial shape only: code D2_source_s-1 versus '
-            'EIRENE ewldmr_res emitted molecular flux; both are segment-integrated'
-        )
-        rows.append(row)
+            if np.sum(reference) <= 0.0:
+                continue
+            reference_share = reference / np.sum(reference)
+            field = f'Target_D2_primary_vs_ewldmr_{reference_mode}'
+            for radial_index, (code_value, ref_value) in enumerate(
+                zip(code_share, reference_share), start=1
+            ):
+                target_profiles.append({
+                    'field': field,
+                    'side': side,
+                    'radial_index': radial_index,
+                    'code': code_value,
+                    'reference': ref_value,
+                    'ratio': (
+                        code_value / ref_value if ref_value > 0.0 else np.nan
+                    ),
+                })
+            row = source_metric_row(
+                f'{field}_{side}', code_share, reference_share
+            )
+            row['mesh'] = 'target_diagnostic'
+            row['region'] = f'{side}_target_radial_1_36'
+            row['note'] = (
+                'shape-only diagnostic, not a like-for-like source metric: '
+                'NT is the primary plasma-ion D2 source, whereas ewldmr_res '
+                'includes molecules emitted from recycling atoms; both the '
+                'as-reported and area-weighted conventions are retained until '
+                'the SOLPS interface normalization is established'
+            )
+            rows.append(row)
     return rows
 
 
