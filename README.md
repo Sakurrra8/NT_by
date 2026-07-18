@@ -449,6 +449,10 @@ sbatch -M mindwell benchmark.slurm \
   Inputfile/settingfile/setting_Trimesh_D_5.log
 ```
 
+`density_report.slurm` accepts the nine simulation job IDs in setting order
+and an optional output directory as its tenth argument. It creates the compact
+trend report plus the complete multi-case PDF on a compute node.
+
 For the 5e19 no-pump/no-puff test, D2+ disagreement should be debugged as a
 chain:
 
