@@ -260,14 +260,12 @@ void Read()
     V_0_read_Tri(Casepath + "D2_0_V_Tri", ua_D2_0_Tri);
     for (int i = 0; i < Grid4.num_tris(); i++)
     {
-        if (T_D_0_Tri[i] < 0.1)
-        {
-            T_D_0_Tri[i] = 0.1;
-        }
-        if (T_D2_0_Tri[i] < 0.1)
-        {
-            T_D2_0_Tri[i] = 0.1;
-        }
+        // Preserve the exported neutral temperature for collision-partner sampling.
+        // Reaction fits apply their own validity-range floor when evaluated.
+        if (T_D_0_Tri[i] < 0.)
+            T_D_0_Tri[i] = 0.;
+        if (T_D2_0_Tri[i] < 0.)
+            T_D2_0_Tri[i] = 0.;
     }
 
     // Read the gamma from target recycle
