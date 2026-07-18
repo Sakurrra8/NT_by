@@ -440,6 +440,15 @@ to `build_density_scan_report.py`. It writes both the cross-density trend
 summary and, with `--full-output`, a master PDF containing all nine case
 reports.
 
+On the VSC cluster, `benchmark.slurm` runs the per-case benchmark and PDF
+assembly away from the login node:
+
+```bash
+sbatch -M mindwell benchmark.slurm \
+  case_input/2MW-5e19 12345678 5e19 \
+  Inputfile/settingfile/setting_Trimesh_D_5.log
+```
+
 For the 5e19 no-pump/no-puff test, D2+ disagreement should be debugged as a
 chain:
 
